@@ -7,6 +7,7 @@ pub struct Map {
     pub height: usize,
     pub start: Position,
     pub exit: Position,
+    pub enemy_spawns: Vec<Position>,
 }
 
 impl Default for Map {
@@ -26,6 +27,7 @@ impl Map {
             height,
             start: Position { x: 2, y: 2 },
             exit: Position { x: 76, y: 36 },
+            enemy_spawns: vec![],
         };
 
         map.assign_zones();
@@ -38,6 +40,7 @@ impl Map {
     pub fn level(level_num: usize) -> Self {
         match level_num {
             2 => Self::build_level_2(),
+            3 => Self::build_level_3(),
             _ => Self::new(),
         }
     }
@@ -140,6 +143,7 @@ impl Map {
             height,
             start: Position { x: 2, y: 37 },
             exit: Position { x: 76, y: 2 },
+            enemy_spawns: vec![],
         };
 
         map.assign_zones();
@@ -231,6 +235,86 @@ impl Map {
         self.set_tile(73, 2, Tile::Obstacle);
         self.set_tile(70, 4, Tile::Obstacle);
         self.set_tile(75, 4, Tile::Obstacle);
+    }
+
+    fn build_level_3() -> Self {
+        let width = 80;
+        let height = 40;
+        let mut map = Self {
+            grid: vec![vec![Tile::Wall; width]; height],
+            zones: vec![vec![Zone::Zone1; width]; height],
+            width,
+            height,
+            start: Position { x: 2, y: 2 },
+            exit: Position { x: 77, y: 37 },
+            enemy_spawns: vec![
+                Position { x: 38, y: 16 },
+                Position { x: 54, y: 22 },
+                Position { x: 48, y: 18 },
+                Position { x: 70, y: 28 },
+                Position { x: 76, y: 34 },
+            ],
+        };
+
+        map.assign_zones();
+        map.carve_level_3();
+        map.set_tile(map.start.x, map.start.y, Tile::Floor);
+        map.set_tile(map.exit.x, map.exit.y, Tile::Exit);
+
+        map
+    }
+
+    fn carve_level_3(&mut self) {
+        self.carve_horizontal(2, 2, 14);
+        self.carve_vertical(2, 2, 6);
+        self.carve_horizontal(6, 2, 10);
+        self.carve_vertical(10, 4, 8);
+        self.carve_horizontal(4, 4, 10);
+        self.carve_horizontal(8, 10, 14);
+
+        self.carve_vertical(14, 2, 10);
+
+        self.carve_horizontal(10, 14, 28);
+        self.carve_vertical(20, 6, 10);
+        self.carve_horizontal(6, 14, 20);
+        self.carve_horizontal(14, 20, 28);
+
+        self.carve_vertical(28, 10, 16);
+
+        self.carve_horizontal(16, 28, 44);
+        self.carve_vertical(36, 12, 16);
+        self.carve_horizontal(12, 32, 36);
+
+        self.carve_vertical(44, 16, 22);
+
+        self.carve_horizontal(22, 44, 60);
+        self.carve_vertical(52, 18, 22);
+        self.carve_horizontal(18, 48, 52);
+        self.carve_vertical(55, 20, 22);
+        self.carve_horizontal(20, 55, 57);
+        self.carve_vertical(57, 20, 22);
+
+        self.carve_vertical(60, 22, 28);
+
+        self.carve_horizontal(28, 60, 76);
+        self.carve_vertical(68, 24, 28);
+        self.carve_horizontal(24, 64, 68);
+        self.carve_vertical(71, 26, 28);
+        self.carve_horizontal(26, 71, 73);
+        self.carve_vertical(73, 26, 28);
+
+        self.carve_vertical(76, 28, 37);
+        self.carve_horizontal(37, 70, 78);
+        self.carve_vertical(73, 35, 37);
+        self.carve_horizontal(35, 73, 75);
+        self.carve_vertical(75, 35, 37);
+
+        self.set_tile(56, 22, Tile::Obstacle);
+        self.set_tile(72, 28, Tile::Obstacle);
+        self.set_tile(74, 37, Tile::Obstacle);
+        self.set_tile(50, 18, Tile::Obstacle);
+        self.set_tile(66, 24, Tile::Obstacle);
+        self.set_tile(34, 12, Tile::Obstacle);
     }
 
     fn carve_horizontal(&mut self, y: usize, start_x: usize, end_x: usize) {
@@ -485,11 +569,11 @@ mod tests {
     #[test]
     fn map_level_invalid_falls_back_to_level_1() {
         let level_0 = Map::level(0);
-        let level_3 = Map::level(3);
+        let level_99 = Map::level(99);
         let level_1 = Map::level(1);
 
         assert_eq!(level_0.start, level_1.start);
-        assert_eq!(level_3.start, level_1.start);
+        assert_eq!(level_99.start, level_1.start);
     }
 
     #[test]
@@ -531,5 +615,100 @@ mod tests {
         }
 
         panic!("Level 2 exit is not reachable from start!");
+    }
+
+    #[test]
+    fn map_level_3_is_80x40() {
+        let map = Map::level(3);
+
+        assert_eq!(map.width, 80);
+        assert_eq!(map.height, 40);
+        assert_eq!(map.grid.len(), 40);
+        assert!(map.grid.iter().all(|row| row.len() == 80));
+    }
+
+    #[test]
+    fn map_level_3_start_is_floor() {
+        let map = Map::level(3);
+
+        assert_eq!(map.get_tile(map.start.x, map.start.y), Tile::Floor);
+    }
+
+    #[test]
+    fn map_level_3_exit_is_exit_tile() {
+        let map = Map::level(3);
+
+        assert_eq!(map.get_tile(map.exit.x, map.exit.y), Tile::Exit);
+    }
+
+    #[test]
+    fn map_level_3_has_enemy_spawns() {
+        let map = Map::level(3);
+
+        assert!(!map.enemy_spawns.is_empty());
+        assert!(map.enemy_spawns.len() >= 3);
+        assert!(map.enemy_spawns.len() <= 5);
+
+        for spawn in &map.enemy_spawns {
+            assert!(map.is_passable(spawn.x, spawn.y));
+            let zone = map.zone_at(*spawn);
+            assert!(
+                zone == Zone::Zone3 || zone == Zone::Zone4 || zone == Zone::Zone5,
+                "Enemy spawn at ({}, {}) is in {:?}, expected Zone 3-5",
+                spawn.x,
+                spawn.y,
+                zone
+            );
+        }
+    }
+
+    #[test]
+    fn map_level_3_start_to_exit_is_reachable() {
+        use std::collections::VecDeque;
+
+        let map = Map::level(3);
+        let mut visited = vec![vec![false; map.width]; map.height];
+        let mut queue = VecDeque::new();
+
+        queue.push_back(map.start);
+        visited[map.start.y][map.start.x] = true;
+
+        let directions: [(isize, isize); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+
+        while let Some(pos) = queue.pop_front() {
+            if pos == map.exit {
+                return;
+            }
+
+            for (dx, dy) in &directions {
+                let nx = pos.x as isize + dx;
+                let ny = pos.y as isize + dy;
+
+                if nx >= 0 && ny >= 0 {
+                    let nx = nx as usize;
+                    let ny = ny as usize;
+
+                    if nx < map.width
+                        && ny < map.height
+                        && !visited[ny][nx]
+                        && map.is_passable(nx, ny)
+                    {
+                        visited[ny][nx] = true;
+                        queue.push_back(Position { x: nx, y: ny });
+                    }
+                }
+            }
+        }
+
+        panic!("Level 3 exit is not reachable from start!");
+    }
+
+    #[test]
+    fn map_level_1_and_2_have_no_enemy_spawns() {
+        let level1 = Map::level(1);
+        let level2 = Map::level(2);
+
+        assert!(level1.enemy_spawns.is_empty());
+        assert!(level2.enemy_spawns.is_empty());
     }
 }

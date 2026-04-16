@@ -36,6 +36,8 @@ impl Player {
             VimMotion::Find => target.is_some_and(|ch| self.find_char(ch, map)),
             VimMotion::Till => target.is_some_and(|ch| self.till_char(ch, map)),
             VimMotion::DeleteLine => self.delete_obstacle_on_row(map),
+            VimMotion::G => self.jump_to_last_row(map),
+            VimMotion::GotoLine => self.jump_to_first_row(map),
         }
     }
 
@@ -140,6 +142,34 @@ impl Player {
         false
     }
 
+    fn jump_to_last_row(&mut self, map: &Map) -> bool {
+        for y in (0..map.height).rev() {
+            for x in 0..map.width {
+                if map.is_passable(x, y) {
+                    let changed = self.position != Position { x, y };
+                    self.position = Position { x, y };
+                    return changed;
+                }
+            }
+        }
+
+        false
+    }
+
+    fn jump_to_first_row(&mut self, map: &Map) -> bool {
+        for y in 0..map.height {
+            for x in 0..map.width {
+                if map.is_passable(x, y) {
+                    let changed = self.position != Position { x, y };
+                    self.position = Position { x, y };
+                    return changed;
+                }
+            }
+        }
+
+        false
+    }
+
     fn find_char(&mut self, target: char, map: &Map) -> bool {
         let y = self.position.y;
         for x in (self.position.x + 1)..map.width {
@@ -207,6 +237,7 @@ mod tests {
                 x: width - 1,
                 y: height - 1,
             },
+            enemy_spawns: vec![],
         }
     }
 
@@ -378,6 +409,82 @@ mod tests {
     }
 
     #[test]
+    fn player_g_jumps_to_last_passable_row() {
+        let mut map = test_map(5, 5);
+        map.set_tile(0, 4, Tile::Wall);
+        map.set_tile(1, 4, Tile::Wall);
+        let mut player = Player::new(Position { x: 2, y: 0 });
+
+        assert!(player.handle_motion(VimMotion::G, None, &mut map));
+        assert_eq!(player.position, Position { x: 2, y: 4 });
+    }
+
+    #[test]
+    fn player_gg_jumps_to_first_passable_row() {
+        let mut map = test_map(5, 5);
+        map.set_tile(0, 0, Tile::Wall);
+        map.set_tile(1, 0, Tile::Wall);
+        let mut player = Player::new(Position { x: 2, y: 4 });
+
+        assert!(player.handle_motion(VimMotion::GotoLine, None, &mut map));
+        assert_eq!(player.position, Position { x: 2, y: 0 });
+    }
+
+    #[test]
+    fn player_g_no_passable_rows_fails() {
+        let mut map = Map {
+            grid: vec![vec![Tile::Wall; 5]; 5],
+            zones: vec![vec![Zone::Zone1; 5]; 5],
+            width: 5,
+            height: 5,
+            start: Position { x: 0, y: 0 },
+            exit: Position { x: 4, y: 4 },
+            enemy_spawns: vec![],
+        };
+        map.set_tile(2, 2, Tile::Floor);
+        let mut player = Player::new(Position { x: 2, y: 2 });
+
+        assert!(!player.handle_motion(VimMotion::G, None, &mut map));
+        assert_eq!(player.position, Position { x: 2, y: 2 });
+    }
+
+    #[test]
+    fn player_gg_no_passable_rows_fails() {
+        let mut map = Map {
+            grid: vec![vec![Tile::Wall; 5]; 5],
+            zones: vec![vec![Zone::Zone1; 5]; 5],
+            width: 5,
+            height: 5,
+            start: Position { x: 0, y: 0 },
+            exit: Position { x: 4, y: 4 },
+            enemy_spawns: vec![],
+        };
+        map.set_tile(2, 2, Tile::Floor);
+        let mut player = Player::new(Position { x: 2, y: 2 });
+
+        assert!(!player.handle_motion(VimMotion::GotoLine, None, &mut map));
+        assert_eq!(player.position, Position { x: 2, y: 2 });
+    }
+
+    #[test]
+    fn player_g_already_on_target_row_returns_false() {
+        let mut map = test_map(5, 5);
+        let mut player = Player::new(Position { x: 0, y: 4 });
+
+        assert!(!player.handle_motion(VimMotion::G, None, &mut map));
+        assert_eq!(player.position, Position { x: 0, y: 4 });
+    }
+
+    #[test]
+    fn player_gg_already_on_target_row_returns_false() {
+        let mut map = test_map(5, 5);
+        let mut player = Player::new(Position { x: 0, y: 0 });
+
+        assert!(!player.handle_motion(VimMotion::GotoLine, None, &mut map));
+        assert_eq!(player.position, Position { x: 0, y: 0 });
+    }
+
+    #[test]
     fn player_handle_motion_records_in_used_motions() {
         let motions = [
             VimMotion::H,
@@ -391,6 +498,8 @@ mod tests {
             VimMotion::Find,
             VimMotion::Till,
             VimMotion::DeleteLine,
+            VimMotion::G,
+            VimMotion::GotoLine,
         ];
 
         for motion in motions {
