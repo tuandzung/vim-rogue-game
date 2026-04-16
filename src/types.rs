@@ -7,6 +7,7 @@ use crate::map::Map;
 use crate::player::Player;
 
 pub const TRAIL_MAX: usize = 8;
+pub const TOTAL_LEVELS: usize = 2;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -177,6 +178,7 @@ pub struct App {
     pub status_message: String,
     pub discovered_motions: HashSet<VimMotion>,
     pub trail: VecDeque<Position>,
+    pub level: usize,
 }
 
 #[cfg(test)]

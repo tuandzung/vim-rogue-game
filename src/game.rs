@@ -32,6 +32,7 @@ impl App {
             ),
             discovered_motions: Default::default(),
             trail: VecDeque::new(),
+            level: 1,
         }
     }
 
@@ -47,6 +48,15 @@ impl App {
 
     pub fn unique_motions(&self) -> usize {
         self.discovered_motions.len()
+    }
+
+    pub fn advance_level(&mut self) {
+        self.level += 1;
+        self.map = Map::level(self.level);
+        self.player.position = self.map.start;
+        self.trail.clear();
+        self.pending_input = None;
+        self.status_message = format!("Level {} — The dungeon shifts around you...", self.level);
     }
 }
 
@@ -193,11 +203,15 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
         .get_tile(app.player.position.x, app.player.position.y)
         == Tile::Exit
     {
-        app.game_state = GameState::Won;
-        let final_time = app.start_time.elapsed();
-        app.final_time = Some(final_time);
-        app.elapsed = final_time;
-        app.status_message = String::from("You reached the exit and completed the dungeon.");
+        if app.level < crate::types::TOTAL_LEVELS {
+            app.advance_level();
+        } else {
+            app.game_state = GameState::Won;
+            let final_time = app.start_time.elapsed();
+            app.final_time = Some(final_time);
+            app.elapsed = final_time;
+            app.status_message = String::from("You conquered all levels of the dungeon!");
+        }
     }
 }
 
@@ -236,6 +250,7 @@ mod tests {
             status_message: String::new(),
             discovered_motions: Default::default(),
             trail: VecDeque::new(),
+            level: 1,
         }
     }
 
@@ -385,6 +400,7 @@ mod tests {
         let mut map = test_map(6, 1);
         map.set_tile(4, 0, Tile::Exit);
         let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+        app.level = crate::types::TOTAL_LEVELS;
 
         handle_event(&mut app, key_event(KeyCode::Char('f')));
         handle_event(&mut app, key_event(KeyCode::Char('>')));
@@ -398,6 +414,7 @@ mod tests {
         map.set_tile(4, 0, Tile::Exit);
         map.exit = Position { x: 4, y: 0 };
         let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = crate::types::TOTAL_LEVELS;
 
         handle_event(&mut app, key_event(KeyCode::Char('l')));
 
@@ -411,5 +428,114 @@ mod tests {
         handle_event(&mut app, key_event(KeyCode::Char('l')));
 
         assert_eq!(app.motion_count, 1);
+    }
+
+    #[test]
+    fn app_new_level_is_one() {
+        let app = App::new();
+        assert_eq!(app.level, 1);
+    }
+
+    #[test]
+    fn app_exit_on_level_1_transitions_to_level_2() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 1;
+
+        handle_event(&mut app, key_event(KeyCode::Char('l')));
+
+        assert_eq!(app.level, 2);
+        assert_eq!(app.game_state, GameState::Playing);
+    }
+
+    #[test]
+    fn app_exit_on_level_2_triggers_win() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 2;
+
+        handle_event(&mut app, key_event(KeyCode::Char('l')));
+
+        assert_eq!(app.level, 2);
+        assert_eq!(app.game_state, GameState::Won);
+    }
+
+    #[test]
+    fn app_level_transition_preserves_stats() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 1;
+        app.motion_count = 42;
+        app.discovered_motions.insert(VimMotion::H);
+        app.discovered_motions.insert(VimMotion::J);
+
+        handle_event(&mut app, key_event(KeyCode::Char('l')));
+
+        assert_eq!(app.level, 2);
+        assert_eq!(app.motion_count, 43);
+        assert_eq!(app.discovered_motions.len(), 3);
+    }
+
+    #[test]
+    fn app_level_transition_clears_trail() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 1;
+        app.trail.push_front(Position { x: 2, y: 0 });
+
+        handle_event(&mut app, key_event(KeyCode::Char('l')));
+
+        assert_eq!(app.level, 2);
+        assert!(app.trail.is_empty());
+    }
+
+    #[test]
+    fn app_level_transition_clears_pending_input() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 1;
+        app.pending_input = Some(PendingInput::Delete);
+
+        app.advance_level();
+
+        assert_eq!(app.level, 2);
+        assert_eq!(app.pending_input, None);
+    }
+
+    #[test]
+    fn app_level_transition_resets_player_position() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 1;
+
+        handle_event(&mut app, key_event(KeyCode::Char('l')));
+
+        assert_eq!(app.player.position, app.map.start);
+    }
+
+    #[test]
+    fn app_level_transition_loads_new_map() {
+        let mut map = test_map(5, 1);
+        map.set_tile(4, 0, Tile::Exit);
+        map.exit = Position { x: 4, y: 0 };
+        let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+        app.level = 1;
+
+        handle_event(&mut app, key_event(KeyCode::Char('l')));
+
+        assert_eq!(app.level, 2);
+        assert_eq!(app.player.position, app.map.start);
     }
 }

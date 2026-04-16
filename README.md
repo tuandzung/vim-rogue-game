@@ -1,10 +1,12 @@
 # vim-quake
 
-A terminal-based roguelike dungeon game that teaches Vim motions through gameplay. Navigate an 80×40 dungeon using real Vim keybindings to reach the exit.
+A terminal-based roguelike dungeon game that teaches Vim motions through gameplay. Navigate two 80×40 dungeon levels using real Vim keybindings to reach the exit.
 
 ## Features
 
-- **5 zone-gated areas** with distinct color palettes (gray → cyan → magenta → red → gold)
+- **2 dungeon levels** with distinct layouts — Level 2 is an inverted maze with obstacles across all zones
+- **5 zone-gated areas** per level with distinct color palettes (gray → cyan → magenta → red → gold)
+- **Level progression** — stats carry over, trail resets, new map loads on reaching the exit
 - **Figlet-style ASCII art** title screen with motion reference
 - **Player trail** — fading green dots show your recent path
 - **Animated exit glow** — pulsing `►` beacon guides you to the goal
@@ -21,7 +23,7 @@ A terminal-based roguelike dungeon game that teaches Vim motions through gamepla
 | `f<char>` `t<char>` | Find / till char | 4 |
 | `dd` | Delete obstacle | 5 |
 
-The dungeon is divided into 5 zone-gated areas. Each zone unlocks progressively harder motions.
+The dungeon is divided into 5 zone-gated areas. Each zone unlocks progressively harder motions. Complete Level 1 to advance to the harder Level 2 maze.
 
 ## Quick Start
 
@@ -35,13 +37,13 @@ cargo run
 - `q` / `Esc` — quit
 - Any key — start from title screen
 
-Reach the exit (`>`) to win.
+Reach the exit (`>`) on each level. Complete Level 2 to win.
 
 ## Build & Test
 
 ```bash
 cargo build    # Compile
-cargo test     # Run 62 inline tests
+cargo test     # Run 80 inline tests
 cargo run      # Play
 ```
 
@@ -51,7 +53,7 @@ cargo run      # Play
 src/main.rs     Terminal setup + event loop
 src/game.rs     App state, event handling, win condition, trail tracking
 src/player.rs   Player + 11 motion implementations
-src/map.rs      80×40 grid, 5 zones, corridor carving
+src/map.rs      80×40 grid, 5 zones, corridor carving, 2 dungeon levels
 src/renderer.rs ratatui TUI rendering (zone colors, trail, glow, ASCII art)
 src/types.rs    Shared types (Position, Tile, Zone, VimMotion, App, …)
 src/lib.rs      Module re-exports

@@ -4,7 +4,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use ratatui::Frame;
 
-use crate::types::{App, GameState, PendingInput, Tile, VimMotion, Zone};
+use crate::types::{App, GameState, PendingInput, Tile, VimMotion, Zone, TOTAL_LEVELS};
 
 pub fn render(frame: &mut Frame<'_>, app: &App) {
     if !app.started {
@@ -215,8 +215,8 @@ fn render_win(frame: &mut Frame<'_>, app: &App) {
     ]);
 
     let stats = Line::from(format!(
-        "  Time: {duration}        Moves: {}",
-        app.motion_count
+        "  Level: {} / {}    Time: {duration}    Moves: {}",
+        app.level, TOTAL_LEVELS, app.motion_count
     ));
 
     let mut zone_lines: Vec<Line> = vec![
@@ -310,7 +310,11 @@ fn render_win(frame: &mut Frame<'_>, app: &App) {
     lines.push(Line::from(""));
 
     let body = Paragraph::new(lines)
-        .block(Block::default().borders(Borders::ALL).title("★ Victory ★"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!("★ Victory — Level {} ★", app.level)),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(body, centered_rect(80, 70, frame.area()));
@@ -401,6 +405,7 @@ fn render_sidebar(frame: &mut Frame<'_>, app: &App, area: Rect) {
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         )),
+        Line::from(format!("Level: {} / {}", app.level, TOTAL_LEVELS)),
         Line::from(format!("Time: {}", format_duration(app.elapsed))),
         Line::from(format!("Moves: {}", app.motion_count)),
         Line::from(format!("Unique: {}", app.unique_motions())),

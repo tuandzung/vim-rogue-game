@@ -35,6 +35,13 @@ impl Map {
         map
     }
 
+    pub fn level(level_num: usize) -> Self {
+        match level_num {
+            2 => Self::build_level_2(),
+            _ => Self::new(),
+        }
+    }
+
     pub fn get_tile(&self, x: usize, y: usize) -> Tile {
         if x >= self.width || y >= self.height {
             Tile::Wall
@@ -121,6 +128,109 @@ impl Map {
         self.set_tile(74, 34, Tile::Obstacle);
 
         self.set_tile(self.start.x, self.start.y, Tile::Floor);
+    }
+
+    fn build_level_2() -> Self {
+        let width = 80;
+        let height = 40;
+        let mut map = Self {
+            grid: vec![vec![Tile::Wall; width]; height],
+            zones: vec![vec![Zone::Zone1; width]; height],
+            width,
+            height,
+            start: Position { x: 2, y: 37 },
+            exit: Position { x: 76, y: 2 },
+        };
+
+        map.assign_zones();
+        map.carve_level_2();
+        map.set_tile(map.start.x, map.start.y, Tile::Floor);
+        map.set_tile(map.exit.x, map.exit.y, Tile::Exit);
+
+        map
+    }
+
+    fn carve_level_2(&mut self) {
+        self.carve_vertical(2, 32, 37);
+        self.carve_horizontal(35, 2, 6);
+        self.carve_vertical(6, 32, 35);
+        self.carve_horizontal(32, 2, 9);
+        self.carve_vertical(9, 25, 32);
+        self.carve_horizontal(28, 9, 13);
+        self.carve_vertical(13, 25, 28);
+        self.carve_horizontal(25, 5, 15);
+        self.carve_vertical(5, 18, 25);
+        self.carve_horizontal(22, 5, 9);
+        self.carve_vertical(8, 18, 22);
+        self.carve_horizontal(18, 5, 12);
+        self.carve_vertical(12, 12, 18);
+        self.carve_horizontal(12, 8, 16);
+
+        self.carve_horizontal(12, 16, 20);
+        self.carve_horizontal(12, 20, 22);
+        self.carve_horizontal(12, 22, 26);
+        self.carve_horizontal(12, 28, 31);
+        self.carve_vertical(20, 12, 16);
+        self.carve_horizontal(16, 17, 20);
+        self.carve_vertical(17, 16, 21);
+        self.carve_horizontal(21, 17, 23);
+        self.carve_vertical(22, 12, 21);
+        self.carve_vertical(23, 12, 25);
+        self.carve_horizontal(25, 20, 29);
+        self.carve_vertical(27, 25, 29);
+        self.carve_vertical(29, 12, 29);
+        self.carve_horizontal(29, 24, 31);
+
+        self.set_tile(19, 16, Tile::Obstacle);
+        self.set_tile(23, 14, Tile::Obstacle);
+        self.set_tile(28, 25, Tile::Obstacle);
+
+        self.carve_horizontal(29, 31, 47);
+        self.carve_vertical(32, 18, 29);
+        self.carve_vertical(47, 24, 29);
+        self.carve_horizontal(24, 34, 47);
+        self.carve_vertical(34, 18, 24);
+        self.carve_vertical(39, 18, 24);
+        self.carve_vertical(41, 18, 24);
+        self.carve_horizontal(18, 32, 44);
+        self.carve_vertical(44, 12, 18);
+        self.carve_horizontal(12, 36, 47);
+
+        self.set_tile(40, 18, Tile::Obstacle);
+        self.set_tile(38, 24, Tile::Obstacle);
+        self.set_tile(45, 29, Tile::Obstacle);
+
+        self.carve_horizontal(12, 48, 63);
+        self.carve_vertical(50, 12, 20);
+        self.carve_horizontal(20, 50, 58);
+        self.carve_vertical(58, 16, 24);
+        self.carve_horizontal(16, 54, 63);
+        self.carve_vertical(63, 8, 16);
+        self.carve_horizontal(8, 57, 63);
+        self.carve_vertical(57, 8, 14);
+        self.carve_horizontal(14, 52, 57);
+        self.carve_vertical(52, 14, 22);
+        self.carve_horizontal(22, 52, 60);
+        self.carve_vertical(60, 2, 8);
+        self.carve_horizontal(2, 60, 63);
+
+        self.set_tile(55, 12, Tile::Obstacle);
+        self.set_tile(54, 20, Tile::Obstacle);
+        self.set_tile(53, 14, Tile::Obstacle);
+
+        self.carve_horizontal(2, 60, 67);
+        self.carve_vertical(67, 2, 4);
+        self.carve_horizontal(4, 64, 76);
+        self.carve_vertical(69, 2, 4);
+        self.carve_vertical(72, 2, 4);
+        self.carve_vertical(74, 2, 4);
+        self.carve_horizontal(2, 69, 76);
+        self.carve_vertical(76, 2, 4);
+
+        self.set_tile(68, 2, Tile::Obstacle);
+        self.set_tile(73, 2, Tile::Obstacle);
+        self.set_tile(70, 4, Tile::Obstacle);
+        self.set_tile(75, 4, Tile::Obstacle);
     }
 
     fn carve_horizontal(&mut self, y: usize, start_x: usize, end_x: usize) {
@@ -283,5 +393,143 @@ mod tests {
             .count();
 
         assert!(zone5_obstacles > 0);
+    }
+
+    #[test]
+    fn map_level_1_is_same_as_new() {
+        let default_map = Map::new();
+        let level_1 = Map::level(1);
+
+        assert_eq!(default_map.start, level_1.start);
+        assert_eq!(default_map.exit, level_1.exit);
+        assert_eq!(default_map.grid, level_1.grid);
+    }
+
+    #[test]
+    fn map_level_2_has_different_start_and_exit() {
+        let map = Map::level(2);
+
+        assert_ne!(map.start, Map::new().start);
+        assert_ne!(map.exit, Map::new().exit);
+    }
+
+    #[test]
+    fn map_level_2_is_80x40() {
+        let map = Map::level(2);
+
+        assert_eq!(map.width, 80);
+        assert_eq!(map.height, 40);
+    }
+
+    #[test]
+    fn map_level_2_start_is_floor() {
+        let map = Map::level(2);
+
+        assert_eq!(map.get_tile(map.start.x, map.start.y), Tile::Floor);
+    }
+
+    #[test]
+    fn map_level_2_exit_is_exit_tile() {
+        let map = Map::level(2);
+
+        assert_eq!(map.get_tile(map.exit.x, map.exit.y), Tile::Exit);
+    }
+
+    #[test]
+    fn map_level_2_has_obstacles_in_earlier_zones() {
+        let map = Map::level(2);
+        let early_obstacles: usize = map
+            .grid
+            .iter()
+            .enumerate()
+            .flat_map(|(y, row)| row.iter().enumerate().map(move |(x, tile)| (x, y, tile)))
+            .filter(|(x, _, tile)| *x < 64 && **tile == Tile::Obstacle)
+            .count();
+
+        assert!(early_obstacles > 0);
+    }
+
+    #[test]
+    fn map_level_2_has_carved_corridors() {
+        let map = Map::level(2);
+        let carved = map
+            .grid
+            .iter()
+            .flatten()
+            .filter(|t| **t != Tile::Wall)
+            .count();
+
+        assert!(carved > 50);
+    }
+
+    #[test]
+    fn map_level_2_has_more_obstacles_than_level_1() {
+        let level1 = Map::level(1);
+        let level2 = Map::level(2);
+        let obs1 = level1
+            .grid
+            .iter()
+            .flatten()
+            .filter(|t| **t == Tile::Obstacle)
+            .count();
+        let obs2 = level2
+            .grid
+            .iter()
+            .flatten()
+            .filter(|t| **t == Tile::Obstacle)
+            .count();
+
+        assert!(obs2 > obs1);
+    }
+
+    #[test]
+    fn map_level_invalid_falls_back_to_level_1() {
+        let level_0 = Map::level(0);
+        let level_3 = Map::level(3);
+        let level_1 = Map::level(1);
+
+        assert_eq!(level_0.start, level_1.start);
+        assert_eq!(level_3.start, level_1.start);
+    }
+
+    #[test]
+    fn map_level_2_start_to_exit_is_reachable() {
+        use std::collections::VecDeque;
+
+        let map = Map::level(2);
+        let mut visited = vec![vec![false; map.width]; map.height];
+        let mut queue = VecDeque::new();
+
+        queue.push_back(map.start);
+        visited[map.start.y][map.start.x] = true;
+
+        let directions: [(isize, isize); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+
+        while let Some(pos) = queue.pop_front() {
+            if pos == map.exit {
+                return;
+            }
+
+            for (dx, dy) in &directions {
+                let nx = pos.x as isize + dx;
+                let ny = pos.y as isize + dy;
+
+                if nx >= 0 && ny >= 0 {
+                    let nx = nx as usize;
+                    let ny = ny as usize;
+
+                    if nx < map.width
+                        && ny < map.height
+                        && !visited[ny][nx]
+                        && map.is_passable(nx, ny)
+                    {
+                        visited[ny][nx] = true;
+                        queue.push_back(Position { x: nx, y: ny });
+                    }
+                }
+            }
+        }
+
+        panic!("Level 2 exit is not reachable from start!");
     }
 }
