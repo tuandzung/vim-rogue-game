@@ -5,5 +5,4 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0"
-crossterm = "0.28"
-ratatui = "0.29"
+bracket-lib = "0.8.7"

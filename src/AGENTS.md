@@ -8,60 +8,81 @@ All application source code and inline tests for vim-quake.
 ## Key Files
 | File | Lines | Role |
 |------|-------|------|
-| `main.rs` | 54 | Binary entry — crossterm setup, event loop, delegates to game/renderer |
-| `lib.rs` | 6 | Library root — `pub mod` re-exports all modules (incl. enemy) |
-| `game.rs` | 763 | `App` state, `handle_event` dispatch, enemy turns, lives, win/loss, level progression |
+| `main.rs` | 32 | Binary entry — bracket-lib setup, event loop, delegates to game/renderer |
+| `lib.rs` | 9 | Library root — `pub mod` re-exports all modules |
+| `game.rs` | 1470 | `App` state, `handle_key`/`tick`, `parse_motion`, `execute_motion`, `enemies_step`, win/loss/retry, trail, audio dispatch |
 | `player.rs` | 521 | `Player` struct + 13 motion impls (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
-| `map.rs` | 714 | `Map` struct, 80×40 grid, 3 levels, 5 zones, `carve_level`, obstacles, `enemy_spawn_points()` |
-| `renderer.rs` | 690 | ratatui TUI — title/gameplay/win/loss screens, viewport + sidebar, trail, glow, enemies |
-| `enemy.rs` | 244 | `Enemy` struct + BFS pathfinding (`step_toward_player`), collision handling |
-| `types.rs` | 306 | Position, Tile, Zone, VimMotion, Direction, GameState, PendingInput, Enemy, App |
+| `map.rs` | 714 | `Map` struct, 80×40 grid, 5 zones, 3 levels (`carve_level`, `build_level_2/3`), enemy spawn points |
+| `renderer.rs` | 1266 | bracket-lib rendering — title/gameplay/win/lost screens, viewport, sidebar, minimap, zone colors |
+| `types.rs` | 504 | Position, Tile, Zone, VimMotion, Direction, Enemy, GameState, App, RenderGrid, ViewModel, ScreenModel |
+| `animation.rs` | 491 | `GameClock` trait, `RealClock`/`TestClock`, `AnimationState`, `AnimationTimer`, `Interpolator` |
+| `visibility.rs` | 519 | `VisibilityMap` with `compute_fov`, `VisibilityState` (Hidden/Explored/Visible) |
+| `enemy.rs` | 244 | `Enemy` struct with BFS `step_toward_player` |
+| `audio.rs` | 256 | `AudioManager` + `SoundEffect` enum, graceful no-op fallback |
 
 ## Where To Look
 | Task | File | What to change |
 |------|------|----------------|
 | Add Vim motion | `player.rs` + `types.rs` | VimMotion enum, handle_motion match arm, game.rs parse_motion |
-| Change dungeon | `map.rs` | carve_level (3 level variants), assign_zones, obstacle placement |
+| Change dungeon | `map.rs` | carve_level, build_level_2/3, assign_zones |
 | Change UI | `renderer.rs` | Pure display only — never mutates state |
-| Change game flow | `game.rs` | handle_event, pending_input two-phase for f/t/dd/gg |
-| Change enemy AI | `enemy.rs` | BFS pathfinding, step_toward_player |
+| Change game flow | `game.rs` | handle_key, tick, pending_input two-phase for f/t/dd/gg |
 | Add shared type | `types.rs` | All modules import via `crate::types::*` |
+| Change enemy AI | `enemy.rs` | step_toward_player (BFS), called via game.rs enemies_step |
+| Change visibility | `visibility.rs` | compute_fov, VisibilityMap, demote_visible_to_explored |
+| Add animation | `animation.rs` | AnimationState + Interpolator; durations as constants |
+| Add sound | `audio.rs` | SoundEffect enum + AudioManager.play() |
 
 ## Internal Dependencies
 ```
-types.rs ← (all modules)
-game.rs  ← player.rs, map.rs, enemy.rs, types.rs
-player.rs ← map.rs, types.rs
-enemy.rs ← map.rs, types.rs
-renderer.rs ← types.rs (read-only)
-main.rs ← game.rs, renderer.rs, types.rs
+types.rs      ← (all modules)
+map.rs        ← player.rs, enemy.rs, game.rs
+player.rs     ← game.rs
+enemy.rs      ← game.rs
+visibility.rs ← game.rs, renderer.rs
+animation.rs  ← game.rs
+audio.rs      ← game.rs
+renderer.rs   ← main.rs (reads types for display)
+game.rs       ← main.rs
+lib.rs        ← main.rs (implicit)
 ```
 
 ## Conventions
 - `grid[y][x]` row-major indexing — always bounds-check before access.
 - Event handling: single-key motions execute immediately; f/t/dd/gg set `pending_input` for next keypress.
 - `Tile` has `glyph()` for char + `Display` for string. `VimMotion` has `key_label()`, `display_name()`, `description()`.
-- Enemies only on Level 3. `enemy_spawn_points()` returns spawn positions. BFS each enemy turn.
-- 3 lives. Collision → `lives -= 1` + remove enemy. 0 lives → `GameState::Lost` → any key retries level.
+- Input queue: `input_queue` in App buffers keypresses during animation; dequeued after animation completes.
+- `GameClock` trait: `RealClock` in production, `TestClock` (deterministic) in tests.
+- Animation durations: `PLAYER_MOVE_MS` (150ms), `ENEMY_MOVE_MS` (200ms), `EFFECT_MS` in animation.rs.
+- FOV: `compute_fov` uses ray-casting with `FOV_RADIUS`; `demote_visible_to_explored` called before each recomputation.
+- Enemy BFS: `step_toward_player` finds shortest path; won't walk through walls or stay on player tile.
+- Audio: disabled by default; `play()` no-ops when disabled; `SoundEffect` enum in audio.rs.
 
 ## Tests
-117 inline tests across 5 files (`#[cfg(test)] mod tests` at bottom):
+275 inline tests across 9 files (`#[cfg(test)] mod tests` at bottom):
 | File | Tests | Coverage |
 |------|-------|----------|
-| `game.rs` | 35 | Motions, pending input, win/loss, level transitions, enemies, lives, trail, zone tracking |
-| `map.rs` | 33 | Dimensions, tiles, passability, zones, corridors, obstacles, 3 levels, enemy spawns |
-| `player.rs` | 25 | All 13 motions + boundaries + dd obstacle + motion recording |
-| `enemy.rs` | 10 | BFS pathfinding, wall avoidance, diagonal, corridor following, collision |
-| `types.rs` | 14 | Tile glyphs, motion labels/descriptions, zone titles, direction deltas, Enemy struct |
-| `renderer.rs` | 0 | No tests |
+| `game.rs` | 72 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry |
+| `renderer.rs` | 44 | Zone colors, wall glyphs, duration formatting, phases, exit glow, trail colors, minimap, fog, centering |
+| `map.rs` | 33 | Dimensions, tiles, passability, zones, corridors, obstacles, 3 levels, reachability, enemy spawns |
+| `animation.rs` | 29 | Timer progress, interpolation, easing, AnimationState, TestClock determinism |
+| `visibility.rs` | 25 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases |
+| `player.rs` | 25 | All 13 motions + boundaries + motion recording |
+| `types.rs` | 21 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
+| `audio.rs` | 16 | Manager lifecycle, play no-op, enable/disable, rapid play, sound variants |
+| `enemy.rs` | 10 | BFS movement, diagonal, walls, adjacency, corridors, shortest path |
 | `main.rs` | 0 | No tests (thin wrapper) |
 | `lib.rs` | 0 | No tests (re-exports only) |
 
-Per-file test helpers: `test_map(w,h)`, `started_app_with_map(map,pos)`, `key_event(code)`.
+Per-file test helpers: `test_map(w,h)`, `started_app_with_map(map,pos)`, `key_event(code)`, `assert_approx_eq()`, `tick_timer()`, `tick_state()`.
 
 ## Notes
-- Map start: (2,2), exit: (76,36). Zones: 16 columns each.
-- Level 1 = basic maze. Level 2 = inverted maze + obstacles in earlier zones. Level 3 = zigzag + enemies.
+- Map defaults: start (2,2), exit (76,36). Zones: 16 columns each.
 - Zone 5 has obstacles (only area with `Tile::Obstacle`).
+- Level 2: inverted maze, obstacles in earlier zones, different start/exit.
+- Level 3: zigzag corridors, enemy spawn points from `map.enemy_spawns`.
+- `Enemy` glyph: `⚡` (default). Stored in `Enemy` struct field.
+- `RenderGrid`/`RenderCell`/`ViewModel`/`ScreenModel` are renderer-specific types in types.rs.
+- `examples/spike.rs`: bracket-lib proof-of-concept, not part of main build.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->

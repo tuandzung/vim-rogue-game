@@ -3,11 +3,17 @@ use std::collections::VecDeque;
 use std::fmt::{self, Display, Formatter};
 use std::time::{Duration, Instant};
 
+use bracket_lib::prelude::VirtualKeyCode;
+
+use crate::animation::AnimationState;
+use crate::audio::AudioManager;
 use crate::map::Map;
 use crate::player::Player;
+use crate::visibility::VisibilityMap;
 
 pub const TRAIL_MAX: usize = 8;
 pub const TOTAL_LEVELS: usize = 3;
+pub const FOV_RADIUS: i32 = 10;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -175,6 +181,102 @@ pub enum PendingInput {
     GotoLine,
 }
 
+/// A single cell in the render grid.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderCell {
+    pub glyph: char,
+    pub fg: (u8, u8, u8),
+    pub bg: (u8, u8, u8),
+    pub blink: bool,
+}
+
+impl RenderCell {
+    pub fn new(glyph: char, fg: (u8, u8, u8), bg: (u8, u8, u8)) -> Self {
+        Self {
+            glyph,
+            fg,
+            bg,
+            blink: false,
+        }
+    }
+
+    pub fn with_blink(mut self) -> Self {
+        self.blink = true;
+        self
+    }
+}
+
+/// 2D grid of render cells — the "frame" to be drawn.
+#[derive(Debug, Clone)]
+pub struct RenderGrid {
+    cells: Vec<Vec<RenderCell>>, // cells[y][x]
+    width: usize,
+    height: usize,
+}
+
+impl RenderGrid {
+    pub fn new(width: usize, height: usize, default: RenderCell) -> Self {
+        Self {
+            cells: vec![vec![default; width]; height],
+            width,
+            height,
+        }
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn get(&self, x: usize, y: usize) -> &RenderCell {
+        &self.cells[y][x]
+    }
+
+    pub fn set(&mut self, x: usize, y: usize, cell: RenderCell) {
+        self.cells[y][x] = cell;
+    }
+
+    pub fn fill(&mut self, cell: RenderCell) {
+        for row in &mut self.cells {
+            for current in row {
+                *current = cell.clone();
+            }
+        }
+    }
+}
+
+/// Which screen is being rendered.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ScreenModel {
+    Title,
+    Gameplay,
+    Win,
+    Lost,
+}
+
+/// Holds current screen model + frame info for the renderer.
+#[derive(Debug, Clone)]
+pub struct ViewModel {
+    pub screen: ScreenModel,
+    pub frame_number: u64,
+}
+
+impl ViewModel {
+    pub fn new(screen: ScreenModel) -> Self {
+        Self {
+            screen,
+            frame_number: 0,
+        }
+    }
+
+    pub fn advance_frame(&mut self) {
+        self.frame_number += 1;
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Enemy {
     pub position: Position,
@@ -183,7 +285,11 @@ pub struct Enemy {
 
 pub struct App {
     pub map: Map,
+    pub visibility: VisibilityMap,
     pub player: Player,
+    pub player_animation: Option<AnimationState>,
+    pub enemy_animations: Vec<(usize, AnimationState)>,
+    pub input_queue: Vec<(VirtualKeyCode, bool)>,
     pub enemies: Vec<Enemy>,
     pub lives: usize,
     pub game_state: GameState,
@@ -197,6 +303,7 @@ pub struct App {
     pub discovered_motions: HashSet<VimMotion>,
     pub trail: VecDeque<Position>,
     pub level: usize,
+    pub audio: AudioManager,
 }
 
 #[cfg(test)]
@@ -302,5 +409,96 @@ mod tests {
     #[test]
     fn total_levels_is_three() {
         assert_eq!(TOTAL_LEVELS, 3);
+    }
+
+    #[test]
+    fn render_cell_new() {
+        let cell = RenderCell::new('@', (1, 2, 3), (4, 5, 6));
+        assert_eq!(cell.glyph, '@');
+        assert_eq!(cell.fg, (1, 2, 3));
+        assert_eq!(cell.bg, (4, 5, 6));
+        assert!(!cell.blink);
+    }
+
+    #[test]
+    fn render_cell_with_blink() {
+        let cell = RenderCell::new('@', (1, 2, 3), (4, 5, 6)).with_blink();
+        assert!(cell.blink);
+    }
+
+    #[test]
+    fn render_grid_new_dimensions() {
+        let default = RenderCell::new('.', (1, 1, 1), (0, 0, 0));
+        let grid = RenderGrid::new(3, 2, default);
+        assert_eq!(grid.width(), 3);
+        assert_eq!(grid.height(), 2);
+    }
+
+    #[test]
+    fn render_grid_get_set() {
+        let default = RenderCell::new('.', (1, 1, 1), (0, 0, 0));
+        let mut grid = RenderGrid::new(2, 2, default);
+        let cell = RenderCell::new('@', (10, 20, 30), (40, 50, 60));
+        grid.set(1, 0, cell.clone());
+        assert_eq!(grid.get(1, 0), &cell);
+    }
+
+    #[test]
+    fn render_grid_fill() {
+        let default = RenderCell::new('.', (1, 1, 1), (0, 0, 0));
+        let mut grid = RenderGrid::new(2, 2, default);
+        let fill_cell = RenderCell::new('#', (9, 9, 9), (8, 8, 8)).with_blink();
+        grid.fill(fill_cell.clone());
+
+        for y in 0..grid.height() {
+            for x in 0..grid.width() {
+                assert_eq!(grid.get(x, y), &fill_cell);
+            }
+        }
+    }
+
+    #[test]
+    fn render_grid_default_cells() {
+        let default = RenderCell::new('.', (1, 1, 1), (0, 0, 0));
+        let grid = RenderGrid::new(2, 2, default.clone());
+        for y in 0..grid.height() {
+            for x in 0..grid.width() {
+                assert_eq!(grid.get(x, y), &default);
+            }
+        }
+    }
+
+    #[test]
+    fn screen_model_covers_all_states() {
+        let cases = [
+            (ScreenModel::Title, "title"),
+            (ScreenModel::Gameplay, "gameplay"),
+            (ScreenModel::Win, "win"),
+            (ScreenModel::Lost, "lost"),
+        ];
+
+        for (screen, expected) in cases {
+            let label = match screen {
+                ScreenModel::Title => "title",
+                ScreenModel::Gameplay => "gameplay",
+                ScreenModel::Win => "win",
+                ScreenModel::Lost => "lost",
+            };
+            assert_eq!(label, expected);
+        }
+    }
+
+    #[test]
+    fn view_model_frame_advances() {
+        let mut view = ViewModel::new(ScreenModel::Gameplay);
+        view.advance_frame();
+        view.advance_frame();
+        assert_eq!(view.frame_number, 2);
+    }
+
+    #[test]
+    fn view_model_new_starts_at_frame_zero() {
+        let view = ViewModel::new(ScreenModel::Title);
+        assert_eq!(view.frame_number, 0);
     }
 }

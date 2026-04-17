@@ -1,6 +1,9 @@
+pub mod animation;
+pub mod audio;
 pub mod enemy;
 pub mod game;
 pub mod map;
 pub mod player;
 pub mod renderer;
 pub mod types;
+pub mod visibility;

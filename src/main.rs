@@ -1,54 +1,39 @@
-use std::io::{self, Stdout};
-use std::time::Duration;
+use bracket_lib::prelude::*;
 
-use anyhow::Result;
-use crossterm::event;
-use crossterm::execute;
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-};
-use ratatui::backend::CrosstermBackend;
-use ratatui::Terminal;
-use vim_quake::game::handle_event;
-use vim_quake::renderer::render;
-use vim_quake::types::{App, GameState};
+use vim_quake::game;
+use vim_quake::renderer;
+use vim_quake::types::App;
 
-fn main() -> Result<()> {
-    let mut terminal = setup_terminal()?;
-    let result = run(&mut terminal);
-    restore_terminal(&mut terminal)?;
-    result
+embedded_resource!(UNICODE_FONT, "../resources/Kjammer_16x16.png");
+
+struct AppWrapper {
+    app: App,
 }
 
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
+impl GameState for AppWrapper {
+    fn tick(&mut self, ctx: &mut BTerm) {
+        self.app.refresh_time();
 
-fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
-    Ok(())
-}
-
-fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    let mut app = App::new();
-
-    while app.game_state != GameState::Quit {
-        terminal.draw(|frame| render(frame, &app))?;
-
-        if event::poll(Duration::from_millis(50))? {
-            let event = event::read()?;
-            handle_event(&mut app, event);
-        } else {
-            app.refresh_time();
+        if let Some(key) = ctx.key {
+            game::handle_key(&mut self.app, key, ctx.shift);
         }
-    }
 
-    Ok(())
+        game::tick(&mut self.app, f64::from(ctx.frame_time_ms));
+
+        self.app.update_visibility();
+
+        renderer::render(ctx, &self.app);
+    }
+}
+
+fn main() -> BError {
+    link_resource!(UNICODE_FONT, "resources/Kjammer_16x16.png");
+
+    let context = BTermBuilder::new()
+        .with_font("Kjammer_16x16.png", 16, 16)
+        .with_simple_console(80u32, 50u32, "Kjammer_16x16.png")
+        .with_tile_dimensions(16u32, 16u32)
+        .with_title("vim-quake")
+        .build()?;
+    main_loop(context, AppWrapper { app: App::new() })
 }
