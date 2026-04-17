@@ -37,7 +37,7 @@ fn render_resize_notice(ctx: &mut BTerm, width: u32, height: u32) {
     let black: RGB = RGB::named(BLACK);
     let white: RGB = RGB::named(WHITE);
     let yellow: RGB = RGB::named(YELLOW);
-    let dark_gray: RGB = rgb8(100, 100, 100);
+    let dark_gray: RGB = rgb8(140, 140, 140);
     let lines = [
         ("Window too small", white),
         ("Please resize the window.", yellow),
@@ -205,7 +205,7 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     let black: RGB = RGB::named(BLACK);
     let white: RGB = RGB::named(WHITE);
     let green: RGB = RGB::named(GREEN);
-    let dark_gray: RGB = rgb8(100, 100, 100);
+    let dark_gray: RGB = rgb8(140, 140, 140);
     let magenta: RGB = RGB::named(MAGENTA);
 
     ctx.print_color(sidebar_x - 1, 0, white, black, "┌");
@@ -383,10 +383,10 @@ fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut 
             let zone = app.map.zone_at(pos);
 
             let (glyph, color) = match tile {
-                Tile::Wall => ('█', dim_color(zone_wall_color(zone), 0.4)),
-                Tile::Floor => ('·', dim_color(zone_floor_color(zone), 0.4)),
+                Tile::Wall => ('█', dim_color(zone_wall_color(zone), 0.6)),
+                Tile::Floor => ('·', dim_color(zone_floor_color(zone), 0.6)),
                 Tile::Exit => ('>', RGB::named(YELLOW)),
-                Tile::Obstacle => ('▒', dim_color(rgb8(255, 100, 100), 0.4)),
+                Tile::Obstacle => ('▒', dim_color(rgb8(255, 100, 100), 0.6)),
             };
 
             let final_color = if vis == VisibilityState::Explored {
@@ -417,8 +417,8 @@ fn render_title(ctx: &mut BTerm) {
     let cyan: RGB = RGB::named(CYAN);
     let yellow: RGB = RGB::named(YELLOW);
     let white: RGB = RGB::named(WHITE);
-    let gray: RGB = rgb8(128, 128, 128);
-    let dark_gray: RGB = rgb8(64, 64, 64);
+    let gray: RGB = rgb8(160, 160, 160);
+    let dark_gray: RGB = rgb8(130, 130, 130);
 
     let vim_banner: &[&str] = &[
         " ██╗   ██╗██╗███╗   ███╗███████╗",
@@ -524,7 +524,7 @@ fn render_win(ctx: &mut BTerm, app: &App) {
     let green: RGB = RGB::named(GREEN);
     let gold: RGB = rgb8(255, 215, 0);
     let white: RGB = RGB::named(WHITE);
-    let dark_gray: RGB = rgb8(64, 64, 64);
+    let dark_gray: RGB = rgb8(130, 130, 130);
 
     let trophy: &[&str] = &[
         "        ╔═══╗         ",
@@ -620,7 +620,7 @@ fn render_lost(ctx: &mut BTerm, app: &App) {
     let light_red: RGB = rgb8(255, 100, 100);
     let yellow: RGB = RGB::named(YELLOW);
     let white: RGB = RGB::named(WHITE);
-    let dark_gray: RGB = rgb8(64, 64, 64);
+    let dark_gray: RGB = rgb8(130, 130, 130);
 
     let skull: &[&str] = &[
         "          ████          ",
@@ -710,7 +710,7 @@ fn tile_fog_appearance(
     };
 
     let fg = if vis == VisibilityState::Explored {
-        dim_color(color, 0.3)
+        dim_color(color, 0.5)
     } else {
         color
     };
@@ -748,17 +748,17 @@ fn phase_definitions() -> Vec<(Zone, &'static [VimMotion])> {
 
 pub fn zone_wall_color(zone: Zone) -> RGB {
     match zone {
-        Zone::Zone1 => rgb8(64, 64, 64),
-        Zone::Zone2 => rgb8(0, 0, 139),
-        Zone::Zone3 => rgb8(139, 0, 139),
-        Zone::Zone4 => rgb8(139, 0, 0),
-        Zone::Zone5 => rgb8(139, 139, 0),
+        Zone::Zone1 => rgb8(170, 175, 185),
+        Zone::Zone2 => rgb8(100, 160, 230),
+        Zone::Zone3 => rgb8(190, 130, 220),
+        Zone::Zone4 => rgb8(220, 100, 100),
+        Zone::Zone5 => rgb8(220, 210, 80),
     }
 }
 
 pub fn zone_floor_color(zone: Zone) -> RGB {
     match zone {
-        Zone::Zone1 => rgb8(128, 128, 128),
+        Zone::Zone1 => rgb8(160, 165, 170),
         Zone::Zone2 => RGB::named(CYAN),
         Zone::Zone3 => rgb8(255, 100, 255),
         Zone::Zone4 => rgb8(255, 100, 100),
@@ -814,8 +814,8 @@ fn trail_color(index: usize, total: usize) -> (char, RGB) {
     } else {
         1.0 - (index as f64 / (total as f64 - 1.0)) * 0.7
     };
-    let g = (180.0 * fade) as u8;
-    ('·', rgb8(0, g, 0))
+    let g = (230.0 * fade) as u8;
+    ('·', rgb8(60, g, 60))
 }
 
 fn obstacle_display(elapsed: std::time::Duration) -> (char, RGB) {
@@ -882,16 +882,16 @@ mod tests {
 
     #[test]
     fn zone_wall_colors() {
-        assert!(approx_eq(zone_wall_color(Zone::Zone1).r, 64.0 / 255.0));
-        assert!(approx_eq(zone_wall_color(Zone::Zone2).b, 139.0 / 255.0));
-        assert!(approx_eq(zone_wall_color(Zone::Zone3).r, 139.0 / 255.0));
-        assert!(approx_eq(zone_wall_color(Zone::Zone4).r, 139.0 / 255.0));
-        assert!(approx_eq(zone_wall_color(Zone::Zone5).g, 139.0 / 255.0));
+        assert!(approx_eq(zone_wall_color(Zone::Zone1).r, 170.0 / 255.0));
+        assert!(approx_eq(zone_wall_color(Zone::Zone2).b, 230.0 / 255.0));
+        assert!(approx_eq(zone_wall_color(Zone::Zone3).r, 190.0 / 255.0));
+        assert!(approx_eq(zone_wall_color(Zone::Zone4).r, 220.0 / 255.0));
+        assert!(approx_eq(zone_wall_color(Zone::Zone5).g, 210.0 / 255.0));
     }
 
     #[test]
     fn zone_floor_colors() {
-        assert!(approx_eq(zone_floor_color(Zone::Zone1).r, 128.0 / 255.0));
+        assert!(approx_eq(zone_floor_color(Zone::Zone1).r, 160.0 / 255.0));
         assert_eq!(zone_floor_color(Zone::Zone2), RGB::named(CYAN));
         assert!(approx_eq(zone_floor_color(Zone::Zone3).r, 1.0));
         assert!(approx_eq(zone_floor_color(Zone::Zone4).g, 100.0 / 255.0));
@@ -1004,7 +1004,7 @@ mod tests {
     #[test]
     fn trail_color_single_entry_full_brightness() {
         let (_, color) = trail_color(0, 1);
-        assert!(approx_eq(color.g, 180.0 / 255.0));
+        assert!(approx_eq(color.g, 230.0 / 255.0));
     }
 
     #[test]
@@ -1152,9 +1152,9 @@ mod tests {
         let (glyph, color) = result.expect("explored tile should have appearance");
         assert_eq!(glyph, '.');
         let full = zone_floor_color(Zone::Zone1);
-        assert!(color.r < full.r || approx_eq(color.r, full.r * 0.3));
-        assert!(color.g < full.g || approx_eq(color.g, full.g * 0.3));
-        assert!(color.b < full.b || approx_eq(color.b, full.b * 0.3));
+        assert!(color.r < full.r || approx_eq(color.r, full.r * 0.5));
+        assert!(color.g < full.g || approx_eq(color.g, full.g * 0.5));
+        assert!(color.b < full.b || approx_eq(color.b, full.b * 0.5));
     }
 
     #[test]
