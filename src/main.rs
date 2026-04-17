@@ -4,7 +4,7 @@ use vim_quake::game;
 use vim_quake::renderer;
 use vim_quake::types::App;
 
-embedded_resource!(UNICODE_FONT, "../resources/Zilk_16x16.png");
+embedded_resource!(UNICODE_FONT, "../resources/Kjammer_16x16.png");
 
 struct AppWrapper {
     app: App,
@@ -27,11 +27,11 @@ impl GameState for AppWrapper {
 }
 
 fn main() -> BError {
-    link_resource!(UNICODE_FONT, "resources/Zilk_16x16.png");
+    link_resource!(UNICODE_FONT, "resources/Kjammer_16x16.png");
 
     let context = BTermBuilder::new()
-        .with_font("Zilk_16x16.png", 16, 16)
-        .with_simple_console(80u32, 50u32, "Zilk_16x16.png")
+        .with_font("Kjammer_16x16.png", 16, 16)
+        .with_simple_console(80u32, 50u32, "Kjammer_16x16.png")
         .with_tile_dimensions(16u32, 16u32)
         .with_title("vim-quake")
         .build()?;
