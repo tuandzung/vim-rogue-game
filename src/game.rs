@@ -7,7 +7,7 @@ use crate::animation::{AnimationState, ENEMY_MOVE_MS, PLAYER_MOVE_MS};
 use crate::audio::SoundEffect;
 use crate::map::Map;
 use crate::player::Player;
-use crate::types::{App, Enemy, GameState, PendingInput, Tile, VimMotion, FOV_RADIUS};
+use crate::types::{App, Enemy, FOV_RADIUS, GameState, PendingInput, Tile, VimMotion};
 use crate::visibility::VisibilityMap;
 
 impl Default for App {
@@ -455,4 +455,3 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
         enemies_step(app);
     }
 }
-

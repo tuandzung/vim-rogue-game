@@ -1,6 +1,6 @@
 use bracket_lib::prelude::*;
 
-use crate::types::{App, GameState, PendingInput, Position, Tile, VimMotion, Zone, TOTAL_LEVELS};
+use crate::types::{App, GameState, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion, Zone};
 use crate::visibility::VisibilityState;
 
 pub const SCREEN_WIDTH: u32 = 80;
@@ -305,16 +305,17 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     }
 
     if let Some(pending) = app.pending_input
-        && y < 49 {
-            let prompt = match pending {
-                PendingInput::Find => "Awaiting target for f",
-                PendingInput::Till => "Awaiting target for t",
-                PendingInput::Delete => "Awaiting second d",
-                PendingInput::GotoLine => "Awaiting second g",
-            };
-            ctx.print_color(sidebar_x, y, magenta, black, prompt);
-            y += 1;
-        }
+        && y < 49
+    {
+        let prompt = match pending {
+            PendingInput::Find => "Awaiting target for f",
+            PendingInput::Till => "Awaiting target for t",
+            PendingInput::Delete => "Awaiting second d",
+            PendingInput::GotoLine => "Awaiting second g",
+        };
+        ctx.print_color(sidebar_x, y, magenta, black, prompt);
+        y += 1;
+    }
 
     render_minimap(ctx, app, sidebar_x, y, &mut y);
 }
@@ -785,10 +786,9 @@ pub fn wall_display_glyph(x: usize, y: usize, map: &crate::map::Map) -> char {
         if nx >= 0 && ny >= 0 {
             let nx = nx as usize;
             let ny = ny as usize;
-            if nx < map.width && ny < map.height
-                && !matches!(map.get_tile(nx, ny), Tile::Wall) {
-                    non_wall_neighbors += 1;
-                }
+            if nx < map.width && ny < map.height && !matches!(map.get_tile(nx, ny), Tile::Wall) {
+                non_wall_neighbors += 1;
+            }
         }
     }
     match non_wall_neighbors {
@@ -837,4 +837,3 @@ pub fn motion_mastery(total_discovered: usize) -> (&'static str, RGB) {
         _ => ("Master", rgb8(255, 255, 100)),
     }
 }
-

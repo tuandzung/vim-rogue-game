@@ -88,4 +88,3 @@ impl Enemy {
         false
     }
 }
-

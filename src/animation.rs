@@ -157,4 +157,3 @@ impl AnimationState {
         self.timer.is_complete()
     }
 }
-

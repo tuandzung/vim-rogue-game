@@ -305,4 +305,3 @@ pub struct App {
     pub level: usize,
     pub audio: AudioManager,
 }
-

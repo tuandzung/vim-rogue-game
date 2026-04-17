@@ -115,4 +115,3 @@ impl VisibilityMap {
         pos.x < self.width && pos.y < self.height
     }
 }
-

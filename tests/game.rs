@@ -8,7 +8,7 @@ use vim_quake::animation::{ENEMY_MOVE_MS, PLAYER_MOVE_MS};
 use vim_quake::game::{handle_key, tick};
 use vim_quake::map::Map;
 use vim_quake::types::{
-    App, Enemy, GameState, PendingInput, Position, Tile, VimMotion, Zone, TOTAL_LEVELS,
+    App, Enemy, GameState, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion, Zone,
 };
 use vim_quake::visibility::{VisibilityMap, VisibilityState};
 

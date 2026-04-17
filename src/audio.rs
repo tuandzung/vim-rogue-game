@@ -53,4 +53,3 @@ impl AudioManager {
         self.enabled = false;
     }
 }
-
