@@ -36,8 +36,8 @@ impl Player {
             VimMotion::Find => target.is_some_and(|ch| self.find_char(ch, map)),
             VimMotion::Till => target.is_some_and(|ch| self.till_char(ch, map)),
             VimMotion::DeleteLine => self.delete_obstacle_on_row(map),
-            VimMotion::G => self.jump_to_last_row(map),
-            VimMotion::GotoLine => self.jump_to_first_row(map),
+            VimMotion::G => self.jump_to_column_bottom(map),
+            VimMotion::GotoLine => self.jump_to_column_top(map),
         }
     }
 
@@ -142,28 +142,26 @@ impl Player {
         false
     }
 
-    fn jump_to_last_row(&mut self, map: &Map) -> bool {
+    fn jump_to_column_bottom(&mut self, map: &Map) -> bool {
+        let x = self.position.x;
         for y in (0..map.height).rev() {
-            for x in 0..map.width {
-                if map.is_passable(x, y) {
-                    let changed = self.position != Position { x, y };
-                    self.position = Position { x, y };
-                    return changed;
-                }
+            if map.is_passable(x, y) {
+                let changed = self.position.y != y;
+                self.position.y = y;
+                return changed;
             }
         }
 
         false
     }
 
-    fn jump_to_first_row(&mut self, map: &Map) -> bool {
+    fn jump_to_column_top(&mut self, map: &Map) -> bool {
+        let x = self.position.x;
         for y in 0..map.height {
-            for x in 0..map.width {
-                if map.is_passable(x, y) {
-                    let changed = self.position != Position { x, y };
-                    self.position = Position { x, y };
-                    return changed;
-                }
+            if map.is_passable(x, y) {
+                let changed = self.position.y != y;
+                self.position.y = y;
+                return changed;
             }
         }
 

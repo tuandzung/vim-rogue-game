@@ -122,8 +122,8 @@ impl VimMotion {
             Self::Find => "Find char",
             Self::Till => "Till char",
             Self::DeleteLine => "Delete row obstacle",
-            Self::G => "Last row",
-            Self::GotoLine => "First row",
+            Self::G => "Column bottom",
+            Self::GotoLine => "Column top",
         }
     }
 
@@ -140,8 +140,8 @@ impl VimMotion {
             Self::Find => "Jump to the next matching tile character",
             Self::Till => "Stop one tile before the next matching character",
             Self::DeleteLine => "Turn the nearest obstacle on the row into floor",
-            Self::G => "Jump to the last passable tile on the bottom row",
-            Self::GotoLine => "Jump to the first passable tile on the top row",
+            Self::G => "Jump to the bottom-most passable tile in the current column",
+            Self::GotoLine => "Jump to the top-most passable tile in the current column",
         }
     }
 }
