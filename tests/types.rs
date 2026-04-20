@@ -21,6 +21,11 @@ fn tile_glyph_obstacle() {
 }
 
 #[test]
+fn tile_glyph_torchlight() {
+    assert_eq!(Tile::Torchlight.glyph(), 'i');
+}
+
+#[test]
 fn vim_motion_key_labels() {
     let cases = [
         (VimMotion::H, "h"),
@@ -90,15 +95,37 @@ fn enemy_struct_fields() {
     let enemy = Enemy {
         position: Position { x: 5, y: 10 },
         glyph: 'X',
+        hp: None,
     };
     assert_eq!(enemy.position.x, 5);
     assert_eq!(enemy.position.y, 10);
     assert_eq!(enemy.glyph, 'X');
+    assert_eq!(enemy.hp, None);
 }
 
 #[test]
-fn total_levels_is_three() {
-    assert_eq!(TOTAL_LEVELS, 3);
+fn enemy_hp_with_value() {
+    let enemy = Enemy {
+        position: Position { x: 3, y: 4 },
+        glyph: 'g',
+        hp: Some(5),
+    };
+    assert_eq!(enemy.hp, Some(5));
+}
+
+#[test]
+fn total_levels_is_four() {
+    assert_eq!(TOTAL_LEVELS, 4);
+}
+
+#[test]
+fn max_hp_constant() {
+    assert_eq!(MAX_HP, 30);
+}
+
+#[test]
+fn torchlight_fov_radius_constant() {
+    assert_eq!(TORCHLIGHT_FOV_RADIUS, 6);
 }
 
 #[test]

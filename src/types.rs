@@ -12,8 +12,10 @@ use crate::player::Player;
 use crate::visibility::VisibilityMap;
 
 pub const TRAIL_MAX: usize = 8;
-pub const TOTAL_LEVELS: usize = 3;
+pub const TOTAL_LEVELS: usize = 4;
 pub const FOV_RADIUS: i32 = 10;
+pub const MAX_HP: i32 = 30;
+pub const TORCHLIGHT_FOV_RADIUS: i32 = 6;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -27,6 +29,7 @@ pub enum Tile {
     Floor,
     Exit,
     Obstacle,
+    Torchlight,
 }
 
 impl Tile {
@@ -36,6 +39,7 @@ impl Tile {
             Self::Floor => '.',
             Self::Exit => '>',
             Self::Obstacle => '▒',
+            Self::Torchlight => 'i',
         }
     }
 }
@@ -307,6 +311,7 @@ impl ViewModel {
 pub struct Enemy {
     pub position: Position,
     pub glyph: char,
+    pub hp: Option<i32>,
 }
 
 pub struct App {
@@ -317,7 +322,7 @@ pub struct App {
     pub enemy_animations: Vec<(usize, AnimationState)>,
     pub input_queue: Vec<(VirtualKeyCode, bool)>,
     pub enemies: Vec<Enemy>,
-    pub lives: usize,
+    pub hp: i32,
     pub game_state: GameState,
     pub pause_selection: PauseOption,
     pub started: bool,
@@ -331,4 +336,6 @@ pub struct App {
     pub trail: VecDeque<Position>,
     pub level: usize,
     pub audio: AudioManager,
+    pub last_checkpoint: Option<Position>,
+    pub activated_torchlights: HashSet<Position>,
 }

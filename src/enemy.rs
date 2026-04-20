@@ -8,6 +8,7 @@ impl Enemy {
         Self {
             position: pos,
             glyph: 'e',
+            hp: None,
         }
     }
 
