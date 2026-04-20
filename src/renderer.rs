@@ -703,7 +703,13 @@ fn render_pause_overlay(ctx: &mut BTerm, app: &App) {
     for x in (left + 1)..(left + box_width - 1) {
         ctx.print_color(x, top + box_height - 1, white, box_bg, "─");
     }
-    ctx.print_color(left + box_width - 1, top + box_height - 1, white, box_bg, "┘");
+    ctx.print_color(
+        left + box_width - 1,
+        top + box_height - 1,
+        white,
+        box_bg,
+        "┘",
+    );
 
     let header = "P  A  U  S  E";
     ctx.print_color(center_x(header.len()), top + 2, cyan, box_bg, header);
