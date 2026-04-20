@@ -1217,6 +1217,94 @@ fn melee_attack_cant_attack_hp_none_enemy() {
 }
 
 #[test]
+fn melee_attack_stuns_enemy() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert_eq!(app.enemies[0].stunned_turns, 0);
+    assert_eq!(app.enemies[0].hp, Some(20));
+    assert!(app.status_message.contains("20"));
+}
+
+#[test]
+fn stunned_enemy_does_not_move() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    // Enemy was at (6,5), got stunned, should not have moved during enemies_step
+    assert_eq!(app.enemies[0].position, Position { x: 6, y: 5 });
+    // Stun decremented from 1 to 0 during enemies_step
+    assert_eq!(app.enemies[0].stunned_turns, 0);
+}
+
+#[test]
+fn stunned_enemy_does_not_deal_damage() {
+    let map = test_map(20, 20);
+    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    app.level = 4;
+    app.hp = 10;
+    // Enemy adjacent on the left — would step onto player if not stunned
+    app.enemies = vec![Enemy {
+        position: Position { x: 4, y: 5 },
+        glyph: 'e',
+        hp: Some(30),
+        stunned_turns: 1,
+    }];
+    app.player.last_direction = Some(Direction::Right);
+
+    // Player moves right to (6,5) — enemies_step runs, stunned enemy stays put
+    handle_key(&mut app, VirtualKeyCode::L, false);
+
+    assert_eq!(app.hp, 10, "Stunned enemy should not deal damage");
+    assert_eq!(app.enemies[0].position, Position { x: 4, y: 5 }, "Stunned enemy should not move");
+}
+
+#[test]
+fn stun_wears_off_after_one_turn() {
+    let map = test_map(20, 20);
+    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    app.level = 4;
+    app.enemies = vec![Enemy {
+        position: Position { x: 6, y: 5 },
+        glyph: 'e',
+        hp: Some(30),
+        stunned_turns: 1,
+    }];
+    app.player.last_direction = Some(Direction::Right);
+
+    // Turn 1: enemy is stunned, stun decrements to 0
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert_eq!(app.enemies[0].stunned_turns, 0);
+    assert_eq!(app.enemies[0].position, Position { x: 6, y: 5 }, "Still stunned, should not move");
+
+    // Turn 2: stun has worn off, enemy should move toward player
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.enemies[0].position, Position { x: 5, y: 5 }, "Enemy should move after stun wears off");
+}
+
+#[test]
+fn stun_prevents_enemy_counterattack_after_melee() {
+    let map = test_map(20, 20);
+    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    app.level = 4;
+    app.hp = 10;
+    app.player.last_direction = Some(Direction::Right);
+    app.enemies = vec![Enemy {
+        position: Position { x: 6, y: 5 },
+        glyph: 'e',
+        hp: Some(20),
+        stunned_turns: 0,
+    }];
+
+    // Melee hits enemy (20->10), enemy gets stunned, doesn't step onto player
+    handle_key(&mut app, VirtualKeyCode::X, false);
+
+    assert_eq!(app.hp, 10, "Player should not take damage from stunned enemy");
+    assert_eq!(app.enemies.len(), 1);
+    assert_eq!(app.enemies[0].hp, Some(10));
+    assert_eq!(app.enemies[0].position, Position { x: 6, y: 5 }, "Stunned enemy should not move");
+    assert_eq!(app.enemies[0].stunned_turns, 0, "Stun should have decremented during enemies_step");
+}
+
+#[test]
 fn death_with_checkpoint_respawns_at_torchlight() {
     let map = test_map(20, 20);
     let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
