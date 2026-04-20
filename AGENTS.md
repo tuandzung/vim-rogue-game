@@ -20,7 +20,7 @@ vim-quake/
 ## Architecture
 ```
 main.rs       → bracket-lib setup + event loop (32 lines)
-game.rs       → App state, event handling, motion dispatch, enemy turns, win/loss, trail, audio (458 lines)
+game.rs       → App state, event handling, motion dispatch, enemy turns, win/loss, trail, audio (485 lines)
 player.rs     → Player + 13 motion implementations (223 lines)
 map.rs        → 80×40 grid, 5 zones, 3 dungeon levels, corridor carving, enemy spawns (332 lines)
 renderer.rs   → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (840 lines)
@@ -53,7 +53,9 @@ lib.rs        → Re-exports all modules (9 lines)
 - Test helpers: `test_map()`, `started_app_with_map()`, `test_app()`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
 - `renderer.rs` internals are `pub` for integration test access (e.g., `screen_meets_minimum_size`, `phase_definitions`, `exit_glow`, etc.).
 - `lib.rs` re-exports all modules. `main.rs` is thin (~32 lines).
-- `is_passable` = `Tile::Floor` or `Tile::Exit` only.
+- `is_passable` = `Tile::Floor` or `Tile::Exit` only. `Tile::Obstacle` is not passable but can be destroyed by `dd`.
+- w/b motions scan horizontally along clear paths, stopping at non-passable tiles (walls/obstacles).
+- G/gg motions scan vertically from current position, stopping at non-passable tiles (walls/obstacles).
 - `renderer.rs` is read-only — never mutates App state.
 - `Player::handle_motion` takes `&mut Map` (dd deletes obstacles).
 - `GameClock` trait for time — `RealClock` in production, `TestClock` in tests.

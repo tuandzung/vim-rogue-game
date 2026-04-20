@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-17 | Updated: 2026-04-17 -->
+<!-- Generated: 2026-04-17 | Updated: 2026-04-20 -->
 
 # src
 
@@ -61,7 +61,7 @@ lib.rs        ← main.rs (implicit)
 - Audio: disabled by default; `play()` no-ops when disabled; `SoundEffect` enum in audio.rs.
 
 ## Tests
-275 integration tests in `tests/` directory (no inline tests in src/):
+279 integration tests in `tests/` directory (no inline tests in src/):
 | File | Tests | Coverage |
 |------|-------|----------|
 | `tests/game.rs` | 72 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry, pause menu |
@@ -69,7 +69,7 @@ lib.rs        ← main.rs (implicit)
 | `tests/map.rs` | 33 | Dimensions, tiles, passability, zones, corridors, obstacles, 3 levels, reachability, enemy spawns |
 | `tests/animation.rs` | 29 | Timer progress, interpolation, easing, AnimationState, TestClock determinism |
 | `tests/visibility.rs` | 25 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases |
-| `tests/player.rs` | 25 | All 13 motions + boundaries + motion recording |
+| `tests/player.rs` | 29 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + motion recording |
 | `tests/types.rs` | 21 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
 | `tests/audio.rs` | 16 | Manager lifecycle, play no-op, enable/disable, rapid play, sound variants |
 | `tests/enemy.rs` | 10 | BFS movement, diagonal, walls, adjacency, corridors, shortest path |

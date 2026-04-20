@@ -5,7 +5,7 @@ A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vi
 ## Features
 
 - **Graphical window** with ASCII/CP437 aesthetic — tile-based rendering via bracket-lib
-- **3 dungeon levels** with distinct layouts — Level 2 is an inverted maze, Level 3 is a zigzag descent with enemy patrols
+- **3 dungeon levels** with distinct layouts — Level 1 has destroyable obstacles and connecting corridors, Level 2 is an inverted maze with obstacles at corridor gaps, Level 3 is a zigzag descent with enemy patrols
 - **5 zone-gated areas** per level with distinct color palettes (gray → cyan → magenta → red → gold)
 - **Level progression** — stats carry over, trail resets, new map loads on reaching the exit
 - **Enemy encounters** — Level 3 spawns BFS-chasing enemies that step toward you each turn
