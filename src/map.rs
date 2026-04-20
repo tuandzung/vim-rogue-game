@@ -90,17 +90,33 @@ impl Map {
         self.carve_vertical(14, 16, 20);
 
         self.carve_horizontal(20, 14, 16);
+        self.set_tile(17, 20, Tile::Obstacle);
+        self.set_tile(18, 20, Tile::Obstacle);
         self.carve_horizontal(20, 19, 21);
+        self.set_tile(22, 20, Tile::Obstacle);
+        self.set_tile(23, 20, Tile::Obstacle);
         self.carve_horizontal(20, 24, 26);
+        self.set_tile(27, 20, Tile::Obstacle);
+        self.set_tile(28, 20, Tile::Obstacle);
         self.carve_horizontal(20, 29, 31);
+
         self.carve_horizontal(22, 19, 21);
+        self.set_tile(22, 22, Tile::Obstacle);
+        self.set_tile(23, 22, Tile::Obstacle);
         self.carve_horizontal(22, 24, 26);
+        self.set_tile(27, 22, Tile::Obstacle);
+        self.set_tile(28, 22, Tile::Obstacle);
         self.carve_horizontal(22, 29, 31);
-        self.carve_vertical(31, 20, 25);
+
+        self.carve_vertical(31, 20, 28);
+
+        self.carve_horizontal(28, 31, 47);
+        self.set_tile(38, 28, Tile::Obstacle);
+        self.set_tile(39, 28, Tile::Obstacle);
 
         self.carve_horizontal(25, 31, 33);
         self.carve_horizontal(25, 45, 47);
-        self.carve_vertical(47, 25, 30);
+        self.carve_vertical(47, 25, 34);
         self.carve_horizontal(30, 32, 34);
         self.carve_horizontal(30, 45, 47);
         self.carve_vertical(34, 30, 34);
@@ -115,7 +131,7 @@ impl Map {
         self.carve_horizontal(36, 49, 58);
         self.carve_horizontal(36, 60, 68);
 
-        self.set_tile(59, 36, Tile::Wall);
+        self.set_tile(59, 36, Tile::Obstacle);
         self.set_tile(69, 36, Tile::Obstacle);
         self.set_tile(73, 36, Tile::Obstacle);
         self.carve_horizontal(36, 70, 72);
@@ -173,6 +189,7 @@ impl Map {
         self.carve_horizontal(12, 16, 20);
         self.carve_horizontal(12, 20, 22);
         self.carve_horizontal(12, 22, 26);
+        self.set_tile(27, 12, Tile::Obstacle);
         self.carve_horizontal(12, 28, 31);
         self.carve_vertical(20, 12, 16);
         self.carve_horizontal(16, 17, 20);
@@ -181,6 +198,8 @@ impl Map {
         self.carve_vertical(22, 12, 21);
         self.carve_vertical(23, 12, 25);
         self.carve_horizontal(25, 20, 29);
+        self.set_tile(17, 25, Tile::Obstacle);
+        self.set_tile(18, 25, Tile::Obstacle);
         self.carve_vertical(27, 25, 29);
         self.carve_vertical(29, 12, 29);
         self.carve_horizontal(29, 24, 31);
@@ -199,6 +218,9 @@ impl Map {
         self.carve_horizontal(18, 32, 44);
         self.carve_vertical(44, 12, 18);
         self.carve_horizontal(12, 36, 47);
+        self.set_tile(33, 12, Tile::Obstacle);
+        self.set_tile(34, 12, Tile::Obstacle);
+        self.set_tile(35, 12, Tile::Obstacle);
 
         self.set_tile(40, 18, Tile::Obstacle);
         self.set_tile(38, 24, Tile::Obstacle);
