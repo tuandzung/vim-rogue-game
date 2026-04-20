@@ -312,6 +312,7 @@ pub struct Enemy {
     pub position: Position,
     pub glyph: char,
     pub hp: Option<i32>,
+    pub stunned_turns: usize,
 }
 
 pub struct App {

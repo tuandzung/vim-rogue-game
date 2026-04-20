@@ -113,7 +113,7 @@ impl App {
             .iter()
             .map(|&pos| {
                 if self.level == 4 {
-                    Enemy { position: pos, glyph: 'e', hp: Some(30) }
+                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0 }
                 } else {
                     Enemy::new(pos)
                 }
@@ -144,7 +144,7 @@ impl App {
             .iter()
             .map(|&pos| {
                 if self.level == 4 {
-                    Enemy { position: pos, glyph: 'e', hp: Some(30) }
+                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0 }
                 } else {
                     Enemy::new(pos)
                 }
@@ -424,8 +424,12 @@ fn enemies_step(app: &mut App) {
         .collect();
 
     for enemy in &mut app.enemies {
-        enemy.step_toward_player(player_pos, &app.map);
-        app.audio.play(SoundEffect::EnemyStep);
+        if enemy.stunned_turns > 0 {
+            enemy.stunned_turns -= 1;
+        } else {
+            enemy.step_toward_player(player_pos, &app.map);
+            app.audio.play(SoundEffect::EnemyStep);
+        }
     }
 
     let player_pos = app.player.position;
@@ -438,7 +442,7 @@ fn enemies_step(app: &mut App) {
         .zip(app.enemies.drain(..))
         .enumerate()
     {
-        if enemy.position == player_pos {
+        if enemy.position == player_pos && enemy.stunned_turns == 0 {
             app.audio.play(SoundEffect::Damage);
             app.hp -= 10;
             if app.hp <= 0 {
@@ -632,6 +636,7 @@ fn handle_melee_attack(app: &mut App) {
                         app.status_message = String::from("Enemy defeated!");
                     } else {
                         app.enemies[idx].hp = Some(new_hp);
+                        app.enemies[idx].stunned_turns = 1;
                         app.status_message = format!("Hit! Enemy HP: {}", new_hp);
                     }
                     app.motion_count += 1;

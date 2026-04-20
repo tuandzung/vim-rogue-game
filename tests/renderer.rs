@@ -225,6 +225,7 @@ fn visual_enemy_positions_use_active_animation() {
         position: Position { x: 4, y: 2 },
         glyph: 'e',
         hp: None,
+        stunned_turns: 0,
     });
     let mut animation = AnimationState::new(ENEMY_MOVE_MS, (2.0, 2.0), (4.0, 2.0));
     animation.update(ENEMY_MOVE_MS / 2.0);

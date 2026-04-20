@@ -96,6 +96,7 @@ fn enemy_struct_fields() {
         position: Position { x: 5, y: 10 },
         glyph: 'X',
         hp: None,
+        stunned_turns: 0,
     };
     assert_eq!(enemy.position.x, 5);
     assert_eq!(enemy.position.y, 10);
@@ -109,6 +110,7 @@ fn enemy_hp_with_value() {
         position: Position { x: 3, y: 4 },
         glyph: 'g',
         hp: Some(5),
+        stunned_turns: 0,
     };
     assert_eq!(enemy.hp, Some(5));
 }

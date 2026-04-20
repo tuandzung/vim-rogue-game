@@ -1081,6 +1081,7 @@ fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
         position: enemy_pos,
         glyph: 'e',
         hp: enemy_hp,
+        stunned_turns: 0,
     }];
     app.player.last_direction = Some(Direction::Right);
     app
@@ -1145,6 +1146,7 @@ fn melee_attack_kills_enemy_after_3_hits() {
         position: Position { x: 6, y: 5 },
         glyph: 'e',
         hp: Some(20),
+        stunned_turns: 0,
     }];
     app.player.last_direction = Some(Direction::Right);
 
@@ -1156,6 +1158,7 @@ fn melee_attack_kills_enemy_after_3_hits() {
         position: Position { x: 6, y: 5 },
         glyph: 'e',
         hp: Some(10),
+        stunned_turns: 0,
     }];
     app.player.last_direction = Some(Direction::Right);
 
@@ -1273,6 +1276,7 @@ fn surviving_enemies_persist_after_checkpoint_respawn() {
         position: far_enemy_pos,
         glyph: 'e',
         hp: Some(30),
+        stunned_turns: 0,
     });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1295,6 +1299,7 @@ fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
         position: checkpoint,
         glyph: 'e',
         hp: Some(30),
+        stunned_turns: 0,
     });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1392,6 +1397,7 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
         position: Position { x: 6, y: 5 },
         glyph: 'e',
         hp: Some(30),
+        stunned_turns: 0,
     }];
 
     // Move right — enemy steps toward player, collision occurs, HP -> 0 -> checkpoint respawn

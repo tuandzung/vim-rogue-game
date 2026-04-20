@@ -9,6 +9,7 @@ impl Enemy {
             position: pos,
             glyph: 'e',
             hp: None,
+            stunned_turns: 0,
         }
     }
 
