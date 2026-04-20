@@ -133,15 +133,15 @@ impl VimMotion {
             Self::J => "Move one tile down",
             Self::K => "Move one tile up",
             Self::L => "Move one tile right",
-            Self::W => "Jump to the next passable segment",
-            Self::B => "Jump to the previous passable segment",
+            Self::W => "Jump to the next segment along a clear path",
+            Self::B => "Jump to the previous segment along a clear path",
             Self::Zero => "Jump to the first passable tile on the row",
             Self::Dollar => "Jump to the last passable tile on the row",
             Self::Find => "Jump to the next matching tile character",
             Self::Till => "Stop one tile before the next matching character",
             Self::DeleteLine => "Turn the nearest obstacle on the row into floor",
-            Self::G => "Jump to the bottom-most passable tile in the current column",
-            Self::GotoLine => "Jump to the top-most passable tile in the current column",
+            Self::G => "Jump down the column until blocked",
+            Self::GotoLine => "Jump up the column until blocked",
         }
     }
 }

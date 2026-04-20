@@ -65,29 +65,25 @@ impl Player {
     fn jump_word_forward(&mut self, map: &Map) -> bool {
         let y = self.position.y;
         let current = map.get_tile(self.position.x, y);
-        let mut seen_separator = false;
+        let mut last_valid_x = self.position.x;
 
         for x in (self.position.x + 1)..map.width {
-            let tile = map.get_tile(x, y);
             if !map.is_passable(x, y) {
-                seen_separator = true;
-                continue;
+                break;
             }
-
-            let previous = if x > 0 {
-                map.get_tile(x - 1, y)
-            } else {
-                Tile::Wall
-            };
-            let starts_segment = !matches!(previous, Tile::Floor | Tile::Exit);
-            let different_kind = tile != current;
-            if seen_separator || starts_segment || different_kind {
+            let tile = map.get_tile(x, y);
+            if tile != current {
                 self.position.x = x;
                 return true;
             }
+            last_valid_x = x;
         }
 
-        false
+        let changed = self.position.x != last_valid_x;
+        if changed {
+            self.position.x = last_valid_x;
+        }
+        changed
     }
 
     fn jump_word_backward(&mut self, map: &Map) -> bool {
@@ -97,25 +93,25 @@ impl Player {
 
         let y = self.position.y;
         let current = map.get_tile(self.position.x, y);
-        let mut seen_separator = false;
+        let mut last_valid_x = self.position.x;
 
         for x in (0..self.position.x).rev() {
-            let tile = map.get_tile(x, y);
             if !map.is_passable(x, y) {
-                seen_separator = true;
-                continue;
+                break;
             }
-
-            let next = map.get_tile(x + 1, y);
-            let starts_segment = !matches!(next, Tile::Floor | Tile::Exit);
-            let different_kind = tile != current;
-            if seen_separator || starts_segment || different_kind {
+            let tile = map.get_tile(x, y);
+            if tile != current {
                 self.position.x = x;
                 return true;
             }
+            last_valid_x = x;
         }
 
-        false
+        let changed = self.position.x != last_valid_x;
+        if changed {
+            self.position.x = last_valid_x;
+        }
+        changed
     }
 
     fn jump_row_start(&mut self, map: &Map) -> bool {
@@ -144,28 +140,42 @@ impl Player {
 
     fn jump_to_column_bottom(&mut self, map: &Map) -> bool {
         let x = self.position.x;
-        for y in (0..map.height).rev() {
-            if map.is_passable(x, y) {
-                let changed = self.position.y != y;
-                self.position.y = y;
-                return changed;
+        let mut last_valid_y = self.position.y;
+
+        for y in (self.position.y + 1)..map.height {
+            if !map.is_passable(x, y) {
+                break;
             }
+            last_valid_y = y;
         }
 
-        false
+        let changed = self.position.y != last_valid_y;
+        if changed {
+            self.position.y = last_valid_y;
+        }
+        changed
     }
 
     fn jump_to_column_top(&mut self, map: &Map) -> bool {
-        let x = self.position.x;
-        for y in 0..map.height {
-            if map.is_passable(x, y) {
-                let changed = self.position.y != y;
-                self.position.y = y;
-                return changed;
-            }
+        if self.position.y == 0 {
+            return false;
         }
 
-        false
+        let x = self.position.x;
+        let mut last_valid_y = self.position.y;
+
+        for y in (0..self.position.y).rev() {
+            if !map.is_passable(x, y) {
+                break;
+            }
+            last_valid_y = y;
+        }
+
+        let changed = self.position.y != last_valid_y;
+        if changed {
+            self.position.y = last_valid_y;
+        }
+        changed
     }
 
     fn find_char(&mut self, target: char, map: &Map) -> bool {

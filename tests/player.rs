@@ -87,21 +87,39 @@ fn player_step_records_motion() {
 #[test]
 fn player_w_jumps_forward() {
     let mut map = test_map(6, 1);
-    map.set_tile(2, 0, Tile::Wall);
     let mut player = Player::new(Position { x: 1, y: 0 });
 
     assert!(player.handle_motion(VimMotion::W, None, &mut map));
-    assert_eq!(player.position, Position { x: 3, y: 0 });
+    assert_eq!(player.position, Position { x: 5, y: 0 });
+}
+
+#[test]
+fn player_w_stops_at_wall() {
+    let mut map = test_map(6, 1);
+    map.set_tile(2, 0, Tile::Wall);
+    let mut player = Player::new(Position { x: 1, y: 0 });
+
+    assert!(!player.handle_motion(VimMotion::W, None, &mut map));
+    assert_eq!(player.position, Position { x: 1, y: 0 });
 }
 
 #[test]
 fn player_b_jumps_backward() {
     let mut map = test_map(6, 1);
-    map.set_tile(2, 0, Tile::Wall);
     let mut player = Player::new(Position { x: 4, y: 0 });
 
     assert!(player.handle_motion(VimMotion::B, None, &mut map));
-    assert_eq!(player.position, Position { x: 1, y: 0 });
+    assert_eq!(player.position, Position { x: 0, y: 0 });
+}
+
+#[test]
+fn player_b_stops_at_wall() {
+    let mut map = test_map(6, 1);
+    map.set_tile(3, 0, Tile::Wall);
+    let mut player = Player::new(Position { x: 4, y: 0 });
+
+    assert!(!player.handle_motion(VimMotion::B, None, &mut map));
+    assert_eq!(player.position, Position { x: 4, y: 0 });
 }
 
 #[test]
@@ -228,6 +246,26 @@ fn player_gg_no_passable_in_column_fails() {
 
     assert!(!player.handle_motion(VimMotion::GotoLine, None, &mut map));
     assert_eq!(player.position, Position { x: 2, y: 2 });
+}
+
+#[test]
+fn player_g_stops_at_wall() {
+    let mut map = test_map(5, 5);
+    map.set_tile(2, 2, Tile::Wall);
+    let mut player = Player::new(Position { x: 2, y: 1 });
+
+    assert!(!player.handle_motion(VimMotion::G, None, &mut map));
+    assert_eq!(player.position, Position { x: 2, y: 1 });
+}
+
+#[test]
+fn player_gg_stops_at_wall() {
+    let mut map = test_map(5, 5);
+    map.set_tile(2, 3, Tile::Wall);
+    let mut player = Player::new(Position { x: 2, y: 4 });
+
+    assert!(!player.handle_motion(VimMotion::GotoLine, None, &mut map));
+    assert_eq!(player.position, Position { x: 2, y: 4 });
 }
 
 #[test]
