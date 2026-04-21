@@ -1829,3 +1829,64 @@ fn mixed_age_dying_removes_completed_effects_first() {
     tick(&mut app, 0.0);
     assert_eq!(app.game_state, GameState::Playing);
 }
+
+#[test]
+fn enemy_chases_when_player_visible() {
+    let map = test_map(20, 20);
+    let mut app = started_app_with_map(map, Position { x: 15, y: 10 });
+    app.level = 3;
+    let mut enemy = Enemy::new(Position { x: 12, y: 10 });
+    enemy.patrol_area = PatrolArea { min_x: 0, min_y: 0, max_x: 19, max_y: 19 };
+    app.enemies = vec![enemy];
+
+    let old_pos = app.enemies[0].position;
+    handle_key(&mut app, VirtualKeyCode::H, false);
+
+    assert_ne!(
+        app.enemies[0].position, old_pos,
+        "Enemy should move toward player when visible"
+    );
+}
+
+#[test]
+fn enemy_patrols_when_player_not_visible() {
+    let mut map = test_map(80, 40);
+    for y in 0..40 {
+        map.set_tile(40, y, Tile::Wall);
+    }
+    let mut app = started_app_with_map(map, Position { x: 60, y: 20 });
+    app.level = 3;
+    let mut enemy = Enemy::new(Position { x: 10, y: 20 });
+    enemy.patrol_area = PatrolArea { min_x: 0, min_y: 0, max_x: 39, max_y: 39 };
+    app.enemies = vec![enemy];
+
+    handle_key(&mut app, VirtualKeyCode::H, false);
+
+    assert!(
+        app.enemies[0].patrol_area.contains(app.enemies[0].position.x, app.enemies[0].position.y),
+        "Enemy should stay within patrol area"
+    );
+    assert_ne!(
+        app.enemies[0].position.x, 60,
+        "Enemy should NOT be moving toward distant player behind wall"
+    );
+}
+
+#[test]
+fn enemy_patrol_does_not_leave_room_over_many_turns() {
+    let map = test_map(80, 40);
+    let mut app = started_app_with_map(map, Position { x: 70, y: 35 });
+    app.level = 3;
+    let mut enemy = Enemy::new(Position { x: 10, y: 5 });
+    enemy.patrol_area = PatrolArea { min_x: 4, min_y: 2, max_x: 15, max_y: 9 };
+    app.enemies = vec![enemy];
+
+    for _ in 0..50 {
+        handle_key(&mut app, VirtualKeyCode::L, false);
+        assert!(
+            app.enemies[0].patrol_area.contains(app.enemies[0].position.x, app.enemies[0].position.y),
+            "Enemy left patrol area at ({}, {})",
+            app.enemies[0].position.x, app.enemies[0].position.y
+        );
+    }
+}

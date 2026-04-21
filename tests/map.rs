@@ -517,3 +517,47 @@ fn level_3_torchlights_are_passable() {
         }
     }
 }
+
+#[test]
+fn level_4_no_torchlight_rooms_have_at_least_two_enemies() {
+    let map = Map::level(4);
+
+    let rooms_without_torchlights: &[((usize, usize), (usize, usize), &str)] = &[
+        ((4, 15), (2, 9), "Room 1"),
+        ((30, 43), (16, 23), "Room 3"),
+        ((60, 75), (30, 37), "Room 5"),
+    ];
+
+    for &((x_min, x_max), (y_min, y_max), name) in rooms_without_torchlights {
+        let count = map.enemy_spawns.iter().filter(|pos| {
+            pos.x >= x_min && pos.x <= x_max && pos.y >= y_min && pos.y <= y_max
+        }).count();
+        assert!(
+            count >= 2,
+            "{} should have at least 2 enemies, found {}",
+            name, count
+        );
+    }
+}
+
+#[test]
+fn level_4_patrol_areas_match_spawn_count() {
+    let map = Map::level(4);
+    assert_eq!(
+        map.enemy_spawns.len(), map.enemy_patrol_areas.len(),
+        "Patrol areas should match spawn count"
+    );
+}
+
+#[test]
+fn level_4_spawns_are_within_their_patrol_areas() {
+    let map = Map::level(4);
+    for (i, spawn) in map.enemy_spawns.iter().enumerate() {
+        let area = map.enemy_patrol_areas[i];
+        assert!(
+            area.contains(spawn.x, spawn.y),
+            "Spawn at ({}, {}) not within its patrol area ({},{})-({},{})",
+            spawn.x, spawn.y, area.min_x, area.min_y, area.max_x, area.max_y
+        );
+    }
+}
