@@ -2,7 +2,6 @@ use std::time::Instant;
 
 pub const PLAYER_MOVE_MS: f64 = 150.0;
 pub const ENEMY_MOVE_MS: f64 = 200.0;
-pub const EFFECT_MS: f64 = 100.0;
 
 /// Clock abstraction for deterministic testing.
 pub trait GameClock {
@@ -147,6 +146,41 @@ impl AnimationState {
             self.start_x + (self.end_x - self.start_x) * t,
             self.start_y + (self.end_y - self.start_y) * t,
         )
+    }
+
+    pub fn update(&mut self, delta_ms: f64) {
+        self.timer.update(delta_ms);
+    }
+
+    pub fn is_complete(&self) -> bool {
+        self.timer.is_complete()
+    }
+}
+
+pub const ATTACK_EFFECT_MS: f64 = 200.0;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttackEffectKind {
+    PlayerStrike,
+    EnemyHit,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct AttackEffect {
+    pub kind: AttackEffectKind,
+    pub x: usize,
+    pub y: usize,
+    pub timer: AnimationTimer,
+}
+
+impl AttackEffect {
+    pub fn new(kind: AttackEffectKind, x: usize, y: usize) -> Self {
+        Self {
+            kind,
+            x,
+            y,
+            timer: AnimationTimer::new(ATTACK_EFFECT_MS),
+        }
     }
 
     pub fn update(&mut self, delta_ms: f64) {

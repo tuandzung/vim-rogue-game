@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use bracket_lib::prelude::VirtualKeyCode;
 
-use crate::animation::AnimationState;
+use crate::animation::{AnimationState, AttackEffect};
 use crate::audio::AudioManager;
 use crate::map::Map;
 use crate::player::Player;
@@ -173,6 +173,7 @@ impl Direction {
 pub enum GameState {
     Playing,
     Won,
+    Dying,
     Lost,
     Paused,
     Quit,
@@ -321,6 +322,8 @@ pub struct App {
     pub player: Player,
     pub player_animation: Option<AnimationState>,
     pub enemy_animations: Vec<(usize, AnimationState)>,
+    pub attack_effects: Vec<AttackEffect>,
+    pub pending_respawn: Option<Position>,
     pub input_queue: Vec<(VirtualKeyCode, bool)>,
     pub enemies: Vec<Enemy>,
     pub hp: i32,
