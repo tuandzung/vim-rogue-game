@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use crate::map::Map;
-use crate::types::{Enemy, Position};
+use crate::types::{ENEMY_FOV_RADIUS, Enemy, PatrolArea, Position, Tile};
 
 impl Enemy {
     pub fn new(pos: Position) -> Self {
@@ -10,6 +10,7 @@ impl Enemy {
             glyph: 'e',
             hp: None,
             stunned_turns: 0,
+            patrol_area: PatrolArea::point(pos.x, pos.y),
         }
     }
 

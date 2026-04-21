@@ -16,6 +16,7 @@ pub const TOTAL_LEVELS: usize = 4;
 pub const FOV_RADIUS: i32 = 10;
 pub const MAX_HP: i32 = 30;
 pub const TORCHLIGHT_FOV_RADIUS: i32 = 6;
+pub const ENEMY_FOV_RADIUS: i32 = 8;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -309,11 +310,36 @@ impl ViewModel {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct PatrolArea {
+    pub min_x: usize,
+    pub min_y: usize,
+    pub max_x: usize,
+    pub max_y: usize,
+}
+
+impl PatrolArea {
+    pub fn point(x: usize, y: usize) -> Self {
+        Self { min_x: x, min_y: y, max_x: x, max_y: y }
+    }
+
+    pub fn contains(&self, x: usize, y: usize) -> bool {
+        x >= self.min_x && x <= self.max_x && y >= self.min_y && y <= self.max_y
+    }
+}
+
+impl Default for PatrolArea {
+    fn default() -> Self {
+        Self { min_x: 0, min_y: 0, max_x: 0, max_y: 0 }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Enemy {
     pub position: Position,
     pub glyph: char,
     pub hp: Option<i32>,
     pub stunned_turns: usize,
+    pub patrol_area: PatrolArea,
 }
 
 pub struct App {

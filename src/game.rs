@@ -7,7 +7,7 @@ use crate::animation::{AnimationState, AttackEffect, AttackEffectKind, ENEMY_MOV
 use crate::audio::SoundEffect;
 use crate::map::Map;
 use crate::player::Player;
-use crate::types::{App, Enemy, FOV_RADIUS, GameState, MAX_HP, PauseOption, PendingInput, Tile, TORCHLIGHT_FOV_RADIUS, VimMotion};
+use crate::types::{App, Enemy, FOV_RADIUS, GameState, MAX_HP, PauseOption, PendingInput, PatrolArea, Tile, TORCHLIGHT_FOV_RADIUS, VimMotion};
 use crate::visibility::VisibilityMap;
 
 impl Default for App {
@@ -115,11 +115,16 @@ impl App {
             .map
             .enemy_spawns
             .iter()
-            .map(|&pos| {
+            .enumerate()
+            .map(|(i, &pos)| {
+                let patrol_area = self.map.enemy_patrol_areas.get(i).copied()
+                    .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
                 if self.level == 4 {
-                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0 }
+                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
                 } else {
-                    Enemy::new(pos)
+                    let mut e = Enemy::new(pos);
+                    e.patrol_area = patrol_area;
+                    e
                 }
             })
             .collect();
@@ -148,11 +153,16 @@ impl App {
             .map
             .enemy_spawns
             .iter()
-            .map(|&pos| {
+            .enumerate()
+            .map(|(i, &pos)| {
+                let patrol_area = self.map.enemy_patrol_areas.get(i).copied()
+                    .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
                 if self.level == 4 {
-                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0 }
+                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
                 } else {
-                    Enemy::new(pos)
+                    let mut e = Enemy::new(pos);
+                    e.patrol_area = patrol_area;
+                    e
                 }
             })
             .collect();

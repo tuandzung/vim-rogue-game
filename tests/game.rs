@@ -8,7 +8,7 @@ use vim_quake::animation::{AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER
 use vim_quake::game::{handle_key, tick};
 use vim_quake::map::Map;
 use vim_quake::types::{
-    App, Direction, Enemy, GameState, MAX_HP, PauseOption, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion, Zone,
+    App, Direction, Enemy, GameState, MAX_HP, PauseOption, PatrolArea, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion, Zone,
 };
 use vim_quake::visibility::{VisibilityMap, VisibilityState};
 
@@ -1082,9 +1082,8 @@ fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
     app.level = 4;
     app.enemies = vec![Enemy {
         position: enemy_pos,
-        glyph: 'e',
         hp: enemy_hp,
-        stunned_turns: 0,
+        ..Enemy::new(enemy_pos)
     }];
     app.player.last_direction = Some(Direction::Right);
     app
@@ -1147,9 +1146,8 @@ fn melee_attack_kills_enemy_after_3_hits() {
 
     app.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
-        glyph: 'e',
         hp: Some(20),
-        stunned_turns: 0,
+        ..Enemy::new(Position { x: 6, y: 5 })
     }];
     app.player.last_direction = Some(Direction::Right);
 
@@ -1159,9 +1157,8 @@ fn melee_attack_kills_enemy_after_3_hits() {
 
     app.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
-        glyph: 'e',
         hp: Some(10),
-        stunned_turns: 0,
+        ..Enemy::new(Position { x: 6, y: 5 })
     }];
     app.player.last_direction = Some(Direction::Right);
 
@@ -1247,9 +1244,9 @@ fn stunned_enemy_does_not_deal_damage() {
     // Enemy adjacent on the left — would step onto player if not stunned
     app.enemies = vec![Enemy {
         position: Position { x: 4, y: 5 },
-        glyph: 'e',
         hp: Some(30),
         stunned_turns: 1,
+        ..Enemy::new(Position { x: 4, y: 5 })
     }];
     app.player.last_direction = Some(Direction::Right);
 
@@ -1267,9 +1264,9 @@ fn stun_wears_off_after_one_turn() {
     app.level = 4;
     app.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
-        glyph: 'e',
         hp: Some(30),
         stunned_turns: 1,
+        ..Enemy::new(Position { x: 6, y: 5 })
     }];
     app.player.last_direction = Some(Direction::Right);
 
@@ -1292,9 +1289,8 @@ fn stun_prevents_enemy_counterattack_after_melee() {
     app.player.last_direction = Some(Direction::Right);
     app.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
-        glyph: 'e',
         hp: Some(20),
-        stunned_turns: 0,
+        ..Enemy::new(Position { x: 6, y: 5 })
     }];
 
     // Melee hits enemy (20->10), enemy gets stunned, doesn't step onto player
@@ -1371,9 +1367,9 @@ fn surviving_enemies_persist_after_checkpoint_respawn() {
     let far_enemy_pos = Position { x: 15, y: 15 };
     app.enemies.push(Enemy {
         position: far_enemy_pos,
-        glyph: 'e',
         hp: Some(30),
-        stunned_turns: 0,
+        patrol_area: PatrolArea { min_x: 10, min_y: 10, max_x: 19, max_y: 19 },
+        ..Enemy::new(far_enemy_pos)
     });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1396,9 +1392,8 @@ fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
     app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     app.enemies.push(Enemy {
         position: checkpoint,
-        glyph: 'e',
         hp: Some(30),
-        stunned_turns: 0,
+        ..Enemy::new(checkpoint)
     });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1497,9 +1492,8 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
     // Level 4 enemy with hp: Some(30)
     app.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
-        glyph: 'e',
         hp: Some(30),
-        stunned_turns: 0,
+        ..Enemy::new(Position { x: 6, y: 5 })
     }];
 
     // Move right — enemy steps toward player, collision occurs, HP -> 0 -> checkpoint respawn
@@ -1627,9 +1621,8 @@ fn checkpoint_respawn_preserves_hit_effect() {
     app.player.last_direction = Some(Direction::Right);
     app.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
-        glyph: 'e',
         hp: Some(30),
-        stunned_turns: 0,
+        ..Enemy::new(Position { x: 6, y: 5 })
     }];
     handle_key(&mut app, VirtualKeyCode::L, false);
     assert_eq!(app.game_state, GameState::Dying);
@@ -1758,8 +1751,8 @@ fn checkpoint_respawn_pushes_stacked_enemies_off_checkpoint() {
     app.activated_torchlights.insert(checkpoint);
     app.player.last_direction = Some(Direction::Up);
     app.enemies = vec![
-        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
-        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
+        Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) },
+        Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) },
     ];
     handle_key(&mut app, VirtualKeyCode::K, false);
     assert_eq!(app.player.position, Position { x: 5, y: 5 });
@@ -1788,8 +1781,8 @@ fn push_enemies_bfs_past_walls() {
     app.pending_respawn = Some(checkpoint);
     app.attack_effects.push(AttackEffect::new(AttackEffectKind::EnemyHit, 8, 8));
     app.enemies = vec![
-        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
-        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
+        Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) },
+        Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) },
     ];
     tick(&mut app, ATTACK_EFFECT_MS);
     tick(&mut app, 0.0);

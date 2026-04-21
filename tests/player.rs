@@ -222,6 +222,7 @@ fn player_g_no_passable_rows_fails() {
         start: Position { x: 0, y: 0 },
         exit: Position { x: 4, y: 4 },
         enemy_spawns: vec![],
+        enemy_patrol_areas: vec![],
     };
     map.set_tile(2, 2, Tile::Floor);
     let mut player = Player::new(Position { x: 2, y: 2 });
@@ -240,6 +241,7 @@ fn player_gg_no_passable_in_column_fails() {
         start: Position { x: 0, y: 0 },
         exit: Position { x: 4, y: 4 },
         enemy_spawns: vec![],
+        enemy_patrol_areas: vec![],
     };
     map.set_tile(2, 2, Tile::Floor);
     let mut player = Player::new(Position { x: 2, y: 2 });

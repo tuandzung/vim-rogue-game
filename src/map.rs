@@ -1,4 +1,4 @@
-use crate::types::{Position, Tile, Zone};
+use crate::types::{PatrolArea, Position, Tile, Zone};
 
 pub struct Map {
     pub grid: Vec<Vec<Tile>>,
@@ -8,6 +8,7 @@ pub struct Map {
     pub start: Position,
     pub exit: Position,
     pub enemy_spawns: Vec<Position>,
+    pub enemy_patrol_areas: Vec<PatrolArea>,
 }
 
 impl Default for Map {
@@ -28,6 +29,7 @@ impl Map {
             start: Position { x: 2, y: 2 },
             exit: Position { x: 76, y: 36 },
             enemy_spawns: vec![],
+            enemy_patrol_areas: vec![],
         };
 
         map.assign_zones();
@@ -161,6 +163,7 @@ impl Map {
             start: Position { x: 2, y: 37 },
             exit: Position { x: 76, y: 2 },
             enemy_spawns: vec![],
+            enemy_patrol_areas: vec![],
         };
 
         map.assign_zones();
@@ -277,6 +280,7 @@ impl Map {
                 Position { x: 70, y: 28 },
                 Position { x: 76, y: 34 },
             ],
+            enemy_patrol_areas: vec![],
         };
 
         map.assign_zones();
@@ -355,12 +359,34 @@ impl Map {
             start: Position { x: 2, y: 2 },
             exit: Position { x: 77, y: 37 },
             enemy_spawns: vec![
+                // Room 1 (no torchlight): 2 enemies
+                Position { x: 7, y: 5 },
+                Position { x: 12, y: 7 },
+                // Room 2 (torchlight at 56,5): 2 enemies
                 Position { x: 55, y: 5 },
                 Position { x: 58, y: 7 },
+                // Room 3 (no torchlight): 3 enemies
                 Position { x: 33, y: 18 },
                 Position { x: 38, y: 20 },
                 Position { x: 36, y: 22 },
+                // Room 5 (no torchlight): 2 enemies
                 Position { x: 72, y: 34 },
+                Position { x: 68, y: 32 },
+            ],
+            enemy_patrol_areas: vec![
+                // Room 1 patrol areas
+                PatrolArea { min_x: 4, min_y: 2, max_x: 15, max_y: 9 },
+                PatrolArea { min_x: 4, min_y: 2, max_x: 15, max_y: 9 },
+                // Room 2 patrol areas
+                PatrolArea { min_x: 50, min_y: 2, max_x: 63, max_y: 9 },
+                PatrolArea { min_x: 50, min_y: 2, max_x: 63, max_y: 9 },
+                // Room 3 patrol areas
+                PatrolArea { min_x: 30, min_y: 16, max_x: 43, max_y: 23 },
+                PatrolArea { min_x: 30, min_y: 16, max_x: 43, max_y: 23 },
+                PatrolArea { min_x: 30, min_y: 16, max_x: 43, max_y: 23 },
+                // Room 5 patrol areas
+                PatrolArea { min_x: 60, min_y: 30, max_x: 75, max_y: 37 },
+                PatrolArea { min_x: 60, min_y: 30, max_x: 75, max_y: 37 },
             ],
         };
 

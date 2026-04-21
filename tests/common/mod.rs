@@ -19,6 +19,7 @@ pub fn test_map(width: usize, height: usize) -> Map {
             y: height - 1,
         },
         enemy_spawns: vec![],
+        enemy_patrol_areas: vec![],
     }
 }
 
