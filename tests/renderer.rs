@@ -5,7 +5,7 @@ use common::{approx_eq, test_app};
 use std::collections::VecDeque;
 use std::time::Duration;
 use std::time::Instant;
-use vim_quake::animation::{AnimationState, ENEMY_MOVE_MS};
+use vim_quake::animation::{AnimationState, AttackEffectKind, ENEMY_MOVE_MS};
 use vim_quake::map::Map;
 use vim_quake::player::Player;
 use vim_quake::renderer::*;
@@ -417,4 +417,42 @@ fn hp_bar_half_at_15() {
     let hp_filled = (hp_ratio * 10.0).round() as usize;
     assert_eq!(hp_filled, 5);
     assert!(hp_ratio > 0.25 && hp_ratio <= 0.5);
+}
+
+#[test]
+fn attack_effect_player_strike_early_glyph() {
+    let (glyph, _) = attack_effect_display(AttackEffectKind::PlayerStrike, 0.0);
+    assert_eq!(glyph, '*');
+}
+
+#[test]
+fn attack_effect_player_strike_late_glyph() {
+    let (glyph, _) = attack_effect_display(AttackEffectKind::PlayerStrike, 0.7);
+    assert_eq!(glyph, '/');
+}
+
+#[test]
+fn attack_effect_enemy_hit_early_glyph() {
+    let (glyph, _) = attack_effect_display(AttackEffectKind::EnemyHit, 0.0);
+    assert_eq!(glyph, '!');
+}
+
+#[test]
+fn attack_effect_enemy_hit_late_glyph() {
+    let (glyph, _) = attack_effect_display(AttackEffectKind::EnemyHit, 0.7);
+    assert_eq!(glyph, '·');
+}
+
+#[test]
+fn attack_effect_player_strike_early_color() {
+    let (_, color) = attack_effect_display(AttackEffectKind::PlayerStrike, 0.0);
+    assert!(color.r > 0.9);
+    assert!(color.g > 0.9);
+    assert!(color.b > 0.3);
+}
+
+#[test]
+fn attack_effect_enemy_hit_early_color() {
+    let (_, color) = attack_effect_display(AttackEffectKind::EnemyHit, 0.0);
+    assert_eq!(color, RGB::named(RED));
 }

@@ -310,3 +310,40 @@ fn animation_states_can_run_sequentially_without_sharing_elapsed_time() {
     assert!(second.is_complete());
     assert_eq!(second.current_position(), (4.0, 6.0));
 }
+
+#[test]
+fn attack_effect_starts_at_zero_progress() {
+    let effect = AttackEffect::new(AttackEffectKind::PlayerStrike, 5, 10);
+    assert_eq!(effect.timer.progress(), 0.0);
+    assert!(!effect.is_complete());
+}
+
+#[test]
+fn attack_effect_completes_after_duration() {
+    let mut effect = AttackEffect::new(AttackEffectKind::PlayerStrike, 5, 10);
+    effect.update(ATTACK_EFFECT_MS);
+    assert!(effect.is_complete());
+}
+
+#[test]
+fn attack_effect_progress_midpoint() {
+    let mut effect = AttackEffect::new(AttackEffectKind::EnemyHit, 3, 7);
+    effect.update(ATTACK_EFFECT_MS / 2.0);
+    assert_approx_eq(effect.timer.progress(), 0.5);
+    assert!(!effect.is_complete());
+}
+
+#[test]
+fn attack_effect_preserves_position() {
+    let effect = AttackEffect::new(AttackEffectKind::PlayerStrike, 12, 34);
+    assert_eq!(effect.x, 12);
+    assert_eq!(effect.y, 34);
+}
+
+#[test]
+fn attack_effect_kind_is_stored() {
+    let strike = AttackEffect::new(AttackEffectKind::PlayerStrike, 0, 0);
+    let hit = AttackEffect::new(AttackEffectKind::EnemyHit, 0, 0);
+    assert_eq!(strike.kind, AttackEffectKind::PlayerStrike);
+    assert_eq!(hit.kind, AttackEffectKind::EnemyHit);
+}

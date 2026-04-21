@@ -4,7 +4,7 @@ use bracket_lib::prelude::VirtualKeyCode;
 use common::{started_app_with_map, test_map};
 use std::time::Duration;
 use std::time::Instant;
-use vim_quake::animation::{ENEMY_MOVE_MS, PLAYER_MOVE_MS};
+use vim_quake::animation::{AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS, ATTACK_EFFECT_MS};
 use vim_quake::game::{handle_key, tick};
 use vim_quake::map::Map;
 use vim_quake::types::{
@@ -753,9 +753,12 @@ fn app_enemy_collision_sets_lost_when_hp_depleted() {
     handle_key(&mut app, VirtualKeyCode::H, false);
 
     assert_eq!(app.hp, 0);
+    assert_eq!(app.game_state, GameState::Dying);
+    assert!(!app.attack_effects.is_empty());
+    tick(&mut app, ATTACK_EFFECT_MS); // ages effects to complete
+    tick(&mut app, 0.0); // detects all expired → transitions to Lost
     assert_eq!(app.game_state, GameState::Lost);
     assert!(app.status_message.contains("Game over"));
-    assert!(app.enemies.is_empty());
 }
 
 #[test]
@@ -1315,6 +1318,9 @@ fn death_with_checkpoint_respawns_at_torchlight() {
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
     assert_eq!(app.hp, MAX_HP, "HP should be restored to MAX_HP after checkpoint respawn");
     assert_eq!(app.player.position, Position { x: 10, y: 10 }, "Player should respawn at checkpoint");
     assert_eq!(app.game_state, GameState::Playing, "Game state should remain Playing after respawn");
@@ -1332,7 +1338,10 @@ fn death_without_checkpoint_triggers_lost() {
     handle_key(&mut app, VirtualKeyCode::H, false);
 
     assert_eq!(app.hp, 0);
-    assert_eq!(app.game_state, GameState::Lost, "Should be Lost when no checkpoint");
+    assert_eq!(app.game_state, GameState::Dying, "Should be Dying when no checkpoint");
+    tick(&mut app, ATTACK_EFFECT_MS); // ages effects to complete
+    tick(&mut app, 0.0); // detects all expired → transitions to Lost
+    assert_eq!(app.game_state, GameState::Lost);
     assert!(app.status_message.contains("Game over"));
 }
 
@@ -1368,7 +1377,9 @@ fn surviving_enemies_persist_after_checkpoint_respawn() {
     });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
-
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
     assert_eq!(app.game_state, GameState::Playing);
     assert_eq!(app.enemies.len(), 1, "Non-colliding enemy should survive checkpoint respawn");
     assert_ne!(app.enemies[0].position, far_enemy_pos, "Surviving enemy should have moved via BFS");
@@ -1392,6 +1403,9 @@ fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
     assert_eq!(app.game_state, GameState::Playing);
     assert_eq!(app.player.position, checkpoint, "Player should be at checkpoint");
     let enemy_on_checkpoint = app.enemies.iter().any(|e| e.position == checkpoint);
@@ -1491,6 +1505,10 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
     // Move right — enemy steps toward player, collision occurs, HP -> 0 -> checkpoint respawn
     vim_quake::game::handle_key(&mut app, VirtualKeyCode::L, false);
 
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
+
     // Player should have respawned at checkpoint
     assert_eq!(app.hp, MAX_HP, "HP should be restored to MAX_HP");
     assert_eq!(app.player.position, checkpoint, "Player should respawn at checkpoint");
@@ -1499,4 +1517,322 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
     // The Level 4 enemy should persist (not despawn)
     assert_eq!(app.enemies.len(), 1, "Level 4 enemy should persist after collision");
     assert_eq!(app.enemies[0].hp, Some(30), "Level 4 enemy HP should be unchanged");
+}
+
+#[test]
+fn melee_attack_spawns_strike_effect_at_target() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    let effect = &app.attack_effects[0];
+    assert_eq!(effect.kind, AttackEffectKind::PlayerStrike);
+    assert_eq!(effect.x, 6);
+    assert_eq!(effect.y, 5);
+}
+
+#[test]
+fn melee_attack_kill_spawns_strike_effect() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(10));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    assert_eq!(app.attack_effects[0].kind, AttackEffectKind::PlayerStrike);
+}
+
+#[test]
+fn melee_attack_miss_no_effect() {
+    let mut app = level4_app_with_enemy(Position { x: 15, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert!(app.attack_effects.is_empty());
+}
+
+#[test]
+fn attack_effect_completes_after_tick() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    tick(&mut app, ATTACK_EFFECT_MS); // ages to complete
+    tick(&mut app, 0.0); // removes completed effects
+    assert!(app.attack_effects.is_empty());
+}
+
+#[test]
+fn attack_effect_does_not_block_input() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert!(!app.attack_effects.is_empty());
+    assert!(app.player_animation.is_none());
+    handle_key(&mut app, VirtualKeyCode::L, false);
+}
+
+#[test]
+fn advance_level_clears_attack_effects() {
+    let mut map = test_map(10, 1);
+    map.set_tile(4, 0, Tile::Exit);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.attack_effects.push(vim_quake::animation::AttackEffect::new(
+        AttackEffectKind::PlayerStrike,
+        3,
+        0,
+    ));
+    assert!(!app.attack_effects.is_empty());
+    app.level = 1;
+    handle_key(&mut app, VirtualKeyCode::L, false);
+    assert!(app.attack_effects.is_empty());
+}
+
+#[test]
+fn retry_level_clears_attack_effects() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert!(!app.attack_effects.is_empty());
+    app.retry_level();
+    assert!(app.attack_effects.is_empty());
+}
+
+#[test]
+fn enemy_collision_spawns_hit_effect_on_player() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = MAX_HP;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    let effect = &app.attack_effects[0];
+    assert_eq!(effect.kind, AttackEffectKind::EnemyHit);
+    assert_eq!(effect.x, 2);
+    assert_eq!(effect.y, 0);
+}
+
+#[test]
+fn fatal_enemy_hit_preserves_effect() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = 10;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.game_state, GameState::Dying);
+    assert_eq!(app.attack_effects.len(), 1);
+    assert_eq!(app.attack_effects[0].kind, AttackEffectKind::EnemyHit);
+}
+
+#[test]
+fn checkpoint_respawn_preserves_hit_effect() {
+    let map = test_map(20, 20);
+    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    app.level = 4;
+    app.hp = 10;
+    let checkpoint = Position { x: 10, y: 10 };
+    app.last_checkpoint = Some(checkpoint);
+    app.activated_torchlights.insert(checkpoint);
+    app.player.last_direction = Some(Direction::Right);
+    app.enemies = vec![Enemy {
+        position: Position { x: 6, y: 5 },
+        glyph: 'e',
+        hp: Some(30),
+        stunned_turns: 0,
+    }];
+    handle_key(&mut app, VirtualKeyCode::L, false);
+    assert_eq!(app.game_state, GameState::Dying);
+    assert!(!app.attack_effects.is_empty());
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Playing);
+    assert_eq!(app.player.position, checkpoint);
+}
+
+#[test]
+fn attack_effects_expire_after_duration() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = MAX_HP;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    tick(&mut app, ATTACK_EFFECT_MS); // ages to complete, still present
+    tick(&mut app, 0.0); // removes already-complete effects
+    assert!(app.attack_effects.is_empty());
+}
+
+#[test]
+fn dying_transitions_to_lost_after_effects_expire() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = 10;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS);
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Lost);
+}
+
+#[test]
+fn nonfatal_effect_survives_oversized_first_delta() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = MAX_HP;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    assert_eq!(app.game_state, GameState::Playing);
+    tick(&mut app, ATTACK_EFFECT_MS * 10.0);
+    assert_eq!(app.attack_effects.len(), 1, "effect should survive oversized delta for at least one render");
+    assert!(app.attack_effects[0].is_complete());
+}
+
+#[test]
+fn player_strike_survives_oversized_first_delta() {
+    let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
+    handle_key(&mut app, VirtualKeyCode::X, false);
+    assert_eq!(app.attack_effects.len(), 1);
+    tick(&mut app, ATTACK_EFFECT_MS * 10.0);
+    assert_eq!(app.attack_effects.len(), 1, "PlayerStrike should survive oversized delta");
+    assert!(app.attack_effects[0].is_complete());
+}
+
+#[test]
+fn dying_state_ignores_input() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = 10;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.game_state, GameState::Dying);
+    let pos_before = app.player.position;
+    handle_key(&mut app, VirtualKeyCode::L, false);
+    assert_eq!(app.player.position, pos_before, "input should be ignored during Dying");
+}
+
+#[test]
+fn dying_large_delta_still_shows_effects_before_transition() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = 10;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS * 10.0);
+    assert_eq!(app.game_state, GameState::Dying, "effects still visible after oversized delta");
+    assert!(!app.attack_effects.is_empty(), "effects should not be cleared during Dying");
+    assert!(app.attack_effects.iter().all(|e| e.is_complete()));
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Lost);
+}
+
+#[test]
+fn two_enemies_same_turn_both_hit_at_high_hp() {
+    let map = test_map(10, 3);
+    let mut app = started_app_with_map(map, Position { x: 5, y: 1 });
+    app.hp = 20;
+    app.enemies.push(Enemy::new(Position { x: 4, y: 0 }));
+    app.enemies.push(Enemy::new(Position { x: 4, y: 2 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.player.position, Position { x: 4, y: 1 });
+    assert_eq!(app.hp, 0);
+    assert_eq!(app.game_state, GameState::Dying);
+    assert_eq!(app.attack_effects.len(), 2);
+}
+
+#[test]
+fn two_enemies_fatal_first_skips_second() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    app.hp = 10;
+    app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
+    app.enemies.push(Enemy::new(Position { x: 4, y: 0 }));
+    handle_key(&mut app, VirtualKeyCode::H, false);
+    assert_eq!(app.hp, 0);
+    assert_eq!(app.game_state, GameState::Dying);
+    assert_eq!(app.attack_effects.len(), 1, "second enemy skipped after fatal collision");
+}
+
+#[test]
+fn checkpoint_respawn_pushes_stacked_enemies_off_checkpoint() {
+    let map = test_map(10, 10);
+    let checkpoint = Position { x: 5, y: 5 };
+    let mut app = started_app_with_map(map, Position { x: 5, y: 6 });
+    app.level = 4;
+    app.hp = 10;
+    app.last_checkpoint = Some(checkpoint);
+    app.activated_torchlights.insert(checkpoint);
+    app.player.last_direction = Some(Direction::Up);
+    app.enemies = vec![
+        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
+        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
+    ];
+    handle_key(&mut app, VirtualKeyCode::K, false);
+    assert_eq!(app.player.position, Position { x: 5, y: 5 });
+    assert_eq!(app.game_state, GameState::Dying);
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Playing);
+    assert_eq!(app.player.position, checkpoint);
+    assert_eq!(app.enemies.len(), 2);
+    let on_checkpoint = app.enemies.iter().any(|e| e.position == checkpoint);
+    assert!(!on_checkpoint, "no enemy should remain on checkpoint tile");
+    let positions: std::collections::HashSet<Position> = app.enemies.iter().map(|e| e.position).collect();
+    assert_eq!(positions.len(), app.enemies.len(), "enemies should not stack on the same tile after push");
+}
+
+#[test]
+fn push_enemies_bfs_past_walls() {
+    let mut map = test_map(10, 10);
+    let checkpoint = Position { x: 5, y: 5 };
+    map.set_tile(4, 5, Tile::Wall);
+    map.set_tile(6, 5, Tile::Wall);
+    map.set_tile(5, 4, Tile::Wall);
+    map.set_tile(5, 6, Tile::Wall);
+    let mut app = started_app_with_map(map, Position { x: 8, y: 8 });
+    app.game_state = GameState::Dying;
+    app.pending_respawn = Some(checkpoint);
+    app.attack_effects.push(AttackEffect::new(AttackEffectKind::EnemyHit, 8, 8));
+    app.enemies = vec![
+        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
+        Enemy { position: checkpoint, glyph: 'e', hp: Some(30), stunned_turns: 0 },
+    ];
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Playing);
+    assert_eq!(app.player.position, checkpoint);
+    assert_eq!(app.enemies.len(), 2);
+    let on_checkpoint = app.enemies.iter().any(|e| e.position == checkpoint);
+    assert!(!on_checkpoint, "BFS should find tiles beyond the wall ring");
+    let positions: std::collections::HashSet<Position> = app.enemies.iter().map(|e| e.position).collect();
+    assert_eq!(positions.len(), 2, "enemies should not stack");
+}
+
+#[test]
+fn dying_with_empty_effects_transitions_immediately() {
+    let map = test_map(5, 5);
+    let mut app = started_app_with_map(map, Position { x: 2, y: 2 });
+    app.game_state = GameState::Dying;
+    app.pending_respawn = None;
+    assert!(app.attack_effects.is_empty());
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Lost);
+}
+
+#[test]
+fn mixed_age_dying_removes_completed_effects_first() {
+    let map = test_map(10, 10);
+    let checkpoint = Position { x: 5, y: 5 };
+    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    app.hp = 10;
+    app.last_checkpoint = Some(checkpoint);
+    app.activated_torchlights.insert(checkpoint);
+    let mut old_effect = AttackEffect::new(AttackEffectKind::EnemyHit, 5, 5);
+    old_effect.update(ATTACK_EFFECT_MS);
+    assert!(old_effect.is_complete());
+    app.attack_effects.push(old_effect);
+    app.attack_effects.push(AttackEffect::new(AttackEffectKind::EnemyHit, 5, 5));
+    app.game_state = GameState::Dying;
+    app.pending_respawn = Some(checkpoint);
+    assert_eq!(app.attack_effects.len(), 2);
+    tick(&mut app, 0.0);
+    assert_eq!(app.attack_effects.len(), 1, "completed old effect should be removed");
+    assert!(!app.attack_effects[0].is_complete(), "fresh effect should remain");
+    tick(&mut app, ATTACK_EFFECT_MS);
+    tick(&mut app, 0.0);
+    assert_eq!(app.game_state, GameState::Playing);
 }
