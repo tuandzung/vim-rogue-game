@@ -1,5 +1,6 @@
 use bracket_lib::prelude::*;
 
+use crate::animation::AttackEffectKind;
 use crate::types::{
     App, GameState, MAX_HP, PauseOption, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion,
     Zone,
@@ -36,6 +37,11 @@ pub fn render(ctx: &mut BTerm, app: &App) {
     if app.game_state == GameState::Paused {
         render_gameplay(ctx, app);
         render_pause_overlay(ctx, app);
+        return;
+    }
+
+    if app.game_state == GameState::Dying {
+        render_gameplay(ctx, app);
         return;
     }
 
@@ -170,6 +176,21 @@ fn render_map_viewport(ctx: &mut BTerm, app: &App, map_width: i32) {
             {
                 ctx.print_color(draw_x, draw_y, fg, black, glyph.to_string());
             }
+        }
+    }
+
+    for effect in &app.attack_effects {
+        let screen_x = effect.x as isize - left as isize;
+        let screen_y = effect.y as isize - top as isize;
+        if screen_x >= 0
+            && screen_x < view_width as isize
+            && screen_y >= 0
+            && screen_y < view_height as isize
+        {
+            let draw_x = (screen_x + 1) as i32;
+            let draw_y = (screen_y + 1) as i32;
+            let (glyph, fg) = attack_effect_display(effect.kind, effect.timer.progress());
+            ctx.print_color(draw_x, draw_y, fg, black, glyph.to_string());
         }
     }
 }
@@ -937,6 +958,25 @@ pub fn obstacle_display(elapsed: std::time::Duration) -> (char, RGB) {
         ('▒', rgb8(255, 100, 100))
     } else {
         (' ', RGB::named(BLACK))
+    }
+}
+
+pub fn attack_effect_display(kind: AttackEffectKind, progress: f64) -> (char, RGB) {
+    match kind {
+        AttackEffectKind::PlayerStrike => {
+            if progress < 0.5 {
+                ('*', rgb8(255, 255, 100))
+            } else {
+                ('/', rgb8(200, 180, 50))
+            }
+        }
+        AttackEffectKind::EnemyHit => {
+            if progress < 0.5 {
+                ('!', RGB::named(RED))
+            } else {
+                ('·', rgb8(180, 40, 40))
+            }
+        }
     }
 }
 
