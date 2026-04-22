@@ -1,4 +1,4 @@
-use crate::types::{Position, Tile, Zone};
+use crate::types::{PatrolArea, Position, Tile, Zone};
 
 pub struct Map {
     pub grid: Vec<Vec<Tile>>,
@@ -8,6 +8,7 @@ pub struct Map {
     pub start: Position,
     pub exit: Position,
     pub enemy_spawns: Vec<Position>,
+    pub enemy_patrol_areas: Vec<PatrolArea>,
 }
 
 impl Default for Map {
@@ -28,6 +29,7 @@ impl Map {
             start: Position { x: 2, y: 2 },
             exit: Position { x: 76, y: 36 },
             enemy_spawns: vec![],
+            enemy_patrol_areas: vec![],
         };
 
         map.assign_zones();
@@ -41,6 +43,7 @@ impl Map {
         match level_num {
             2 => Self::build_level_2(),
             3 => Self::build_level_3(),
+            4 => Self::build_level_4(),
             _ => Self::new(),
         }
     }
@@ -60,7 +63,7 @@ impl Map {
     }
 
     pub fn is_passable(&self, x: usize, y: usize) -> bool {
-        matches!(self.get_tile(x, y), Tile::Floor | Tile::Exit)
+        matches!(self.get_tile(x, y), Tile::Floor | Tile::Exit | Tile::Torchlight)
     }
 
     pub fn zone_at(&self, pos: Position) -> Zone {
@@ -160,6 +163,7 @@ impl Map {
             start: Position { x: 2, y: 37 },
             exit: Position { x: 76, y: 2 },
             enemy_spawns: vec![],
+            enemy_patrol_areas: vec![],
         };
 
         map.assign_zones();
@@ -276,6 +280,7 @@ impl Map {
                 Position { x: 70, y: 28 },
                 Position { x: 76, y: 34 },
             ],
+            enemy_patrol_areas: vec![],
         };
 
         map.assign_zones();
@@ -337,6 +342,123 @@ impl Map {
         self.set_tile(50, 18, Tile::Obstacle);
         self.set_tile(66, 24, Tile::Obstacle);
         self.set_tile(34, 12, Tile::Obstacle);
+
+        // Torchlight checkpoints at corridor junctions
+        self.set_tile(28, 10, Tile::Torchlight);
+        self.set_tile(60, 22, Tile::Torchlight);
+    }
+
+    fn build_level_4() -> Self {
+        let width = 80;
+        let height = 40;
+        let mut map = Self {
+            grid: vec![vec![Tile::Wall; width]; height],
+            zones: vec![vec![Zone::Zone1; width]; height],
+            width,
+            height,
+            start: Position { x: 2, y: 2 },
+            exit: Position { x: 77, y: 37 },
+            enemy_spawns: vec![
+                // Room 1 (no torchlight): 2 enemies
+                Position { x: 7, y: 5 },
+                Position { x: 12, y: 7 },
+                // Room 2 (torchlight at 56,5): 2 enemies
+                Position { x: 55, y: 5 },
+                Position { x: 58, y: 7 },
+                // Room 3 (no torchlight): 3 enemies
+                Position { x: 33, y: 18 },
+                Position { x: 38, y: 20 },
+                Position { x: 36, y: 22 },
+                // Room 5 (no torchlight): 2 enemies
+                Position { x: 72, y: 34 },
+                Position { x: 68, y: 32 },
+            ],
+            enemy_patrol_areas: vec![
+                // Room 1 patrol areas
+                PatrolArea { min_x: 4, min_y: 2, max_x: 15, max_y: 9 },
+                PatrolArea { min_x: 4, min_y: 2, max_x: 15, max_y: 9 },
+                // Room 2 patrol areas
+                PatrolArea { min_x: 50, min_y: 2, max_x: 63, max_y: 9 },
+                PatrolArea { min_x: 50, min_y: 2, max_x: 63, max_y: 9 },
+                // Room 3 patrol areas
+                PatrolArea { min_x: 30, min_y: 16, max_x: 43, max_y: 23 },
+                PatrolArea { min_x: 30, min_y: 16, max_x: 43, max_y: 23 },
+                PatrolArea { min_x: 30, min_y: 16, max_x: 43, max_y: 23 },
+                // Room 5 patrol areas
+                PatrolArea { min_x: 60, min_y: 30, max_x: 75, max_y: 37 },
+                PatrolArea { min_x: 60, min_y: 30, max_x: 75, max_y: 37 },
+            ],
+        };
+
+        map.assign_zones();
+        map.carve_level_4();
+        map.set_tile(map.start.x, map.start.y, Tile::Floor);
+        map.set_tile(map.exit.x, map.exit.y, Tile::Exit);
+
+        map
+    }
+
+    fn carve_level_4(&mut self) {
+        // Room 1: top-left (x:4-15, y:2-9) — safe zone, player start
+        for y in 2..=9 {
+            self.carve_horizontal(y, 4, 15);
+        }
+
+        // Room 2: top-right (x:50-63, y:2-9)
+        for y in 2..=9 {
+            self.carve_horizontal(y, 50, 63);
+        }
+
+        // Room 3: center (x:30-43, y:16-23)
+        for y in 16..=23 {
+            self.carve_horizontal(y, 30, 43);
+        }
+
+        // Room 4: bottom-left (x:8-21, y:30-37)
+        for y in 30..=37 {
+            self.carve_horizontal(y, 8, 21);
+        }
+
+        // Room 5: bottom-right (x:60-75, y:30-37)
+        for y in 30..=37 {
+            self.carve_horizontal(y, 60, 75);
+        }
+
+        // Connect start (2,2) to Room 1
+        self.carve_horizontal(2, 2, 4);
+
+        // Corridor: Room 1 → Room 2 (horizontal at y=6, x:15-50)
+        self.carve_horizontal(6, 15, 50);
+
+        // Corridor: Room 1 → Room 3 (horizontal y=10, x:9-36; vertical x=36, y=10-16)
+        self.carve_horizontal(10, 9, 36);
+        self.carve_vertical(36, 10, 16);
+
+        // Corridor: Room 1 → Room 4 (vertical x=10, y:9-30)
+        self.carve_vertical(10, 9, 30);
+
+        // Corridor: Room 3 → Room 5 (vertical x=36, y=23-26; horizontal y=26, x:36-65; vertical x=65, y=26-30)
+        self.carve_vertical(36, 23, 26);
+        self.carve_horizontal(26, 36, 65);
+        self.carve_vertical(65, 26, 30);
+
+        // Corridor: Room 2 → Room 5 (vertical x=62, y:9-30)
+        self.carve_vertical(62, 9, 30);
+
+        // Corridor: Room 4 → Room 5 (horizontal y=34, x:21-60)
+        self.carve_horizontal(34, 21, 60);
+
+        // Corridor: Room 3 → Room 2 (vertical x=42, y=13-16; horizontal y=13, x=42-52; vertical x=52, y=9-13)
+        self.carve_vertical(42, 13, 16);
+        self.carve_horizontal(13, 42, 52);
+        self.carve_vertical(52, 9, 13);
+
+        // Path from Room 5 to exit at (77, 37)
+        self.carve_horizontal(37, 75, 77);
+
+        // Torchlights at rest points
+        self.set_tile(56, 5, Tile::Torchlight); // Room 2 checkpoint
+        self.set_tile(14, 33, Tile::Torchlight); // Room 4 checkpoint
     }
 
     fn carve_horizontal(&mut self, y: usize, start_x: usize, end_x: usize) {

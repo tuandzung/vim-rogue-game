@@ -5,15 +5,18 @@ use std::time::{Duration, Instant};
 
 use bracket_lib::prelude::VirtualKeyCode;
 
-use crate::animation::AnimationState;
+use crate::animation::{AnimationState, AttackEffect};
 use crate::audio::AudioManager;
 use crate::map::Map;
 use crate::player::Player;
 use crate::visibility::VisibilityMap;
 
 pub const TRAIL_MAX: usize = 8;
-pub const TOTAL_LEVELS: usize = 3;
+pub const TOTAL_LEVELS: usize = 4;
 pub const FOV_RADIUS: i32 = 10;
+pub const MAX_HP: i32 = 30;
+pub const TORCHLIGHT_FOV_RADIUS: i32 = 6;
+pub const ENEMY_FOV_RADIUS: i32 = 8;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Position {
@@ -27,6 +30,7 @@ pub enum Tile {
     Floor,
     Exit,
     Obstacle,
+    Torchlight,
 }
 
 impl Tile {
@@ -36,6 +40,7 @@ impl Tile {
             Self::Floor => '.',
             Self::Exit => '>',
             Self::Obstacle => '▒',
+            Self::Torchlight => 'i',
         }
     }
 }
@@ -169,6 +174,7 @@ impl Direction {
 pub enum GameState {
     Playing,
     Won,
+    Dying,
     Lost,
     Paused,
     Quit,
@@ -304,9 +310,36 @@ impl ViewModel {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct PatrolArea {
+    pub min_x: usize,
+    pub min_y: usize,
+    pub max_x: usize,
+    pub max_y: usize,
+}
+
+impl PatrolArea {
+    pub fn point(x: usize, y: usize) -> Self {
+        Self { min_x: x, min_y: y, max_x: x, max_y: y }
+    }
+
+    pub fn contains(&self, x: usize, y: usize) -> bool {
+        x >= self.min_x && x <= self.max_x && y >= self.min_y && y <= self.max_y
+    }
+}
+
+impl Default for PatrolArea {
+    fn default() -> Self {
+        Self { min_x: 0, min_y: 0, max_x: 0, max_y: 0 }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Enemy {
     pub position: Position,
     pub glyph: char,
+    pub hp: Option<i32>,
+    pub stunned_turns: usize,
+    pub patrol_area: PatrolArea,
 }
 
 pub struct App {
@@ -315,9 +348,11 @@ pub struct App {
     pub player: Player,
     pub player_animation: Option<AnimationState>,
     pub enemy_animations: Vec<(usize, AnimationState)>,
+    pub attack_effects: Vec<AttackEffect>,
+    pub pending_respawn: Option<Position>,
     pub input_queue: Vec<(VirtualKeyCode, bool)>,
     pub enemies: Vec<Enemy>,
-    pub lives: usize,
+    pub hp: i32,
     pub game_state: GameState,
     pub pause_selection: PauseOption,
     pub started: bool,
@@ -331,4 +366,6 @@ pub struct App {
     pub trail: VecDeque<Position>,
     pub level: usize,
     pub audio: AudioManager,
+    pub last_checkpoint: Option<Position>,
+    pub activated_torchlights: HashSet<Position>,
 }

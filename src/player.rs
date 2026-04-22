@@ -6,6 +6,7 @@ use crate::types::{Direction, Position, Tile, VimMotion};
 pub struct Player {
     pub position: Position,
     pub used_motions: HashSet<VimMotion>,
+    pub last_direction: Option<Direction>,
 }
 
 impl Player {
@@ -13,6 +14,7 @@ impl Player {
         Self {
             position,
             used_motions: HashSet::new(),
+            last_direction: None,
         }
     }
 
@@ -23,8 +25,9 @@ impl Player {
         map: &mut Map,
     ) -> bool {
         self.used_motions.insert(motion);
+        let old_pos = self.position;
 
-        match motion {
+        let activated = match motion {
             VimMotion::H => self.step(Direction::Left, map),
             VimMotion::J => self.step(Direction::Down, map),
             VimMotion::K => self.step(Direction::Up, map),
@@ -38,7 +41,24 @@ impl Player {
             VimMotion::DeleteLine => self.delete_obstacle_on_row(map),
             VimMotion::G => self.jump_to_column_bottom(map),
             VimMotion::GotoLine => self.jump_to_column_top(map),
+        };
+
+        // Update facing based on net displacement
+        if activated && self.position != old_pos {
+            let dx = self.position.x as isize - old_pos.x as isize;
+            let dy = self.position.y as isize - old_pos.y as isize;
+            if dx > 0 {
+                self.last_direction = Some(Direction::Right);
+            } else if dx < 0 {
+                self.last_direction = Some(Direction::Left);
+            } else if dy > 0 {
+                self.last_direction = Some(Direction::Down);
+            } else if dy < 0 {
+                self.last_direction = Some(Direction::Up);
+            }
         }
+
+        activated
     }
 
     fn step(&mut self, direction: Direction, map: &Map) -> bool {

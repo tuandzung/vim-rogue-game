@@ -19,6 +19,7 @@ pub fn test_map(width: usize, height: usize) -> Map {
             y: height - 1,
         },
         enemy_spawns: vec![],
+        enemy_patrol_areas: vec![],
     }
 }
 
@@ -30,9 +31,11 @@ pub fn started_app_with_map(map: Map, position: Position) -> App {
         player: Player::new(position),
         player_animation: None,
         enemy_animations: Vec::new(),
+        attack_effects: Vec::new(),
+        pending_respawn: None,
         input_queue: Vec::new(),
         enemies: Vec::new(),
-        lives: 3,
+        hp: MAX_HP,
         game_state: GameState::Playing,
         pause_selection: PauseOption::Resume,
         started: true,
@@ -46,6 +49,8 @@ pub fn started_app_with_map(map: Map, position: Position) -> App {
         trail: VecDeque::new(),
         level: 1,
         audio: AudioManager::new(),
+        last_checkpoint: None,
+        activated_torchlights: Default::default(),
     };
     app.update_visibility();
     app
@@ -59,9 +64,11 @@ pub fn test_app() -> App {
         map,
         player_animation: None,
         enemy_animations: Vec::new(),
+        attack_effects: Vec::new(),
+        pending_respawn: None,
         input_queue: Vec::new(),
         enemies: Vec::new(),
-        lives: 3,
+        hp: MAX_HP,
         game_state: GameState::Playing,
         pause_selection: PauseOption::Resume,
         started: true,
@@ -75,6 +82,8 @@ pub fn test_app() -> App {
         trail: VecDeque::new(),
         level: 1,
         audio: AudioManager::new(),
+        last_checkpoint: None,
+        activated_torchlights: Default::default(),
     }
 }
 

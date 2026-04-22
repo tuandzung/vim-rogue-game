@@ -97,6 +97,17 @@ impl VisibilityMap {
         }
     }
 
+    /// Compute FOV from multiple sources, unioning the visible results.
+    /// Each source is (position, radius). Tiles visible from ANY source are set to Visible.
+    pub fn compute_multi_fov<F>(&mut self, sources: &[(Position, i32)], is_transparent: F)
+    where
+        F: Fn(Position) -> bool,
+    {
+        for &(center, radius) in sources {
+            self.compute_fov(center, radius, &is_transparent);
+        }
+    }
+
     pub fn demote_visible_to_explored(&mut self) {
         for state in &mut self.states {
             if *state == VisibilityState::Visible {

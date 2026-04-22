@@ -1,14 +1,18 @@
 # vim-quake
 
-A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vim motions through gameplay. Navigate three 80×40 dungeon levels using real Vim keybindings, dodge enemies, and reach the exit. Built with [bracket-lib](https://github.com/amethyst/bracket-lib) for roguelike-specific rendering, FOV, and tile-based graphics.
+A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vim motions through gameplay. Navigate four 80×40 dungeon levels using real Vim keybindings, dodge enemies, and reach the exit. Built with [bracket-lib](https://github.com/amethyst/bracket-lib) for roguelike-specific rendering, FOV, and tile-based graphics.
 
 ## Features
 
 - **Graphical window** with ASCII/CP437 aesthetic — tile-based rendering via bracket-lib
-- **3 dungeon levels** with distinct layouts — Level 1 has destroyable obstacles and connecting corridors, Level 2 is an inverted maze with obstacles at corridor gaps, Level 3 is a zigzag descent with enemy patrols
+- **4 dungeon levels** with distinct layouts — Level 1 has destroyable obstacles and connecting corridors, Level 2 is an inverted maze with obstacles at corridor gaps, Level 3 is a zigzag descent with enemy patrols, Level 4 is a fortress with FOV-aware patrol enemies and melee combat
 - **5 zone-gated areas** per level with distinct color palettes (gray → cyan → magenta → red → gold)
 - **Level progression** — stats carry over, trail resets, new map loads on reaching the exit
-- **Enemy encounters** — Level 3 spawns BFS-chasing enemies that step toward you each turn
+- **FOV-aware enemy AI** — enemies chase via BFS when they see you (within their FOV radius), patrol their room when you're hidden
+- **Enemy encounters** — Level 3+ spawns enemies; Level 4 enemies have HP and patrol rooms
+- **HP system** — enemy collisions deal 10 damage (MAX_HP=30); health bar in sidebar with color coding
+- **Melee combat** — press `x` to attack adjacent enemies on Level 4 (3 hits to kill)
+- **Torchlight checkpoints** — step on torchlights for permanent illumination and respawn points
 - **Lives and retry** — you start with 3 lives; enemy collisions cost a life, losing all lives triggers a loss screen, and any key retries the current level
 - **Fog of war** — unexplored areas are hidden; explored tiles persist dimly when out of view
 - **Minimap** — scaled-down view of explored areas in the sidebar
@@ -31,7 +35,7 @@ A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vi
 | `f<char>` `t<char>` | Find / till char | 4 |
 | `dd` | Delete obstacle | 5 |
 
-The dungeon is divided into 5 zone-gated areas. Each zone unlocks progressively harder motions. Level 1 teaches basic movement, Level 2 adds obstacles, and Level 3 introduces enemies.
+The dungeon is divided into 5 zone-gated areas. Each zone unlocks progressively harder motions. Level 1 teaches basic movement, Level 2 adds obstacles, Level 3 introduces enemies, and Level 4 adds FOV-aware patrol enemies with melee combat.
 
 ## Quick Start
 
@@ -49,13 +53,13 @@ Opens a graphical window (80×50 character grid). Requires a display — not a t
 - `Enter` — select pause menu option
 - Any key — start from title screen
 
-Reach the exit (`>`) on each level. Complete all 3 levels to win. Lose all lives and you can retry the current level with a fresh map.
+Reach the exit (`>`) on each level. Complete all 4 levels to win. Lose all lives and you can retry the current level with a fresh map.
 
 ## Build & Test
 
 ```bash
 cargo build    # Compile
-cargo test     # Run 275 integration tests
+cargo test     # Run 383 integration tests
 cargo run      # Play
 ```
 
@@ -63,14 +67,14 @@ cargo run      # Play
 
 ```
 src/main.rs       bracket-lib BTerm setup + GameState event loop, quit handling
-src/game.rs       App state, input handling, enemy turns, win/loss/retry, pause menu, trail, audio, animation
+src/game.rs       App state, input handling, FOV-gated enemy turns, win/loss/retry, pause menu, trail, audio, animation
 src/player.rs     Player + 13 motion implementations
-src/map.rs        80×40 grid, 5 zones, corridor carving, 3 dungeon levels, enemy spawn points
+src/map.rs        80×40 grid, 5 zones, corridor carving, 4 dungeon levels, enemy spawn points + patrol areas
 src/renderer.rs   bracket-lib rendering: title, viewport, sidebar, minimap, win/loss/pause screens, fog of war
-src/types.rs      Shared types (Position, Tile, Zone, VimMotion, Enemy, GameState, PauseOption, App, …)
+src/types.rs      Shared types (Position, Tile, Zone, VimMotion, Enemy, PatrolArea, GameState, PauseOption, App, …)
 src/animation.rs  Animation timers, ease-in-out interpolation, deterministic TestClock
 src/visibility.rs FOV ray-casting, explored tile tracking (Hidden/Explored/Visible)
-src/enemy.rs      Enemy struct with BFS pathfinding toward the player
+src/enemy.rs      Enemy struct with FOV-aware BFS chase and room patrol behavior
 src/audio.rs      AudioManager with graceful silent fallback
 src/lib.rs        Module re-exports
 ```
@@ -80,7 +84,7 @@ src/lib.rs        Module re-exports
 - **`renderer.rs` is read-only** — never mutates game state
 - **Animation state on `App`** — separate from Player/Enemy structs (presentation concern)
 - **Deterministic timing** — `TestClock` for tests, `RealClock` for production (via `GameClock` trait)
-- **FOV is visual-only** — fog of war doesn't affect enemy AI behavior
+- **FOV-aware enemy AI** — enemies use Bresenham line-of-sight within their FOV radius to detect the player; they chase via BFS when visible and patrol their room when not
 - **Audio disabled by default** — `AudioManager::enable()` to activate; silent when unavailable
 
 ## Dependencies

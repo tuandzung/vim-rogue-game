@@ -1,13 +1,16 @@
 use std::collections::VecDeque;
 
 use crate::map::Map;
-use crate::types::{Enemy, Position};
+use crate::types::{ENEMY_FOV_RADIUS, Enemy, PatrolArea, Position, Tile};
 
 impl Enemy {
     pub fn new(pos: Position) -> Self {
         Self {
             position: pos,
             glyph: 'e',
+            hp: None,
+            stunned_turns: 0,
+            patrol_area: PatrolArea::point(pos.x, pos.y),
         }
     }
 
@@ -83,6 +86,93 @@ impl Enemy {
                 return true;
             }
             step = prev;
+        }
+
+        false
+    }
+
+    /// Check if this enemy has line-of-sight to a target position using Bresenham's line algorithm.
+    /// Returns false if target is beyond ENEMY_FOV_RADIUS or if a Wall tile blocks the line.
+    pub fn has_line_of_sight(&self, target: Position, map: &Map) -> bool {
+        let dx = target.x as i32 - self.position.x as i32;
+        let dy = target.y as i32 - self.position.y as i32;
+        let dist_sq = dx * dx + dy * dy;
+
+        if dist_sq > ENEMY_FOV_RADIUS * ENEMY_FOV_RADIUS {
+            return false;
+        }
+
+        if self.position == target {
+            return true;
+        }
+
+        // Bresenham's line algorithm
+        let adx = dx.abs();
+        let ady = dy.abs();
+        let sx: i32 = if dx > 0 { 1 } else { -1 };
+        let sy: i32 = if dy > 0 { 1 } else { -1 };
+
+        let mut err = adx - ady;
+        let mut x = self.position.x as i32;
+        let mut y = self.position.y as i32;
+        let tx = target.x as i32;
+        let ty = target.y as i32;
+
+        loop {
+            let e2 = 2 * err;
+            if e2 > -ady {
+                err -= ady;
+                x += sx;
+            }
+            if e2 < adx {
+                err += adx;
+                y += sy;
+            }
+
+            if x == tx && y == ty {
+                return true;
+            }
+
+            if x < 0 || y < 0 || x >= map.width as i32 || y >= map.height as i32 {
+                return false;
+            }
+
+            if map.get_tile(x as usize, y as usize) == Tile::Wall {
+                return false;
+            }
+        }
+    }
+
+    /// Move randomly within the enemy's patrol area.
+    /// Uses a deterministic direction order based on position to avoid pure randomness.
+    /// Returns true if the enemy moved, false if stuck.
+    pub fn patrol_step(&mut self, map: &Map) -> bool {
+        let directions: [(isize, isize); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+        let base_idx = (self.position.x * 7 + self.position.y * 13) % 4;
+
+        for i in 0..4 {
+            let (dx, dy) = directions[(base_idx + i) % 4];
+            let nx = self.position.x as isize + dx;
+            let ny = self.position.y as isize + dy;
+
+            if nx < 0 || ny < 0 {
+                continue;
+            }
+            let nx = nx as usize;
+            let ny = ny as usize;
+
+            if nx >= map.width || ny >= map.height {
+                continue;
+            }
+            if !self.patrol_area.contains(nx, ny) {
+                continue;
+            }
+            if !map.is_passable(nx, ny) {
+                continue;
+            }
+
+            self.position = Position { x: nx, y: ny };
+            return true;
         }
 
         false

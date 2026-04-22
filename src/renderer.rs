@@ -1,7 +1,9 @@
 use bracket_lib::prelude::*;
 
+use crate::animation::AttackEffectKind;
 use crate::types::{
-    App, GameState, PauseOption, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion, Zone,
+    App, GameState, MAX_HP, PauseOption, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion,
+    Zone,
 };
 use crate::visibility::VisibilityState;
 
@@ -35,6 +37,11 @@ pub fn render(ctx: &mut BTerm, app: &App) {
     if app.game_state == GameState::Paused {
         render_gameplay(ctx, app);
         render_pause_overlay(ctx, app);
+        return;
+    }
+
+    if app.game_state == GameState::Dying {
+        render_gameplay(ctx, app);
         return;
     }
 
@@ -171,6 +178,21 @@ fn render_map_viewport(ctx: &mut BTerm, app: &App, map_width: i32) {
             }
         }
     }
+
+    for effect in &app.attack_effects {
+        let screen_x = effect.x as isize - left as isize;
+        let screen_y = effect.y as isize - top as isize;
+        if screen_x >= 0
+            && screen_x < view_width as isize
+            && screen_y >= 0
+            && screen_y < view_height as isize
+        {
+            let draw_x = (screen_x + 1) as i32;
+            let draw_y = (screen_y + 1) as i32;
+            let (glyph, fg) = attack_effect_display(effect.kind, effect.timer.progress());
+            ctx.print_color(draw_x, draw_y, fg, black, glyph.to_string());
+        }
+    }
 }
 
 pub fn visual_player_position(app: &App) -> Position {
@@ -260,7 +282,29 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
         format!("Moves: {}", app.motion_count),
     );
     y += 1;
-    ctx.print_color(sidebar_x, y, white, black, format!("Lives: {}", app.lives));
+    let hp_ratio = app.hp as f32 / MAX_HP as f32;
+    let hp_filled = (hp_ratio * 10.0).round() as usize;
+    let hp_color = if hp_ratio > 0.5 {
+        RGB::named(GREEN)
+    } else if hp_ratio > 0.25 {
+        RGB::named(YELLOW)
+    } else {
+        RGB::named(RED)
+    };
+    let hp_text = format!("HP: {}/{}", app.hp, MAX_HP);
+    ctx.print_color(sidebar_x, y, hp_color, black, &hp_text);
+    y += 1;
+    let mut bar = String::with_capacity(12);
+    bar.push('[');
+    for i in 0..10usize {
+        if i < hp_filled {
+            bar.push('█');
+        } else {
+            bar.push(' ');
+        }
+    }
+    bar.push(']');
+    ctx.print_color(sidebar_x, y, hp_color, black, &bar);
     y += 1;
     ctx.print_color(
         sidebar_x,
@@ -396,6 +440,7 @@ fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut 
                 Tile::Floor => ('·', dim_color(zone_floor_color(zone), 0.6)),
                 Tile::Exit => ('>', RGB::named(YELLOW)),
                 Tile::Obstacle => ('▒', dim_color(rgb8(255, 100, 100), 0.6)),
+                Tile::Torchlight => ('i', RGB::named(YELLOW)),
             };
 
             let final_color = if vis == VisibilityState::Explored {
@@ -662,8 +707,8 @@ fn render_lost(ctx: &mut BTerm, app: &App) {
     ctx.print_color(center_x(stats.len()), y, white, black, &stats);
     y += 2;
 
-    let lives_msg = "Lives depleted — an enemy caught you.";
-    ctx.print_color(center_x(lives_msg.len()), y, light_red, black, lives_msg);
+    let hp_msg = "HP depleted — an enemy caught you.";
+    ctx.print_color(center_x(hp_msg.len()), y, light_red, black, hp_msg);
     y += 2;
 
     let prompt = "► Press any key to retry the level ◄";
@@ -796,6 +841,7 @@ pub fn tile_fog_appearance(
         Tile::Floor => ('.', zone_floor_color(zone)),
         Tile::Exit => exit_glow(elapsed),
         Tile::Obstacle => obstacle_display(elapsed),
+        Tile::Torchlight => ('i', RGB::named(YELLOW)),
     };
 
     let fg = if vis == VisibilityState::Explored {
@@ -912,6 +958,25 @@ pub fn obstacle_display(elapsed: std::time::Duration) -> (char, RGB) {
         ('▒', rgb8(255, 100, 100))
     } else {
         (' ', RGB::named(BLACK))
+    }
+}
+
+pub fn attack_effect_display(kind: AttackEffectKind, progress: f64) -> (char, RGB) {
+    match kind {
+        AttackEffectKind::PlayerStrike => {
+            if progress < 0.5 {
+                ('*', rgb8(255, 255, 100))
+            } else {
+                ('/', rgb8(200, 180, 50))
+            }
+        }
+        AttackEffectKind::EnemyHit => {
+            if progress < 0.5 {
+                ('!', RGB::named(RED))
+            } else {
+                ('·', rgb8(180, 40, 40))
+            }
+        }
     }
 }
 

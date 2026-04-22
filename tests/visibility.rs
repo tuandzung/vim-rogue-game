@@ -386,3 +386,56 @@ fn wall_at_exact_radius_is_visible_but_tiles_behind_it_are_hidden() {
     assert_eq!(vis.get(wall), VisibilityState::Visible);
     assert_eq!(vis.get(Position { x: 16, y: 7 }), VisibilityState::Hidden);
 }
+
+#[test]
+fn multi_source_fov_unions_visibility_from_two_sources() {
+    let mut vis = VisibilityMap::new(40, 40);
+    vis.compute_multi_fov(
+        &[
+            (Position { x: 10, y: 10 }, 6),
+            (Position { x: 30, y: 10 }, 6),
+        ],
+        all_transparent,
+    );
+
+    assert_eq!(vis.get(Position { x: 10, y: 10 }), VisibilityState::Visible);
+    assert_eq!(vis.get(Position { x: 30, y: 10 }), VisibilityState::Visible);
+    assert_eq!(vis.get(Position { x: 12, y: 10 }), VisibilityState::Visible);
+    assert_eq!(vis.get(Position { x: 32, y: 10 }), VisibilityState::Visible);
+    assert_eq!(vis.get(Position { x: 20, y: 10 }), VisibilityState::Hidden);
+}
+
+#[test]
+fn multi_source_fov_with_empty_sources_does_nothing() {
+    let mut vis = VisibilityMap::new(40, 40);
+    vis.compute_multi_fov(&[], all_transparent);
+
+    assert_eq!(vis.get(Position { x: 20, y: 20 }), VisibilityState::Hidden);
+}
+
+#[test]
+fn torchlight_fov_persists_when_player_moves_away() {
+    let mut vis = VisibilityMap::new(40, 40);
+
+    vis.compute_fov(Position { x: 5, y: 5 }, 10, all_transparent);
+    vis.compute_multi_fov(&[(Position { x: 20, y: 20 }, 6)], all_transparent);
+
+    vis.demote_visible_to_explored();
+    vis.compute_multi_fov(&[(Position { x: 20, y: 20 }, 6)], all_transparent);
+
+    assert_eq!(vis.get(Position { x: 20, y: 20 }), VisibilityState::Visible);
+    assert_eq!(vis.get(Position { x: 5, y: 5 }), VisibilityState::Explored);
+}
+
+#[test]
+fn multi_source_fov_respects_walls() {
+    let wall = Position { x: 13, y: 10 };
+    let mut vis = VisibilityMap::new(30, 20);
+    vis.compute_multi_fov(
+        &[(Position { x: 10, y: 10 }, 6)],
+        with_walls(&[wall]),
+    );
+
+    assert_eq!(vis.get(wall), VisibilityState::Visible);
+    assert_eq!(vis.get(Position { x: 14, y: 10 }), VisibilityState::Hidden);
+}
