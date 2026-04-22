@@ -1868,3 +1868,109 @@ fn enemy_patrol_does_not_leave_room_over_many_turns() {
         );
     }
 }
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_iv_advances_to_next_level() {
+    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    assert_eq!(app.level, 1);
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::V, false);
+    assert_eq!(app.level, 2);
+    assert!(app.status_message.contains("CHEAT"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_iv_on_last_level_triggers_win() {
+    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    app.level = TOTAL_LEVELS;
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::V, false);
+    assert_eq!(app.game_state, GameState::Won);
+    assert!(app.status_message.contains("CHEAT"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_im_toggles_god_mode() {
+    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    assert!(!app.cheat_god_mode);
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::M, false);
+    assert!(app.cheat_god_mode);
+    assert!(app.status_message.contains("God mode ON"));
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::M, false);
+    assert!(!app.cheat_god_mode);
+    assert!(app.status_message.contains("God mode OFF"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_god_mode_prevents_damage() {
+    let mut app = level4_app_with_enemy(Position { x: 5, y: 5 }, None);
+    let hp_before = app.hp;
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::M, false);
+    assert!(app.cheat_god_mode);
+    handle_key(&mut app, VirtualKeyCode::L, false);
+    assert_eq!(app.hp, hp_before, "God mode should prevent damage");
+    assert_eq!(app.game_state, GameState::Playing);
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_ie_kills_all_enemies() {
+    let mut app = level4_app_with_enemy(Position { x: 10, y: 10 }, Some(30));
+    app.enemies.push(Enemy {
+        position: Position { x: 15, y: 15 },
+        hp: Some(30),
+        ..Enemy::new(Position { x: 15, y: 15 })
+    });
+    assert_eq!(app.enemies.len(), 2);
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::E, false);
+    assert!(app.enemies.is_empty());
+    assert!(app.enemy_animations.is_empty());
+    assert!(app.status_message.contains("CHEAT"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_ip_toggles_noclip() {
+    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    assert!(!app.player.noclip);
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::P, false);
+    assert!(app.player.noclip);
+    assert!(app.status_message.contains("Noclip ON"));
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::P, false);
+    assert!(!app.player.noclip);
+    assert!(app.status_message.contains("Noclip OFF"));
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_noclip_allows_wall_walking() {
+    let mut map = test_map(10, 10);
+    map.set_tile(6, 5, Tile::Wall);
+    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    handle_key(&mut app, VirtualKeyCode::L, false);
+    assert_eq!(app.player.position, Position { x: 5, y: 5 });
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::P, false);
+    handle_key(&mut app, VirtualKeyCode::L, false);
+    assert_eq!(app.player.position, Position { x: 6, y: 5 });
+}
+
+#[test]
+#[cfg(debug_assertions)]
+fn cheat_buffer_resets_on_non_char_key() {
+    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    handle_key(&mut app, VirtualKeyCode::I, false);
+    handle_key(&mut app, VirtualKeyCode::Escape, false);
+    handle_key(&mut app, VirtualKeyCode::V, false);
+    assert_eq!(app.level, 1);
+}

@@ -1,5 +1,5 @@
 <!-- Generated: 2026-04-17 | Updated: 2026-04-22 -->
-<!-- Commit: 59f0023 | Branch: main -->
+<!-- Commit: f0954bc | Branch: feat/secret-cheat-codes -->
 
 # vim-quake
 
@@ -9,8 +9,9 @@ Terminal-based roguelike dungeon game (Rust + bracket-lib) teaching Vim motions 
 ```
 vim-quake/
 ├── src/          # Application source code (see src/AGENTS.md)
-├── tests/        # Integration tests — 385 tests across 9 files (see tests/AGENTS.md)
+├── tests/        # Integration tests — 393 tests across 9 files (see tests/AGENTS.md)
 ├── examples/     # Spike/prototype code (spike.rs)
+├── resources/    # CP437 font sprite sheets (PNG) for bracket-lib rendering
 ├── Cargo.toml    # Edition 2024, deps: anyhow (unused), bracket-lib
 ├── Cargo.lock
 ├── README.md
@@ -20,13 +21,13 @@ vim-quake/
 ## Architecture
 ```
 main.rs       → bracket-lib setup + event loop (44 lines)
-game.rs       → App state, event handling, motion dispatch, FOV-gated enemy turns, win/loss, trail, audio (752 lines)
-player.rs     → Player + 13 motion implementations (250 lines)
-map.rs        → 80×40 grid, 5 zones, 4 dungeon levels, corridor carving, enemy spawns + patrol areas (475 lines)
-renderer.rs   → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (992 lines)
-types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, App, RenderGrid, ViewModel (371 lines)
-animation.rs  → GameClock, AnimationState, AnimationTimer, Interpolator (easing) (193 lines)
-visibility.rs → VisibilityMap with FOV (explored/visible/hidden states) (128 lines)
+game.rs       → App state, event handling, motion dispatch, FOV-gated enemy turns, win/loss, trail, audio (814 lines)
+player.rs     → Player + 13 motion implementations (247 lines)
+map.rs        → 80×40 grid, 5 zones, 4 dungeon levels, corridor carving, enemy spawns + patrol areas (471 lines)
+renderer.rs   → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (899 lines)
+types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, App, RenderGrid, ViewModel (355 lines)
+animation.rs  → GameClock, AnimationState, AnimationTimer, Interpolator (easing) (182 lines)
+visibility.rs → VisibilityMap with FOV (explored/visible/hidden states) (124 lines)
 enemy.rs      → Enemy struct with FOV-aware BFS chase + room patrol (180 lines)
 audio.rs      → AudioManager with SoundEffect enum, graceful fallback (55 lines)
 lib.rs        → Re-exports all modules (9 lines)
@@ -45,11 +46,11 @@ lib.rs        → Re-exports all modules (9 lines)
 | Change FOV/visibility | `src/visibility.rs` (compute_fov) | VisibilityMap with Hidden/Explored/Visible states |
 | Add animations | `src/animation.rs` | AnimationState + Interpolator; clock via GameClock trait |
 | Add sound effects | `src/audio.rs` (SoundEffect enum + AudioManager) | Audio disabled by default |
-| Fix a bug | Check tests in `tests/` directory (385 integration tests across 9 files) | main.rs and lib.rs have no tests |
+| Fix a bug | Check tests in `tests/` directory (393 integration tests across 9 files) | main.rs and lib.rs have no tests |
 
 ## Conventions
 - Rust edition 2024. Formatting configured via `rustfmt.toml` (`use_small_heuristics = "Max"`, `edition = "2024"`).
-- Integration tests in `tests/` directory (385 tests across 9 files). Shared helpers in `tests/common/mod.rs`.
+- Integration tests in `tests/` directory (393 tests across 9 files). Shared helpers in `tests/common/mod.rs`.
 - Test helpers: `test_map()`, `started_app_with_map()`, `test_app()`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
 - `renderer.rs` internals are `pub` for integration test access (e.g., `screen_meets_minimum_size`, `phase_definitions`, `exit_glow`, etc.).
 - `lib.rs` re-exports all modules. `main.rs` is thin (~32 lines).
@@ -72,7 +73,7 @@ lib.rs        → Re-exports all modules (9 lines)
 cargo fmt              # Format code (uses rustfmt.toml)
 cargo fmt --check      # Check formatting without writing
 cargo clippy           # Lint
-cargo test             # Run 385 integration tests
+cargo test             # Run 393 integration tests
 cargo build            # Compile
 cargo run              # Launch game in terminal
 ```
@@ -81,7 +82,7 @@ cargo run              # Launch game in terminal
 After any code change, run ALL of these before considering work complete:
 1. `cargo fmt --check` — ensure formatting is clean
 2. `cargo clippy` — zero warnings
-3. `cargo test` — all 385 tests pass
+3. `cargo test` — all 393 tests pass
 4. Update `CHANGELOG.md` — add entry under `[Unreleased]` or new version section
 
 ## Dependencies

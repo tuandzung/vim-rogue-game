@@ -7,11 +7,27 @@ pub struct Player {
     pub position: Position,
     pub used_motions: HashSet<VimMotion>,
     pub last_direction: Option<Direction>,
+    #[cfg(debug_assertions)]
+    pub noclip: bool,
 }
 
 impl Player {
     pub fn new(position: Position) -> Self {
-        Self { position, used_motions: HashSet::new(), last_direction: None }
+        Self {
+            position,
+            used_motions: HashSet::new(),
+            last_direction: None,
+            #[cfg(debug_assertions)]
+            noclip: false,
+        }
+    }
+
+    pub fn can_pass_to(&self, x: usize, y: usize, map: &Map) -> bool {
+        #[cfg(debug_assertions)]
+        if self.noclip {
+            return true;
+        }
+        map.is_passable(x, y)
     }
 
     pub fn handle_motion(
@@ -66,8 +82,11 @@ impl Player {
         }
 
         let next = Position { x: next_x as usize, y: next_y as usize };
+        if next.x >= map.width || next.y >= map.height {
+            return false;
+        }
 
-        if map.is_passable(next.x, next.y) {
+        if self.can_pass_to(next.x, next.y, map) {
             self.position = next;
             true
         } else {

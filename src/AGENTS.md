@@ -1,6 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-04-17 | Updated: 2026-04-22 -->
-
 # src
 
 All application source code for vim-quake. Tests are in the `tests/` directory (integration tests).
@@ -10,13 +9,13 @@ All application source code for vim-quake. Tests are in the `tests/` directory (
 |------|-------|------|
 | `main.rs` | 44 | Binary entry — bracket-lib setup, event loop, quit handling via `ctx.quit()`, delegates to game/renderer |
 | `lib.rs` | 9 | Library root — `pub mod` re-exports all modules |
-| `game.rs` | 752 | `App` state, `handle_key`/`tick`, `parse_motion`, `execute_motion`, `spawn_enemies_for_current_level`, `enemies_step`, win/loss/retry, pause menu, trail, audio dispatch |
-| `player.rs` | 250 | `Player` struct + 13 motion impls (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
-| `map.rs` | 475 | `Map` struct, 80×40 grid, 5 zones, 4 levels (`carve_level`, `build_level_2/3/4`), enemy spawn points + patrol areas |
-| `renderer.rs` | 992 | bracket-lib rendering — title/gameplay/win/lost/pause screens, viewport, sidebar, minimap, zone colors |
-| `types.rs` | 371 | Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, GameState, PauseOption, App, RenderGrid, ViewModel, ScreenModel |
-| `animation.rs` | 193 | `GameClock` trait, `RealClock`/`TestClock`, `AnimationState`, `AnimationTimer`, `Interpolator` |
-| `visibility.rs` | 128 | `VisibilityMap` with `compute_fov`, `VisibilityState` (Hidden/Explored/Visible) |
+| `game.rs` | 814 | `App` state, `handle_key`/`tick`, `parse_motion`, `execute_motion`, `spawn_enemies_for_current_level`, `enemies_step`, win/loss/retry, pause menu, trail, audio dispatch |
+| `player.rs` | 247 | `Player` struct + 13 motion impls (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
+| `map.rs` | 471 | `Map` struct, 80×40 grid, 5 zones, 4 levels (`carve_level`, `build_level_2/3/4`), enemy spawn points + patrol areas |
+| `renderer.rs` | 899 | bracket-lib rendering — title/gameplay/win/lost/pause screens, viewport, sidebar, minimap, zone colors |
+| `types.rs` | 355 | Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, GameState, PauseOption, App, RenderGrid, ViewModel, ScreenModel |
+| `animation.rs` | 182 | `GameClock` trait, `RealClock`/`TestClock`, `AnimationState`, `AnimationTimer`, `Interpolator` |
+| `visibility.rs` | 124 | `VisibilityMap` with `compute_fov`, `VisibilityState` (Hidden/Explored/Visible) |
 | `enemy.rs` | 180 | `Enemy` struct with FOV-aware BFS `step_toward_player`, `has_line_of_sight`, `patrol_step` |
 | `audio.rs` | 55 | `AudioManager` + `SoundEffect` enum, graceful no-op fallback |
 
@@ -62,10 +61,10 @@ lib.rs        ← main.rs (implicit)
 - Audio: disabled by default; `play()` no-ops when disabled; `SoundEffect` enum in audio.rs.
 
 ## Tests
-385 integration tests in `tests/` directory (no inline tests in src/):
+393 integration tests in `tests/` directory (no inline tests in src/):
 | File | Tests | Coverage |
 |------|-------|----------|
-| `tests/game.rs` | 132 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry, pause menu, melee combat |
+| `tests/game.rs` | 140 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry, pause menu, melee combat |
 | `tests/renderer.rs` | 53 | Zone colors, wall glyphs, duration formatting, phases, exit glow, trail colors, minimap, fog, centering |
 | `tests/map.rs` | 46 | Dimensions, tiles, passability, zones, corridors, obstacles, 4 levels, reachability, enemy spawns, patrol areas, torchlight rooms |
 | `tests/animation.rs` | 34 | Timer progress, interpolation, easing, AnimationState, TestClock determinism |
