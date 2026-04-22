@@ -196,7 +196,8 @@ fn enemy_patrol_moves_within_area() {
     assert!(
         enemy.patrol_area.contains(enemy.position.x, enemy.position.y),
         "Enemy moved to ({}, {}) outside patrol area",
-        enemy.position.x, enemy.position.y
+        enemy.position.x,
+        enemy.position.y
     );
 }
 

@@ -9,7 +9,7 @@ use vim_quake::animation::{AnimationState, AttackEffectKind, ENEMY_MOVE_MS};
 use vim_quake::map::Map;
 use vim_quake::player::Player;
 use vim_quake::renderer::*;
-use vim_quake::types::{App, Enemy, GameState, Position, Tile, VimMotion, Zone, MAX_HP};
+use vim_quake::types::{App, Enemy, GameState, MAX_HP, Position, Tile, VimMotion, Zone};
 use vim_quake::visibility::{VisibilityMap, VisibilityState};
 
 #[test]
@@ -221,10 +221,8 @@ fn rgb8_converts_correctly() {
 #[test]
 fn visual_enemy_positions_use_active_animation() {
     let mut app = test_app();
-    app.enemies.push(Enemy {
-        position: Position { x: 4, y: 2 },
-        ..Enemy::new(Position { x: 4, y: 2 })
-    });
+    app.enemies
+        .push(Enemy { position: Position { x: 4, y: 2 }, ..Enemy::new(Position { x: 4, y: 2 }) });
     let mut animation = AnimationState::new(ENEMY_MOVE_MS, (2.0, 2.0), (4.0, 2.0));
     animation.update(ENEMY_MOVE_MS / 2.0);
     app.enemy_animations.push((0, animation));
@@ -236,11 +234,7 @@ fn visual_enemy_positions_use_active_animation() {
 
 #[test]
 fn dim_color_reduces_components() {
-    let original = RGB {
-        r: 1.0,
-        g: 0.5,
-        b: 0.0,
-    };
+    let original = RGB { r: 1.0, g: 0.5, b: 0.0 };
     let dimmed = dim_color(original, 0.3);
     assert!(approx_eq(dimmed.r, 0.3));
     assert!(approx_eq(dimmed.g, 0.15));
@@ -249,11 +243,7 @@ fn dim_color_reduces_components() {
 
 #[test]
 fn dim_color_clamps_to_one() {
-    let color = RGB {
-        r: 2.0,
-        g: 2.0,
-        b: 2.0,
-    };
+    let color = RGB { r: 2.0, g: 2.0, b: 2.0 };
     let dimmed = dim_color(color, 1.0);
     assert!(approx_eq(dimmed.r, 1.0));
     assert!(approx_eq(dimmed.g, 1.0));
@@ -327,16 +317,10 @@ fn minimap_scaling_maps_corners_correctly() {
 #[test]
 fn minimap_scaling_covers_full_map() {
     let (x_last, _) = minimap_map_coords(MINIMAP_WIDTH - 1, 0);
-    assert!(
-        x_last >= 75,
-        "rightmost minimap column should reach near x=80, got {x_last}"
-    );
+    assert!(x_last >= 75, "rightmost minimap column should reach near x=80, got {x_last}");
 
     let (_, y_last) = minimap_map_coords(0, MINIMAP_HEIGHT - 1);
-    assert!(
-        y_last >= 35,
-        "bottom minimap row should reach near y=40, got {y_last}"
-    );
+    assert!(y_last >= 35, "bottom minimap row should reach near y=40, got {y_last}");
 }
 
 #[test]
@@ -351,14 +335,8 @@ fn minimap_hidden_tile_is_blank() {
 fn minimap_player_position_at_start() {
     let app = test_app();
     let (px, py) = minimap_player_pos(app.player.position.x, app.player.position.y);
-    assert!(
-        px >= 0 && px < MINIMAP_WIDTH as i32,
-        "player minimap x should be in range, got {px}"
-    );
-    assert!(
-        py >= 0 && py < MINIMAP_HEIGHT as i32,
-        "player minimap y should be in range, got {py}"
-    );
+    assert!(px >= 0 && px < MINIMAP_WIDTH as i32, "player minimap x should be in range, got {px}");
+    assert!(py >= 0 && py < MINIMAP_HEIGHT as i32, "player minimap y should be in range, got {py}");
 }
 
 #[test]
@@ -386,14 +364,8 @@ fn minimap_player_position_at_origin() {
 #[test]
 fn minimap_scaling_center_cell() {
     let (cx, cy) = minimap_map_coords(MINIMAP_WIDTH / 2, MINIMAP_HEIGHT / 2);
-    assert!(
-        cx > 30 && cx < 50,
-        "center minimap cell should map near map center, got x={cx}"
-    );
-    assert!(
-        cy > 15 && cy < 25,
-        "center minimap cell should map near map center, got y={cy}"
-    );
+    assert!(cx > 30 && cx < 50, "center minimap cell should map near map center, got x={cx}");
+    assert!(cy > 15 && cy < 25, "center minimap cell should map near map center, got y={cy}");
 }
 
 #[test]

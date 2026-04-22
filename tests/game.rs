@@ -4,11 +4,14 @@ use bracket_lib::prelude::VirtualKeyCode;
 use common::{started_app_with_map, test_map};
 use std::time::Duration;
 use std::time::Instant;
-use vim_quake::animation::{AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS, ATTACK_EFFECT_MS};
+use vim_quake::animation::{
+    ATTACK_EFFECT_MS, AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS,
+};
 use vim_quake::game::{handle_key, tick};
 use vim_quake::map::Map;
 use vim_quake::types::{
-    App, Direction, Enemy, GameState, MAX_HP, PauseOption, PatrolArea, PendingInput, Position, TOTAL_LEVELS, Tile, VimMotion, Zone,
+    App, Direction, Enemy, GameState, MAX_HP, PatrolArea, PauseOption, PendingInput, Position,
+    TOTAL_LEVELS, Tile, VimMotion, Zone,
 };
 use vim_quake::visibility::{VisibilityMap, VisibilityState};
 
@@ -62,10 +65,7 @@ fn app_new_has_visibility_map() {
 
     assert_eq!(app.visibility.width(), 80);
     assert_eq!(app.visibility.height(), 40);
-    assert_eq!(
-        app.visibility.get(app.player.position),
-        VisibilityState::Visible
-    );
+    assert_eq!(app.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -75,14 +75,8 @@ fn update_visibility_makes_area_visible() {
     app.visibility.reset();
     app.update_visibility();
 
-    assert_eq!(
-        app.visibility.get(app.player.position),
-        VisibilityState::Visible
-    );
-    assert_eq!(
-        app.visibility.get(Position { x: 3, y: 2 }),
-        VisibilityState::Visible
-    );
+    assert_eq!(app.visibility.get(app.player.position), VisibilityState::Visible);
+    assert_eq!(app.visibility.get(Position { x: 3, y: 2 }), VisibilityState::Visible);
 }
 
 #[test]
@@ -92,14 +86,8 @@ fn update_visibility_walls_block() {
     app.visibility.reset();
     app.update_visibility();
 
-    assert_eq!(
-        app.visibility.get(Position { x: 1, y: 2 }),
-        VisibilityState::Visible
-    );
-    assert_eq!(
-        app.visibility.get(Position { x: 0, y: 2 }),
-        VisibilityState::Hidden
-    );
+    assert_eq!(app.visibility.get(Position { x: 1, y: 2 }), VisibilityState::Visible);
+    assert_eq!(app.visibility.get(Position { x: 0, y: 2 }), VisibilityState::Hidden);
 }
 
 #[test]
@@ -115,10 +103,7 @@ fn update_visibility_crosses_zone_boundaries() {
 
     assert_eq!(app.current_zone(), Zone::Zone1);
     assert_eq!(app.map.zone_at(Position { x: 10, y: 2 }), Zone::Zone2);
-    assert_eq!(
-        app.visibility.get(Position { x: 10, y: 2 }),
-        VisibilityState::Visible
-    );
+    assert_eq!(app.visibility.get(Position { x: 10, y: 2 }), VisibilityState::Visible);
 }
 
 #[test]
@@ -129,14 +114,8 @@ fn update_visibility_treats_obstacles_as_transparent() {
 
     let app = started_app_with_map(map, Position { x: 1, y: 2 });
 
-    assert_eq!(
-        app.visibility.get(Position { x: 2, y: 2 }),
-        VisibilityState::Visible
-    );
-    assert_eq!(
-        app.visibility.get(Position { x: 3, y: 2 }),
-        VisibilityState::Visible
-    );
+    assert_eq!(app.visibility.get(Position { x: 2, y: 2 }), VisibilityState::Visible);
+    assert_eq!(app.visibility.get(Position { x: 3, y: 2 }), VisibilityState::Visible);
 }
 
 #[test]
@@ -204,9 +183,7 @@ fn player_animation_starts_on_move() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    let animation = app
-        .player_animation
-        .expect("movement should start animation");
+    let animation = app.player_animation.expect("movement should start animation");
     assert_eq!((animation.start_x, animation.start_y), (1.0, 0.0));
     assert_eq!((animation.end_x, animation.end_y), (2.0, 0.0));
 }
@@ -227,10 +204,7 @@ fn player_animation_interpolates_position() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    let animation = app
-        .player_animation
-        .as_mut()
-        .expect("movement should start animation");
+    let animation = app.player_animation.as_mut().expect("movement should start animation");
     animation.update(PLAYER_MOVE_MS / 2.0);
 
     assert_eq!(animation.current_position(), (1.5, 0.0));
@@ -255,9 +229,7 @@ fn queued_input_executed_after_animation() {
     handle_key(&mut app, VirtualKeyCode::L, false);
     tick(&mut app, PLAYER_MOVE_MS);
 
-    let animation = app
-        .player_animation
-        .expect("queued move should start a new animation");
+    let animation = app.player_animation.expect("queued move should start a new animation");
     assert_eq!(app.player.position, Position { x: 3, y: 0 });
     assert!(app.input_queue.is_empty());
     assert_eq!((animation.start_x, animation.start_y), (2.0, 0.0));
@@ -643,10 +615,7 @@ fn advance_level_resets_visibility() {
     app.advance_level();
 
     assert_eq!(app.visibility.get(far_tile), VisibilityState::Hidden);
-    assert_eq!(
-        app.visibility.get(app.player.position),
-        VisibilityState::Visible
-    );
+    assert_eq!(app.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -659,10 +628,7 @@ fn retry_level_resets_visibility() {
     app.retry_level();
 
     assert_eq!(app.visibility.get(far_tile), VisibilityState::Hidden);
-    assert_eq!(
-        app.visibility.get(app.player.position),
-        VisibilityState::Visible
-    );
+    assert_eq!(app.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -688,11 +654,8 @@ fn enemy_animation_starts_on_move() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    let (enemy_index, animation) = app
-        .enemy_animations
-        .first()
-        .copied()
-        .expect("enemy move should start animation");
+    let (enemy_index, animation) =
+        app.enemy_animations.first().copied().expect("enemy move should start animation");
     assert_eq!(enemy_index, 0);
     assert_eq!((animation.start_x, animation.start_y), (1.0, 1.0));
     assert_eq!((animation.end_x, animation.end_y), (2.0, 1.0));
@@ -734,10 +697,8 @@ fn enemy_animation_interpolates_position() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    let (_, animation) = app
-        .enemy_animations
-        .first_mut()
-        .expect("enemy move should start animation");
+    let (_, animation) =
+        app.enemy_animations.first_mut().expect("enemy move should start animation");
     animation.update(ENEMY_MOVE_MS / 2.0);
 
     assert_eq!(animation.current_position(), (1.5, 1.0));
@@ -874,10 +835,7 @@ fn audio_no_zone_entry_sound_when_same_zone() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    assert_eq!(
-        app.map.zone_at(app.player.position),
-        app.map.zone_at(Position { x: 2, y: 0 })
-    );
+    assert_eq!(app.map.zone_at(app.player.position), app.map.zone_at(Position { x: 2, y: 0 }));
 }
 
 #[test]
@@ -1080,11 +1038,7 @@ fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
     let map = test_map(20, 20);
     let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
     app.level = 4;
-    app.enemies = vec![Enemy {
-        position: enemy_pos,
-        hp: enemy_hp,
-        ..Enemy::new(enemy_pos)
-    }];
+    app.enemies = vec![Enemy { position: enemy_pos, hp: enemy_hp, ..Enemy::new(enemy_pos) }];
     app.player.last_direction = Some(Direction::Right);
     app
 }
@@ -1277,7 +1231,11 @@ fn stun_wears_off_after_one_turn() {
 
     // Turn 2: stun has worn off, enemy should move toward player
     handle_key(&mut app, VirtualKeyCode::H, false);
-    assert_eq!(app.enemies[0].position, Position { x: 5, y: 5 }, "Enemy should move after stun wears off");
+    assert_eq!(
+        app.enemies[0].position,
+        Position { x: 5, y: 5 },
+        "Enemy should move after stun wears off"
+    );
 }
 
 #[test]
@@ -1318,8 +1276,16 @@ fn death_with_checkpoint_respawns_at_torchlight() {
     tick(&mut app, ATTACK_EFFECT_MS);
     tick(&mut app, 0.0);
     assert_eq!(app.hp, MAX_HP, "HP should be restored to MAX_HP after checkpoint respawn");
-    assert_eq!(app.player.position, Position { x: 10, y: 10 }, "Player should respawn at checkpoint");
-    assert_eq!(app.game_state, GameState::Playing, "Game state should remain Playing after respawn");
+    assert_eq!(
+        app.player.position,
+        Position { x: 10, y: 10 },
+        "Player should respawn at checkpoint"
+    );
+    assert_eq!(
+        app.game_state,
+        GameState::Playing,
+        "Game state should remain Playing after respawn"
+    );
     assert!(app.status_message.contains("Respawned at checkpoint"));
 }
 
@@ -1353,7 +1319,10 @@ fn checkpoint_state_persists_after_respawn() {
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
-    assert!(app.activated_torchlights.contains(&checkpoint), "Torchlights should persist after respawn");
+    assert!(
+        app.activated_torchlights.contains(&checkpoint),
+        "Torchlights should persist after respawn"
+    );
     assert_eq!(app.last_checkpoint, Some(checkpoint), "Checkpoint should persist after respawn");
 }
 
@@ -1390,11 +1359,7 @@ fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
     app.last_checkpoint = Some(checkpoint);
     app.activated_torchlights.insert(checkpoint);
     app.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
-    app.enemies.push(Enemy {
-        position: checkpoint,
-        hp: Some(30),
-        ..Enemy::new(checkpoint)
-    });
+    app.enemies.push(Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
@@ -1444,7 +1409,10 @@ fn level_3_enemies_have_no_hp() {
     assert_eq!(app.level, 3);
     if !app.enemies.is_empty() {
         for enemy in &app.enemies {
-            assert!(enemy.hp.is_none(), "Level 3 enemies should have hp: None (despawn on contact)");
+            assert!(
+                enemy.hp.is_none(),
+                "Level 3 enemies should have hp: None (despawn on contact)"
+            );
         }
     }
 }
@@ -1670,7 +1638,11 @@ fn nonfatal_effect_survives_oversized_first_delta() {
     assert_eq!(app.attack_effects.len(), 1);
     assert_eq!(app.game_state, GameState::Playing);
     tick(&mut app, ATTACK_EFFECT_MS * 10.0);
-    assert_eq!(app.attack_effects.len(), 1, "effect should survive oversized delta for at least one render");
+    assert_eq!(
+        app.attack_effects.len(),
+        1,
+        "effect should survive oversized delta for at least one render"
+    );
     assert!(app.attack_effects[0].is_complete());
 }
 
@@ -1764,8 +1736,13 @@ fn checkpoint_respawn_pushes_stacked_enemies_off_checkpoint() {
     assert_eq!(app.enemies.len(), 2);
     let on_checkpoint = app.enemies.iter().any(|e| e.position == checkpoint);
     assert!(!on_checkpoint, "no enemy should remain on checkpoint tile");
-    let positions: std::collections::HashSet<Position> = app.enemies.iter().map(|e| e.position).collect();
-    assert_eq!(positions.len(), app.enemies.len(), "enemies should not stack on the same tile after push");
+    let positions: std::collections::HashSet<Position> =
+        app.enemies.iter().map(|e| e.position).collect();
+    assert_eq!(
+        positions.len(),
+        app.enemies.len(),
+        "enemies should not stack on the same tile after push"
+    );
 }
 
 #[test]
@@ -1843,10 +1820,7 @@ fn enemy_chases_when_player_visible() {
     let old_pos = app.enemies[0].position;
     handle_key(&mut app, VirtualKeyCode::H, false);
 
-    assert_ne!(
-        app.enemies[0].position, old_pos,
-        "Enemy should move toward player when visible"
-    );
+    assert_ne!(app.enemies[0].position, old_pos, "Enemy should move toward player when visible");
 }
 
 #[test]
@@ -1885,9 +1859,12 @@ fn enemy_patrol_does_not_leave_room_over_many_turns() {
     for _ in 0..50 {
         handle_key(&mut app, VirtualKeyCode::L, false);
         assert!(
-            app.enemies[0].patrol_area.contains(app.enemies[0].position.x, app.enemies[0].position.y),
+            app.enemies[0]
+                .patrol_area
+                .contains(app.enemies[0].position.x, app.enemies[0].position.y),
             "Enemy left patrol area at ({}, {})",
-            app.enemies[0].position.x, app.enemies[0].position.y
+            app.enemies[0].position.x,
+            app.enemies[0].position.y
         );
     }
 }

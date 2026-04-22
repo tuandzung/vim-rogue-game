@@ -15,11 +15,7 @@ pub struct VisibilityMap {
 
 impl VisibilityMap {
     pub fn new(width: usize, height: usize) -> Self {
-        Self {
-            width,
-            height,
-            states: vec![VisibilityState::Hidden; width * height],
-        }
+        Self { width, height, states: vec![VisibilityState::Hidden; width * height] }
     }
 
     pub fn width(&self) -> usize {

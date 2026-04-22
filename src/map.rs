@@ -49,11 +49,7 @@ impl Map {
     }
 
     pub fn get_tile(&self, x: usize, y: usize) -> Tile {
-        if x >= self.width || y >= self.height {
-            Tile::Wall
-        } else {
-            self.grid[y][x]
-        }
+        if x >= self.width || y >= self.height { Tile::Wall } else { self.grid[y][x] }
     }
 
     pub fn set_tile(&mut self, x: usize, y: usize, tile: Tile) {

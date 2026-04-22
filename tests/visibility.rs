@@ -67,17 +67,11 @@ fn explored_persists() {
     assert_eq!(vis.get(Position { x: 41, y: 20 }), VisibilityState::Visible);
 
     vis.demote_visible_to_explored();
-    assert_eq!(
-        vis.get(Position { x: 41, y: 20 }),
-        VisibilityState::Explored
-    );
+    assert_eq!(vis.get(Position { x: 41, y: 20 }), VisibilityState::Explored);
 
     vis.compute_fov(center2, 5, all_transparent);
 
-    assert_eq!(
-        vis.get(Position { x: 41, y: 20 }),
-        VisibilityState::Explored
-    );
+    assert_eq!(vis.get(Position { x: 41, y: 20 }), VisibilityState::Explored);
 
     assert_eq!(vis.get(center2), VisibilityState::Visible);
 }
@@ -90,10 +84,7 @@ fn reset_clears_all() {
     vis.compute_fov(center, 10, all_transparent);
     vis.demote_visible_to_explored();
 
-    assert_eq!(
-        vis.get(Position { x: 41, y: 20 }),
-        VisibilityState::Explored
-    );
+    assert_eq!(vis.get(Position { x: 41, y: 20 }), VisibilityState::Explored);
 
     vis.reset();
 
@@ -114,10 +105,7 @@ fn out_of_bounds_returns_hidden() {
 
     assert_eq!(vis.get(Position { x: 80, y: 0 }), VisibilityState::Hidden);
     assert_eq!(vis.get(Position { x: 0, y: 40 }), VisibilityState::Hidden);
-    assert_eq!(
-        vis.get(Position { x: 100, y: 100 }),
-        VisibilityState::Hidden
-    );
+    assert_eq!(vis.get(Position { x: 100, y: 100 }), VisibilityState::Hidden);
 }
 
 #[test]
@@ -246,10 +234,7 @@ fn multiple_sequential_fov_updates_leave_old_tiles_explored() {
         vis.compute_fov(Position { x, y: 10 }, 3, all_transparent);
     }
 
-    assert_eq!(
-        vis.get(Position { x: 10, y: 10 }),
-        VisibilityState::Explored
-    );
+    assert_eq!(vis.get(Position { x: 10, y: 10 }), VisibilityState::Explored);
     assert_eq!(vis.get(Position { x: 15, y: 10 }), VisibilityState::Visible);
     assert_eq!(vis.get(Position { x: 18, y: 10 }), VisibilityState::Visible);
     assert_eq!(vis.get(Position { x: 6, y: 10 }), VisibilityState::Hidden);
@@ -391,10 +376,7 @@ fn wall_at_exact_radius_is_visible_but_tiles_behind_it_are_hidden() {
 fn multi_source_fov_unions_visibility_from_two_sources() {
     let mut vis = VisibilityMap::new(40, 40);
     vis.compute_multi_fov(
-        &[
-            (Position { x: 10, y: 10 }, 6),
-            (Position { x: 30, y: 10 }, 6),
-        ],
+        &[(Position { x: 10, y: 10 }, 6), (Position { x: 30, y: 10 }, 6)],
         all_transparent,
     );
 
@@ -431,10 +413,7 @@ fn torchlight_fov_persists_when_player_moves_away() {
 fn multi_source_fov_respects_walls() {
     let wall = Position { x: 13, y: 10 };
     let mut vis = VisibilityMap::new(30, 20);
-    vis.compute_multi_fov(
-        &[(Position { x: 10, y: 10 }, 6)],
-        with_walls(&[wall]),
-    );
+    vis.compute_multi_fov(&[(Position { x: 10, y: 10 }, 6)], with_walls(&[wall]));
 
     assert_eq!(vis.get(wall), VisibilityState::Visible);
     assert_eq!(vis.get(Position { x: 14, y: 10 }), VisibilityState::Hidden);

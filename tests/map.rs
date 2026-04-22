@@ -122,12 +122,7 @@ fn map_zone_at_zone5() {
 #[test]
 fn map_has_carved_corridors() {
     let map = Map::new();
-    let carved_tiles = map
-        .grid
-        .iter()
-        .flatten()
-        .filter(|tile| **tile != Tile::Wall)
-        .count();
+    let carved_tiles = map.grid.iter().flatten().filter(|tile| **tile != Tile::Wall).count();
 
     assert!(carved_tiles > 0);
 }
@@ -203,12 +198,7 @@ fn map_level_2_has_obstacles_in_earlier_zones() {
 #[test]
 fn map_level_2_has_carved_corridors() {
     let map = Map::level(2);
-    let carved = map
-        .grid
-        .iter()
-        .flatten()
-        .filter(|t| **t != Tile::Wall)
-        .count();
+    let carved = map.grid.iter().flatten().filter(|t| **t != Tile::Wall).count();
 
     assert!(carved > 50);
 }
@@ -217,18 +207,8 @@ fn map_level_2_has_carved_corridors() {
 fn map_level_2_has_more_obstacles_than_level_1() {
     let level1 = Map::level(1);
     let level2 = Map::level(2);
-    let obs1 = level1
-        .grid
-        .iter()
-        .flatten()
-        .filter(|t| **t == Tile::Obstacle)
-        .count();
-    let obs2 = level2
-        .grid
-        .iter()
-        .flatten()
-        .filter(|t| **t == Tile::Obstacle)
-        .count();
+    let obs1 = level1.grid.iter().flatten().filter(|t| **t == Tile::Obstacle).count();
+    let obs2 = level2.grid.iter().flatten().filter(|t| **t == Tile::Obstacle).count();
 
     assert!(obs2 > obs1);
 }
@@ -385,12 +365,7 @@ fn level_4_dimensions() {
 #[test]
 fn level_4_has_torchlights() {
     let map = Map::level(4);
-    let torchlight_count = map
-        .grid
-        .iter()
-        .flatten()
-        .filter(|t| **t == Tile::Torchlight)
-        .count();
+    let torchlight_count = map.grid.iter().flatten().filter(|t| **t == Tile::Torchlight).count();
     assert!(
         torchlight_count >= 2,
         "Level 4 should have at least 2 torchlights, found {}",
@@ -453,10 +428,7 @@ fn level_4_reachable() {
                 let nx = nx as usize;
                 let ny = ny as usize;
 
-                if nx < map.width
-                    && ny < map.height
-                    && !visited[ny][nx]
-                    && map.is_passable(nx, ny)
+                if nx < map.width && ny < map.height && !visited[ny][nx] && map.is_passable(nx, ny)
                 {
                     visited[ny][nx] = true;
                     queue.push_back(Position { x: nx, y: ny });
@@ -474,12 +446,7 @@ fn level_4_torchlights_are_passable() {
     for y in 0..map.height {
         for x in 0..map.width {
             if map.get_tile(x, y) == Tile::Torchlight {
-                assert!(
-                    map.is_passable(x, y),
-                    "Torchlight at ({},{}) should be passable",
-                    x,
-                    y
-                );
+                assert!(map.is_passable(x, y), "Torchlight at ({},{}) should be passable", x, y);
             }
         }
     }
@@ -488,12 +455,7 @@ fn level_4_torchlights_are_passable() {
 #[test]
 fn level_3_has_torchlights() {
     let map = Map::level(3);
-    let torchlight_count = map
-        .grid
-        .iter()
-        .flatten()
-        .filter(|t| **t == Tile::Torchlight)
-        .count();
+    let torchlight_count = map.grid.iter().flatten().filter(|t| **t == Tile::Torchlight).count();
     assert!(
         torchlight_count >= 1,
         "Level 3 should have at least 1 torchlight, found {}",
@@ -507,12 +469,7 @@ fn level_3_torchlights_are_passable() {
     for y in 0..map.height {
         for x in 0..map.width {
             if map.get_tile(x, y) == Tile::Torchlight {
-                assert!(
-                    map.is_passable(x, y),
-                    "Torchlight at ({},{}) should be passable",
-                    x,
-                    y
-                );
+                assert!(map.is_passable(x, y), "Torchlight at ({},{}) should be passable", x, y);
             }
         }
     }
@@ -529,14 +486,12 @@ fn level_4_no_torchlight_rooms_have_at_least_two_enemies() {
     ];
 
     for &((x_min, x_max), (y_min, y_max), name) in rooms_without_torchlights {
-        let count = map.enemy_spawns.iter().filter(|pos| {
-            pos.x >= x_min && pos.x <= x_max && pos.y >= y_min && pos.y <= y_max
-        }).count();
-        assert!(
-            count >= 2,
-            "{} should have at least 2 enemies, found {}",
-            name, count
-        );
+        let count = map
+            .enemy_spawns
+            .iter()
+            .filter(|pos| pos.x >= x_min && pos.x <= x_max && pos.y >= y_min && pos.y <= y_max)
+            .count();
+        assert!(count >= 2, "{} should have at least 2 enemies, found {}", name, count);
     }
 }
 
@@ -544,7 +499,8 @@ fn level_4_no_torchlight_rooms_have_at_least_two_enemies() {
 fn level_4_patrol_areas_match_spawn_count() {
     let map = Map::level(4);
     assert_eq!(
-        map.enemy_spawns.len(), map.enemy_patrol_areas.len(),
+        map.enemy_spawns.len(),
+        map.enemy_patrol_areas.len(),
         "Patrol areas should match spawn count"
     );
 }
@@ -557,7 +513,12 @@ fn level_4_spawns_are_within_their_patrol_areas() {
         assert!(
             area.contains(spawn.x, spawn.y),
             "Spawn at ({}, {}) not within its patrol area ({},{})-({},{})",
-            spawn.x, spawn.y, area.min_x, area.min_y, area.max_x, area.max_y
+            spawn.x,
+            spawn.y,
+            area.min_x,
+            area.min_y,
+            area.max_x,
+            area.max_y
         );
     }
 }
@@ -565,17 +526,14 @@ fn level_4_spawns_are_within_their_patrol_areas() {
 #[test]
 fn level_4_room_2_has_torchlight() {
     let map = Map::level(4);
-    let has_torchlight = (50..=63).any(|x| {
-        (2..=9).any(|y| map.get_tile(x, y) == Tile::Torchlight)
-    });
+    let has_torchlight = (50..=63).any(|x| (2..=9).any(|y| map.get_tile(x, y) == Tile::Torchlight));
     assert!(has_torchlight, "Room 2 (x:50-63, y:2-9) should contain a torchlight checkpoint");
 }
 
 #[test]
 fn level_4_room_4_has_torchlight() {
     let map = Map::level(4);
-    let has_torchlight = (8..=21).any(|x| {
-        (30..=37).any(|y| map.get_tile(x, y) == Tile::Torchlight)
-    });
+    let has_torchlight =
+        (8..=21).any(|x| (30..=37).any(|y| map.get_tile(x, y) == Tile::Torchlight));
     assert!(has_torchlight, "Room 4 (x:8-21, y:30-37) should contain a torchlight checkpoint");
 }

@@ -224,12 +224,7 @@ pub struct RenderCell {
 
 impl RenderCell {
     pub fn new(glyph: char, fg: (u8, u8, u8), bg: (u8, u8, u8)) -> Self {
-        Self {
-            glyph,
-            fg,
-            bg,
-            blink: false,
-        }
+        Self { glyph, fg, bg, blink: false }
     }
 
     pub fn with_blink(mut self) -> Self {
@@ -248,11 +243,7 @@ pub struct RenderGrid {
 
 impl RenderGrid {
     pub fn new(width: usize, height: usize, default: RenderCell) -> Self {
-        Self {
-            cells: vec![vec![default; width]; height],
-            width,
-            height,
-        }
+        Self { cells: vec![vec![default; width]; height], width, height }
     }
 
     pub fn width(&self) -> usize {
@@ -298,10 +289,7 @@ pub struct ViewModel {
 
 impl ViewModel {
     pub fn new(screen: ScreenModel) -> Self {
-        Self {
-            screen,
-            frame_number: 0,
-        }
+        Self { screen, frame_number: 0 }
     }
 
     pub fn advance_frame(&mut self) {

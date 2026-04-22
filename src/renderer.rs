@@ -158,9 +158,8 @@ fn render_map_viewport(ctx: &mut BTerm, app: &App, map_width: i32) {
                     continue;
                 }
 
-                if let Some(trail_idx) = trail_positions
-                    .iter()
-                    .position(|p| p.x == map_x && p.y == map_y)
+                if let Some(trail_idx) =
+                    trail_positions.iter().position(|p| p.x == map_x && p.y == map_y)
                 {
                     let (glyph, color) = trail_color(trail_idx, trail_positions.len());
                     ctx.print_color(draw_x, draw_y, color, black, glyph.to_string());
@@ -203,8 +202,7 @@ pub fn visual_player_position(app: &App) -> Position {
 
     Position {
         x: x.round().clamp(0.0, app.map.width.saturating_sub(1) as f64) as usize,
-        y: y.round()
-            .clamp(0.0, app.map.height.saturating_sub(1) as f64) as usize,
+        y: y.round().clamp(0.0, app.map.height.saturating_sub(1) as f64) as usize,
     }
 }
 
@@ -223,9 +221,7 @@ pub fn visual_enemy_positions(app: &App) -> Vec<Position> {
 
             Position {
                 x: x.round().clamp(0.0, app.map.width.saturating_sub(1) as f64) as usize,
-                y: y.round()
-                    .clamp(0.0, app.map.height.saturating_sub(1) as f64)
-                    as usize,
+                y: y.round().clamp(0.0, app.map.height.saturating_sub(1) as f64) as usize,
             }
         })
         .collect()
@@ -258,29 +254,11 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     ctx.print_color(sidebar_x, y, zone_color, black, zone.title());
     y += 2;
 
-    ctx.print_color(
-        sidebar_x,
-        y,
-        white,
-        black,
-        format!("Level: {} / {}", app.level, TOTAL_LEVELS),
-    );
+    ctx.print_color(sidebar_x, y, white, black, format!("Level: {} / {}", app.level, TOTAL_LEVELS));
     y += 1;
-    ctx.print_color(
-        sidebar_x,
-        y,
-        white,
-        black,
-        format!("Time:  {}", format_duration(app.elapsed)),
-    );
+    ctx.print_color(sidebar_x, y, white, black, format!("Time:  {}", format_duration(app.elapsed)));
     y += 1;
-    ctx.print_color(
-        sidebar_x,
-        y,
-        white,
-        black,
-        format!("Moves: {}", app.motion_count),
-    );
+    ctx.print_color(sidebar_x, y, white, black, format!("Moves: {}", app.motion_count));
     y += 1;
     let hp_ratio = app.hp as f32 / MAX_HP as f32;
     let hp_filled = (hp_ratio * 10.0).round() as usize;
@@ -306,13 +284,7 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     bar.push(']');
     ctx.print_color(sidebar_x, y, hp_color, black, &bar);
     y += 1;
-    ctx.print_color(
-        sidebar_x,
-        y,
-        white,
-        black,
-        format!("Unique: {}", app.unique_motions()),
-    );
+    ctx.print_color(sidebar_x, y, white, black, format!("Unique: {}", app.unique_motions()));
     y += 2;
 
     for (zone, motions) in phase_definitions() {
@@ -329,12 +301,7 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
             let used = app.player.used_motions.contains(motion);
             let marker = if used { "✓" } else { "·" };
             let color = if used { green } else { dark_gray };
-            let label = format!(
-                "{} {:<7} {}",
-                marker,
-                motion.key_label(),
-                motion.display_name()
-            );
+            let label = format!("{} {:<7} {}", marker, motion.key_label(), motion.display_name());
             ctx.print_color(sidebar_x, y, color, black, &label);
             y += 1;
         }
@@ -384,10 +351,7 @@ pub fn minimap_map_coords(mx: usize, my: usize) -> (usize, usize) {
 pub fn minimap_player_pos(player_x: usize, player_y: usize) -> (i32, i32) {
     let mm_x = (player_x as f64 * MINIMAP_WIDTH as f64 / 80.0) as i32;
     let mm_y = (player_y as f64 * MINIMAP_HEIGHT as f64 / 40.0) as i32;
-    (
-        mm_x.min(MINIMAP_WIDTH as i32 - 1),
-        mm_y.min(MINIMAP_HEIGHT as i32 - 1),
-    )
+    (mm_x.min(MINIMAP_WIDTH as i32 - 1), mm_y.min(MINIMAP_HEIGHT as i32 - 1))
 }
 
 fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut i32) {
@@ -443,11 +407,8 @@ fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut 
                 Tile::Torchlight => ('i', RGB::named(YELLOW)),
             };
 
-            let final_color = if vis == VisibilityState::Explored {
-                dim_color(color, 0.5)
-            } else {
-                color
-            };
+            let final_color =
+                if vis == VisibilityState::Explored { dim_color(color, 0.5) } else { color };
 
             ctx.print_color(
                 x + 1 + mx as i32,
@@ -559,13 +520,7 @@ fn render_title(ctx: &mut BTerm) {
     ctx.print_color(40, y, cyan, black, "dd");
     y += 2;
 
-    ctx.print_color(
-        center_x(36),
-        y,
-        gray,
-        black,
-        "Navigate from @ to > across five zones.",
-    );
+    ctx.print_color(center_x(36), y, gray, black, "Navigate from @ to > across five zones.");
     y += 2;
     let prompt = "► Press any key to start ◄";
     ctx.print_color(center_x(prompt.len()), y, yellow, black, prompt);
@@ -619,10 +574,7 @@ fn render_win(ctx: &mut BTerm, app: &App) {
 
     for (zone, motions) in phase_definitions() {
         let total = motions.len();
-        let discovered = motions
-            .iter()
-            .filter(|m| app.discovered_motions.contains(m))
-            .count();
+        let discovered = motions.iter().filter(|m| app.discovered_motions.contains(m)).count();
         let bar_width = 8;
         let filled = if total == 0 {
             0
@@ -634,14 +586,7 @@ fn render_win(ctx: &mut BTerm, app: &App) {
         let complete = discovered == total;
         let check = if complete { " ✓" } else { "" };
         let zone_color = zone_accent_color(zone);
-        let line = format!(
-            "  {}  [{}] {}/{}{}",
-            zone.title(),
-            bar,
-            discovered,
-            total,
-            check
-        );
+        let line = format!("  {}  [{}] {}/{}{}", zone.title(), bar, discovered, total, check);
         ctx.print_color(center_x(line.len()), y, zone_color, black, &line);
         y += 1;
     }
@@ -748,13 +693,7 @@ fn render_pause_overlay(ctx: &mut BTerm, app: &App) {
     for x in (left + 1)..(left + box_width - 1) {
         ctx.print_color(x, top + box_height - 1, white, box_bg, "─");
     }
-    ctx.print_color(
-        left + box_width - 1,
-        top + box_height - 1,
-        white,
-        box_bg,
-        "┘",
-    );
+    ctx.print_color(left + box_width - 1, top + box_height - 1, white, box_bg, "┘");
 
     let header = "P  A  U  S  E";
     ctx.print_color(center_x(header.len()), top + 2, cyan, box_bg, header);
@@ -780,21 +719,9 @@ fn render_pause_overlay(ctx: &mut BTerm, app: &App) {
     }
 
     let nav_hint = "↑↓ j/k navigate  Enter select";
-    ctx.print_color(
-        text_x,
-        top + 8,
-        dark_gray,
-        box_bg,
-        format!("{nav_hint:<text_width$}"),
-    );
+    ctx.print_color(text_x, top + 8, dark_gray, box_bg, format!("{nav_hint:<text_width$}"));
     let esc_hint = "Esc resume";
-    ctx.print_color(
-        text_x,
-        top + 9,
-        dark_gray,
-        box_bg,
-        format!("{esc_hint:<text_width$}"),
-    );
+    ctx.print_color(text_x, top + 9, dark_gray, box_bg, format!("{esc_hint:<text_width$}"));
 }
 
 pub fn center_x(text_len: usize) -> i32 {
@@ -810,11 +737,7 @@ pub fn center_y_for(screen_height: u32, content_height: usize) -> i32 {
 }
 
 pub fn rgb8(r: u8, g: u8, b: u8) -> RGB {
-    RGB {
-        r: r as f32 / 255.0,
-        g: g as f32 / 255.0,
-        b: b as f32 / 255.0,
-    }
+    RGB { r: r as f32 / 255.0, g: g as f32 / 255.0, b: b as f32 / 255.0 }
 }
 
 pub fn dim_color(color: RGB, factor: f32) -> RGB {
@@ -844,11 +767,7 @@ pub fn tile_fog_appearance(
         Tile::Torchlight => ('i', RGB::named(YELLOW)),
     };
 
-    let fg = if vis == VisibilityState::Explored {
-        dim_color(color, 0.5)
-    } else {
-        color
-    };
+    let fg = if vis == VisibilityState::Explored { dim_color(color, 0.5) } else { color };
 
     Some((glyph, fg))
 }
@@ -863,12 +782,8 @@ pub fn format_duration(duration: std::time::Duration) -> String {
 pub fn phase_definitions() -> Vec<(Zone, &'static [VimMotion])> {
     const ZONE1: &[VimMotion] = &[VimMotion::H, VimMotion::J, VimMotion::K, VimMotion::L];
     const ZONE2: &[VimMotion] = &[VimMotion::W, VimMotion::B];
-    const ZONE3: &[VimMotion] = &[
-        VimMotion::Zero,
-        VimMotion::Dollar,
-        VimMotion::G,
-        VimMotion::GotoLine,
-    ];
+    const ZONE3: &[VimMotion] =
+        &[VimMotion::Zero, VimMotion::Dollar, VimMotion::G, VimMotion::GotoLine];
     const ZONE4: &[VimMotion] = &[VimMotion::Find, VimMotion::Till];
     const ZONE5: &[VimMotion] = &[VimMotion::DeleteLine];
 
@@ -943,22 +858,14 @@ pub fn exit_glow(elapsed: std::time::Duration) -> (char, RGB) {
 }
 
 pub fn trail_color(index: usize, total: usize) -> (char, RGB) {
-    let fade = if total <= 1 {
-        1.0
-    } else {
-        1.0 - (index as f64 / (total as f64 - 1.0)) * 0.7
-    };
+    let fade = if total <= 1 { 1.0 } else { 1.0 - (index as f64 / (total as f64 - 1.0)) * 0.7 };
     let g = (230.0 * fade) as u8;
     ('·', rgb8(60, g, 60))
 }
 
 pub fn obstacle_display(elapsed: std::time::Duration) -> (char, RGB) {
     let visible = (elapsed.as_millis() % 1000) < 500;
-    if visible {
-        ('▒', rgb8(255, 100, 100))
-    } else {
-        (' ', RGB::named(BLACK))
-    }
+    if visible { ('▒', rgb8(255, 100, 100)) } else { (' ', RGB::named(BLACK)) }
 }
 
 pub fn attack_effect_display(kind: AttackEffectKind, progress: f64) -> (char, RGB) {

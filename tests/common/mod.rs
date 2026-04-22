@@ -14,10 +14,7 @@ pub fn test_map(width: usize, height: usize) -> Map {
         width,
         height,
         start: Position { x: 0, y: 0 },
-        exit: Position {
-            x: width - 1,
-            y: height - 1,
-        },
+        exit: Position { x: width - 1, y: height - 1 },
         enemy_spawns: vec![],
         enemy_patrol_areas: vec![],
     }
@@ -92,10 +89,7 @@ pub fn approx_eq(a: f32, b: f32) -> bool {
 }
 
 pub fn assert_approx_eq(actual: f64, expected: f64) {
-    assert!(
-        (actual - expected).abs() < 1e-9,
-        "expected {expected}, got {actual}"
-    );
+    assert!((actual - expected).abs() < 1e-9, "expected {expected}, got {actual}");
 }
 
 pub fn tick_timer(timer: &mut AnimationTimer, clock: &mut TestClock, delta_ms: f64) {

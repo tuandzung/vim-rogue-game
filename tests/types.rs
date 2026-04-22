@@ -50,13 +50,7 @@ fn vim_motion_key_labels() {
 
 #[test]
 fn zone_titles_exist() {
-    let zones = [
-        Zone::Zone1,
-        Zone::Zone2,
-        Zone::Zone3,
-        Zone::Zone4,
-        Zone::Zone5,
-    ];
+    let zones = [Zone::Zone1, Zone::Zone2, Zone::Zone3, Zone::Zone4, Zone::Zone5];
 
     for zone in zones {
         assert!(!zone.title().trim().is_empty());

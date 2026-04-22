@@ -3,11 +3,16 @@ use std::time::Instant;
 
 use bracket_lib::prelude::VirtualKeyCode;
 
-use crate::animation::{AnimationState, AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS};
+use crate::animation::{
+    AnimationState, AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS,
+};
 use crate::audio::SoundEffect;
 use crate::map::Map;
 use crate::player::Player;
-use crate::types::{App, Enemy, FOV_RADIUS, GameState, MAX_HP, PauseOption, PendingInput, PatrolArea, Tile, TORCHLIGHT_FOV_RADIUS, VimMotion};
+use crate::types::{
+    App, Enemy, FOV_RADIUS, GameState, MAX_HP, PatrolArea, PauseOption, PendingInput,
+    TORCHLIGHT_FOV_RADIUS, Tile, VimMotion,
+};
 use crate::visibility::VisibilityMap;
 
 impl Default for App {
@@ -77,19 +82,15 @@ impl App {
         let map = &self.map;
 
         self.visibility.demote_visible_to_explored();
-        self.visibility
-            .compute_fov(player_position, FOV_RADIUS, |pos| {
-                matches!(
-                    map.get_tile(pos.x, pos.y),
-                    Tile::Floor | Tile::Exit | Tile::Obstacle | Tile::Torchlight
-                )
-            });
+        self.visibility.compute_fov(player_position, FOV_RADIUS, |pos| {
+            matches!(
+                map.get_tile(pos.x, pos.y),
+                Tile::Floor | Tile::Exit | Tile::Obstacle | Tile::Torchlight
+            )
+        });
 
-        let torchlight_sources: Vec<(crate::types::Position, i32)> = self
-            .activated_torchlights
-            .iter()
-            .map(|&pos| (pos, TORCHLIGHT_FOV_RADIUS))
-            .collect();
+        let torchlight_sources: Vec<(crate::types::Position, i32)> =
+            self.activated_torchlights.iter().map(|&pos| (pos, TORCHLIGHT_FOV_RADIUS)).collect();
 
         if !torchlight_sources.is_empty() {
             let map_ref = &self.map;
@@ -109,7 +110,11 @@ impl App {
             .iter()
             .enumerate()
             .map(|(i, &pos)| {
-                let patrol_area = self.map.enemy_patrol_areas.get(i).copied()
+                let patrol_area = self
+                    .map
+                    .enemy_patrol_areas
+                    .get(i)
+                    .copied()
                     .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
                 if self.level == 4 {
                     Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
@@ -209,8 +214,7 @@ pub fn tick(app: &mut App, delta_ms: f64) {
         for (_, animation) in &mut app.enemy_animations {
             animation.update(delta_ms);
         }
-        app.enemy_animations
-            .retain(|(_, animation)| !animation.is_complete());
+        app.enemy_animations.retain(|(_, animation)| !animation.is_complete());
 
         for effect in &mut app.attack_effects {
             effect.update(delta_ms);
@@ -228,8 +232,7 @@ pub fn tick(app: &mut App, delta_ms: f64) {
     for (_, animation) in &mut app.enemy_animations {
         animation.update(delta_ms);
     }
-    app.enemy_animations
-        .retain(|(_, animation)| !animation.is_complete());
+    app.enemy_animations.retain(|(_, animation)| !animation.is_complete());
 
     app.attack_effects.retain(|e| !e.is_complete());
     for effect in &mut app.attack_effects {
@@ -436,13 +439,8 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
     let mut new_positions: Vec<Option<crate::types::Position>> = vec![None; app.enemies.len()];
     let mut claimed: HashSet<crate::types::Position> = HashSet::new();
 
-    let enemies_on_pos: Vec<usize> = app
-        .enemies
-        .iter()
-        .enumerate()
-        .filter(|(_, e)| e.position == pos)
-        .map(|(i, _)| i)
-        .collect();
+    let enemies_on_pos: Vec<usize> =
+        app.enemies.iter().enumerate().filter(|(_, e)| e.position == pos).map(|(i, _)| i).collect();
 
     if enemies_on_pos.is_empty() {
         return;
@@ -454,9 +452,7 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
     for (dx, dy) in &directions {
         let nx = (pos.x as isize + dx) as usize;
         let ny = (pos.y as isize + dy) as usize;
-        if nx < app.map.width && ny < app.map.height
-            && app.map.is_passable(nx, ny)
-        {
+        if nx < app.map.width && ny < app.map.height && app.map.is_passable(nx, ny) {
             let neighbor = crate::types::Position { x: nx, y: ny };
             if visited.insert(neighbor) {
                 bfs.push_back(neighbor);
@@ -486,9 +482,7 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
         for (dx, dy) in &directions {
             let nx = (candidate.x as isize + dx) as usize;
             let ny = (candidate.y as isize + dy) as usize;
-            if nx < app.map.width && ny < app.map.height
-                && app.map.is_passable(nx, ny)
-            {
+            if nx < app.map.width && ny < app.map.height && app.map.is_passable(nx, ny) {
                 let neighbor = crate::types::Position { x: nx, y: ny };
                 if visited.insert(neighbor) {
                     bfs.push_back(neighbor);
@@ -543,13 +537,13 @@ fn enemies_step(app: &mut App) {
     let player_pos = app.player.position;
     let mut remaining_enemies = Vec::with_capacity(app.enemies.len());
     let mut next_animations = Vec::new();
-    for (old_index, ((old_position, old_visual_position), enemy)) in old_positions
-        .into_iter()
-        .zip(old_visual_positions)
-        .zip(app.enemies.drain(..))
-        .enumerate()
+    for (old_index, ((old_position, old_visual_position), enemy)) in
+        old_positions.into_iter().zip(old_visual_positions).zip(app.enemies.drain(..)).enumerate()
     {
-        if enemy.position == player_pos && enemy.stunned_turns == 0 && app.game_state == GameState::Playing {
+        if enemy.position == player_pos
+            && enemy.stunned_turns == 0
+            && app.game_state == GameState::Playing
+        {
             app.audio.play(SoundEffect::Damage);
             app.hp -= 10;
             app.attack_effects.push(AttackEffect::new(
@@ -654,15 +648,10 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
     }
 
     if !activated {
-        app.status_message
-            .push_str(" No valid destination from here.");
+        app.status_message.push_str(" No valid destination from here.");
     }
 
-    if app
-        .map
-        .get_tile(app.player.position.x, app.player.position.y)
-        == Tile::Torchlight
-    {
+    if app.map.get_tile(app.player.position.x, app.player.position.y) == Tile::Torchlight {
         let torch_pos = app.player.position;
         if !app.activated_torchlights.contains(&torch_pos) {
             app.activated_torchlights.insert(torch_pos);
@@ -671,11 +660,7 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
         }
     }
 
-    if app
-        .map
-        .get_tile(app.player.position.x, app.player.position.y)
-        == Tile::Exit
-    {
+    if app.map.get_tile(app.player.position.x, app.player.position.y) == Tile::Exit {
         if app.level < crate::types::TOTAL_LEVELS {
             app.audio.play(SoundEffect::LevelComplete);
             app.advance_level();
@@ -709,10 +694,8 @@ fn handle_melee_attack(app: &mut App) {
     let target_x = (app.player.position.x as isize + dx) as usize;
     let target_y = (app.player.position.y as isize + dy) as usize;
 
-    let enemy_index = app
-        .enemies
-        .iter()
-        .position(|e| e.position.x == target_x && e.position.y == target_y);
+    let enemy_index =
+        app.enemies.iter().position(|e| e.position.x == target_x && e.position.y == target_y);
 
     match enemy_index {
         Some(idx) => {

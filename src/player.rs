@@ -11,11 +11,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(position: Position) -> Self {
-        Self {
-            position,
-            used_motions: HashSet::new(),
-            last_direction: None,
-        }
+        Self { position, used_motions: HashSet::new(), last_direction: None }
     }
 
     pub fn handle_motion(
@@ -69,10 +65,7 @@ impl Player {
             return false;
         }
 
-        let next = Position {
-            x: next_x as usize,
-            y: next_y as usize,
-        };
+        let next = Position { x: next_x as usize, y: next_y as usize };
 
         if map.is_passable(next.x, next.y) {
             self.position = next;

@@ -18,10 +18,7 @@ pub struct RealClock {
 
 impl RealClock {
     pub fn new() -> Self {
-        Self {
-            start: Instant::now(),
-            offset_ms: 0.0,
-        }
+        Self { start: Instant::now(), offset_ms: 0.0 }
     }
 }
 
@@ -78,10 +75,7 @@ pub struct AnimationTimer {
 
 impl AnimationTimer {
     pub fn new(duration_ms: f64) -> Self {
-        Self {
-            duration_ms: duration_ms.max(0.0),
-            elapsed_ms: 0.0,
-        }
+        Self { duration_ms: duration_ms.max(0.0), elapsed_ms: 0.0 }
     }
 
     pub fn progress(&self) -> f64 {
@@ -175,12 +169,7 @@ pub struct AttackEffect {
 
 impl AttackEffect {
     pub fn new(kind: AttackEffectKind, x: usize, y: usize) -> Self {
-        Self {
-            kind,
-            x,
-            y,
-            timer: AnimationTimer::new(ATTACK_EFFECT_MS),
-        }
+        Self { kind, x, y, timer: AnimationTimer::new(ATTACK_EFFECT_MS) }
     }
 
     pub fn update(&mut self, delta_ms: f64) {

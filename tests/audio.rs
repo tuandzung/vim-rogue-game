@@ -181,14 +181,8 @@ fn audio_manager_same_sound_effect_can_be_played_rapidly() {
 
 #[test]
 fn sound_effect_names_are_unique() {
-    let mut names = vec![
-        "Movement",
-        "ZoneEntry",
-        "Victory",
-        "Damage",
-        "EnemyStep",
-        "LevelComplete",
-    ];
+    let mut names =
+        vec!["Movement", "ZoneEntry", "Victory", "Damage", "EnemyStep", "LevelComplete"];
 
     names.sort_unstable();
     names.dedup();
