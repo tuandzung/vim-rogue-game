@@ -92,13 +92,23 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: List artifacts
         run: find artifacts -type f | sort
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          # Strip leading 'v' from tag to match CHANGELOG format ([X.Y.Z])
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Extract the section for this version: from "## [VERSION]" to the next "## [" or EOF
+          sed -n "/^## \[${VERSION}\]/,/^## \[/{/^## \[/!p}" CHANGELOG.md > release_body.md
+          echo "Extracted changelog for ${VERSION}:"
+          cat release_body.md
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
-          generate_release_notes: true
+          body_path: release_body.md
