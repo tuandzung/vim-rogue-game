@@ -324,6 +324,46 @@ pub struct Enemy {
     pub patrol_area: PatrolArea,
 }
 
+#[cfg(debug_assertions)]
+#[derive(Debug, Clone)]
+pub struct CheatBuffer {
+    buf: [Option<char>; 2],
+    len: usize,
+}
+
+#[cfg(debug_assertions)]
+impl CheatBuffer {
+    pub fn new() -> Self {
+        Self { buf: [None; 2], len: 0 }
+    }
+
+    pub fn push(&mut self, ch: char) {
+        if self.len < 2 {
+            self.buf[self.len] = Some(ch);
+            self.len += 1;
+        } else {
+            self.buf[0] = self.buf[1];
+            self.buf[1] = Some(ch);
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.buf = [None; 2];
+        self.len = 0;
+    }
+
+    pub fn chars(&self) -> (Option<char>, Option<char>) {
+        (self.buf[0], self.buf[1])
+    }
+}
+
+#[cfg(debug_assertions)]
+impl Default for CheatBuffer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct App {
     pub map: Map,
     pub visibility: VisibilityMap,
@@ -350,6 +390,8 @@ pub struct App {
     pub audio: AudioManager,
     pub last_checkpoint: Option<Position>,
     pub activated_torchlights: HashSet<Position>,
-    pub cheat_buffer: String,
+    #[cfg(debug_assertions)]
+    pub cheat_buf: CheatBuffer,
+    #[cfg(debug_assertions)]
     pub cheat_god_mode: bool,
 }

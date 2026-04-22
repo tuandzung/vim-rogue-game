@@ -1870,6 +1870,7 @@ fn enemy_patrol_does_not_leave_room_over_many_turns() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_iv_advances_to_next_level() {
     let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
     assert_eq!(app.level, 1);
@@ -1880,6 +1881,7 @@ fn cheat_iv_advances_to_next_level() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_iv_on_last_level_triggers_win() {
     let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
     app.level = TOTAL_LEVELS;
@@ -1890,6 +1892,7 @@ fn cheat_iv_on_last_level_triggers_win() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_im_toggles_god_mode() {
     let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
     assert!(!app.cheat_god_mode);
@@ -1904,6 +1907,7 @@ fn cheat_im_toggles_god_mode() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_god_mode_prevents_damage() {
     let mut app = level4_app_with_enemy(Position { x: 5, y: 5 }, None);
     let hp_before = app.hp;
@@ -1916,6 +1920,7 @@ fn cheat_god_mode_prevents_damage() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_ie_kills_all_enemies() {
     let mut app = level4_app_with_enemy(Position { x: 10, y: 10 }, Some(30));
     app.enemies.push(Enemy {
@@ -1932,6 +1937,7 @@ fn cheat_ie_kills_all_enemies() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_ip_toggles_noclip() {
     let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
     assert!(!app.player.noclip);
@@ -1946,6 +1952,7 @@ fn cheat_ip_toggles_noclip() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_noclip_allows_wall_walking() {
     let mut map = test_map(10, 10);
     map.set_tile(6, 5, Tile::Wall);
@@ -1959,6 +1966,7 @@ fn cheat_noclip_allows_wall_walking() {
 }
 
 #[test]
+#[cfg(debug_assertions)]
 fn cheat_buffer_resets_on_non_char_key() {
     let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
     handle_key(&mut app, VirtualKeyCode::I, false);

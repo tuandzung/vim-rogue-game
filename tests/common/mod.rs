@@ -7,6 +7,9 @@ use vim_quake::player::Player;
 use vim_quake::types::*;
 use vim_quake::visibility::VisibilityMap;
 
+#[cfg(debug_assertions)]
+use vim_quake::types::CheatBuffer;
+
 pub fn test_map(width: usize, height: usize) -> Map {
     Map {
         grid: vec![vec![Tile::Floor; width]; height],
@@ -48,7 +51,9 @@ pub fn started_app_with_map(map: Map, position: Position) -> App {
         audio: AudioManager::new(),
         last_checkpoint: None,
         activated_torchlights: Default::default(),
-        cheat_buffer: String::new(),
+        #[cfg(debug_assertions)]
+        cheat_buf: CheatBuffer::new(),
+        #[cfg(debug_assertions)]
         cheat_god_mode: false,
     };
     app.update_visibility();
@@ -83,7 +88,9 @@ pub fn test_app() -> App {
         audio: AudioManager::new(),
         last_checkpoint: None,
         activated_torchlights: Default::default(),
-        cheat_buffer: String::new(),
+        #[cfg(debug_assertions)]
+        cheat_buf: CheatBuffer::new(),
+        #[cfg(debug_assertions)]
         cheat_god_mode: false,
     }
 }

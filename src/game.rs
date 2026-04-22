@@ -53,7 +53,9 @@ impl App {
             audio: crate::audio::AudioManager::new(),
             last_checkpoint: None,
             activated_torchlights: Default::default(),
-            cheat_buffer: String::new(),
+            #[cfg(debug_assertions)]
+            cheat_buf: crate::types::CheatBuffer::new(),
+            #[cfg(debug_assertions)]
             cheat_god_mode: false,
         };
         app.update_visibility();
@@ -174,6 +176,16 @@ impl App {
         self.visibility.reset();
         self.update_visibility();
         self.status_message = format!("Level {} — Try again!", self.level);
+    }
+
+    #[cfg(debug_assertions)]
+    fn is_invincible(&self) -> bool {
+        self.cheat_god_mode
+    }
+
+    #[cfg(not(debug_assertions))]
+    fn is_invincible(&self) -> bool {
+        false
     }
 }
 
@@ -297,6 +309,7 @@ fn vkey_to_char(key: VirtualKeyCode, shift: bool) -> Option<char> {
     }
 }
 
+#[cfg(debug_assertions)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum CheatCode {
     NextLevel,
@@ -305,31 +318,31 @@ enum CheatCode {
     Noclip,
 }
 
+#[cfg(debug_assertions)]
 fn check_cheat_code(app: &mut App, key: VirtualKeyCode, shift: bool) -> Option<CheatCode> {
     let ch = match vkey_to_char(key, shift) {
         Some(c) => c,
         None => {
-            app.cheat_buffer.clear();
+            app.cheat_buf.clear();
             return None;
         }
     };
-    app.cheat_buffer.push(ch);
-    while app.cheat_buffer.len() > 2 {
-        app.cheat_buffer.remove(0);
-    }
-    let code = match app.cheat_buffer.as_str() {
-        "iv" => Some(CheatCode::NextLevel),
-        "im" => Some(CheatCode::GodMode),
-        "ie" => Some(CheatCode::KillEnemies),
-        "ip" => Some(CheatCode::Noclip),
+    app.cheat_buf.push(ch);
+    let (c0, c1) = app.cheat_buf.chars();
+    let code = match (c0, c1) {
+        (Some('i'), Some('v')) => Some(CheatCode::NextLevel),
+        (Some('i'), Some('m')) => Some(CheatCode::GodMode),
+        (Some('i'), Some('e')) => Some(CheatCode::KillEnemies),
+        (Some('i'), Some('p')) => Some(CheatCode::Noclip),
         _ => None,
     };
     if code.is_some() {
-        app.cheat_buffer.clear();
+        app.cheat_buf.clear();
     }
     code
 }
 
+#[cfg(debug_assertions)]
 fn apply_cheat(app: &mut App, cheat: CheatCode) {
     match cheat {
         CheatCode::NextLevel => {
@@ -378,6 +391,7 @@ pub fn handle_key(app: &mut App, key: VirtualKeyCode, shift: bool) {
         return;
     }
 
+    #[cfg(debug_assertions)]
     if let Some(cheat) = check_cheat_code(app, key, shift) {
         apply_cheat(app, cheat);
         return;
@@ -613,6 +627,7 @@ fn enemies_step(app: &mut App) {
     }
 
     let player_pos = app.player.position;
+    let invincible = app.is_invincible();
     let mut remaining_enemies = Vec::with_capacity(app.enemies.len());
     let mut next_animations = Vec::new();
     for (old_index, ((old_position, old_visual_position), enemy)) in
@@ -621,7 +636,7 @@ fn enemies_step(app: &mut App) {
         if enemy.position == player_pos
             && enemy.stunned_turns == 0
             && app.game_state == GameState::Playing
-            && !app.cheat_god_mode
+            && !invincible
         {
             app.audio.play(SoundEffect::Damage);
             app.hp -= 10;
