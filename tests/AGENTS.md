@@ -2,20 +2,20 @@
 
 # tests
 
-385 integration tests across 9 files. No inline tests in src/. Shared helpers in `tests/common/mod.rs`.
+393 integration tests across 9 files. No inline tests in src/. Shared helpers in `tests/common/mod.rs`.
 
 ## Test Files
 | File | Tests | Lines | Coverage |
 |------|-------|-------|----------|
-| `game.rs` | 132 | 1893 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry, pause menu, melee combat, checkpoint respawn |
-| `map.rs` | 46 | 581 | Dimensions, tiles, passability, zones, corridors, obstacles, 4 levels, reachability, enemy spawns, patrol areas, torchlight room presence |
-| `renderer.rs` | 53 | 456 | Zone colors, wall glyphs, duration formatting, phases, exit glow, trail colors, minimap, fog, centering |
-| `visibility.rs` | 29 | 441 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases, multi-source FOV |
+| `game.rs` | 140 | 1968 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry, pause menu, melee combat, checkpoint respawn |
+| `map.rs` | 46 | 539 | Dimensions, tiles, passability, zones, corridors, obstacles, 4 levels, reachability, enemy spawns, patrol areas, torchlight room presence |
+| `renderer.rs` | 53 | 428 | Zone colors, wall glyphs, duration formatting, phases, exit glow, trail colors, minimap, fog, centering |
+| `visibility.rs` | 29 | 420 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases, multi-source FOV |
 | `player.rs` | 29 | 324 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + motion recording |
 | `animation.rs` | 34 | 349 | Timer progress, interpolation, easing, AnimationState, TestClock determinism, attack effects |
-| `types.rs` | 25 | 222 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
-| `enemy.rs` | 21 | 264 | BFS movement, diagonal, walls, adjacency, corridors, shortest path, LOS, patrol |
-| `audio.rs` | 16 | 197 | Manager lifecycle, play no-op, enable/disable, rapid play, sound variants |
+| `types.rs` | 25 | 216 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
+| `enemy.rs` | 21 | 265 | BFS movement, diagonal, walls, adjacency, corridors, shortest path, LOS, patrol |
+| `audio.rs` | 16 | 191 | Manager lifecycle, play no-op, enable/disable, rapid play, sound variants |
 
 ## Shared Helpers (`common/mod.rs`)
 | Helper | Signature | Purpose |
@@ -49,5 +49,5 @@
 ## Notes
 - Formatting configured via `rustfmt.toml` — run `cargo fmt --check` before committing.
 - `tests/common/mod.rs` has some helpers trigger `dead_code` warnings — expected, only used by subset of test files.
-- Game test file (`tests/game.rs`) is largest at 1893 lines due to comprehensive state machine coverage.
+- Game test file (`tests/game.rs`) is largest at 1968 lines due to comprehensive state machine coverage.
 - No `#[should_panic]` tests — error cases return gracefully.
