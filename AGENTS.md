@@ -3,7 +3,7 @@
 
 # vim-rogue
 
-Terminal-based roguelike dungeon game (Rust + bracket-lib) teaching Vim motions through gameplay. 80×40 dungeon, 4 levels, 5 zone-gated areas, 13 Vim keybindings, FOV-aware enemy AI with patrol, fog-of-war visibility.
+Roguelike dungeon game (Rust + bracket-lib). Teaches Vim motions through gameplay. 80×40 dungeon, 4 levels, 5 zones, 13 Vim keys, FOV-aware enemy AI + patrol, fog-of-war.
 
 ## Structure
 ```
@@ -36,37 +36,36 @@ lib.rs        → Re-exports all modules (9 lines)
 ## Where To Look
 | Task | Location | Notes |
 |------|----------|-------|
-| Add a new Vim motion | `src/player.rs` + `src/types.rs` (VimMotion enum) | Also update game.rs parse_motion |
-| Change dungeon layout | `src/map.rs` (carve_level, build_level_2/3/4) | grid[y][x] row-major; 4 levels |
-| Add UI elements | `src/renderer.rs` | Pure display — never mutates state |
-| Change game flow | `src/game.rs` (handle_key, tick, execute_motion) | Two-phase input for f/t/dd/gg; pause menu on ESC/q |
+| Add new Vim motion | `src/player.rs` + `src/types.rs` (VimMotion enum) | Update `game.rs` parse_motion too |
+| Change dungeon layout | `src/map.rs` (carve_level, build_level_2/3/4) | `grid[y][x]` row-major; 4 levels |
+| Add UI elements | `src/renderer.rs` | Display only — never mutates state |
+| Change game flow | `src/game.rs` (handle_key, tick, execute_motion) | Two-phase input for f/t/dd/gg; ESC/q = pause |
 | Change pause menu | `src/game.rs` + `src/renderer.rs` + `src/types.rs` | GameState::Paused, PauseOption, render_pause_overlay |
-| Add new types | `src/types.rs` | All modules import via `crate::types::*` |
+| Add new types | `src/types.rs` | All modules use `crate::types::*` |
 | Change enemy AI | `src/enemy.rs` (step_toward_player, has_line_of_sight, patrol_step) | FOV-gated BFS chase + patrol, called from game.rs enemies_step |
-| Change FOV/visibility | `src/visibility.rs` (compute_fov) | VisibilityMap with Hidden/Explored/Visible states |
-| Add animations | `src/animation.rs` | AnimationState + Interpolator; clock via GameClock trait |
-| Add sound effects | `src/audio.rs` (SoundEffect enum + AudioManager) | Audio disabled by default |
-| Fix a bug | Check tests in `tests/` directory (393 integration tests across 9 files) | main.rs and lib.rs have no tests |
+| Change FOV/visibility | `src/visibility.rs` (compute_fov) | Hidden/Explored/Visible states |
+| Add animations | `src/animation.rs` | AnimationState + Interpolator; GameClock trait |
+| Add sound effects | `src/audio.rs` (SoundEffect enum + AudioManager) | Disabled by default |
+| Fix bug | `tests/` (393 integration tests, 9 files) | main.rs + lib.rs have no tests |
 
 ## Conventions
-- Rust edition 2024. Formatting configured via `rustfmt.toml` (`use_small_heuristics = "Max"`, `edition = "2024"`).
-- Integration tests in `tests/` directory (393 tests across 9 files). Shared helpers in `tests/common/mod.rs`.
-- Test helpers: `test_map()`, `started_app_with_map()`, `test_app()`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
-- `renderer.rs` internals are `pub` for integration test access (e.g., `screen_meets_minimum_size`, `phase_definitions`, `exit_glow`, etc.).
-- `lib.rs` re-exports all modules. `main.rs` is thin (~32 lines).
-- `is_passable` = `Tile::Floor`, `Tile::Exit`, or `Tile::Torchlight`. `Tile::Obstacle` is not passable but can be destroyed by `dd`.
-- w/b motions scan horizontally along clear paths, stopping at non-passable tiles (walls/obstacles).
-- G/gg motions scan vertically from current position, stopping at non-passable tiles (walls/obstacles).
-- `renderer.rs` is read-only — never mutates App state.
+- Rust edition 2024. `rustfmt.toml`: `use_small_heuristics = "Max"`, `edition = "2024"`.
+- 393 integration tests in `tests/` (9 files). Shared helpers in `tests/common/mod.rs`.
+- Helpers: `test_map()`, `started_app_with_map()`, `test_app()`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
+- `renderer.rs` internals `pub` for test access (e.g. `screen_meets_minimum_size`, `phase_definitions`, `exit_glow`).
+- `lib.rs` re-exports all. `main.rs` thin (~32 lines).
+- `is_passable` = `Tile::Floor`, `Tile::Exit`, `Tile::Torchlight`. `Tile::Obstacle` not passable but `dd` destroys it.
+- w/b: horizontal scan, stop at non-passable. G/gg: vertical scan, stop at non-passable.
+- `renderer.rs` read-only — never mutates App.
 - `Player::handle_motion` takes `&mut Map` (dd deletes obstacles).
-- `GameClock` trait for time — `RealClock` in production, `TestClock` in tests.
-- Animation durations: player 150ms (`PLAYER_MOVE_MS`), enemy 200ms (`ENEMY_MOVE_MS`).
-- FOV radius: `FOV_RADIUS` constant in types.rs. Enemy FOV: `ENEMY_FOV_RADIUS = 8`.
-- Enemies have FOV-aware AI: chase via BFS when player visible (`has_line_of_sight`), patrol within `PatrolArea` otherwise.
-- Level 4 enemies have room-based patrol areas; no-torchlight rooms have ≥2 enemies.
-- Audio disabled by default; `AudioManager::enable()` to activate.
-- Error handling: `BError` from bracket-lib in main.rs. `anyhow` listed in Cargo.toml but unused in source.
-- `unwrap()`/`expect()` present in non-test source code.
+- `GameClock` trait: `RealClock` prod, `TestClock` tests.
+- Animations: player 150ms (`PLAYER_MOVE_MS`), enemy 200ms (`ENEMY_MOVE_MS`).
+- FOV: `FOV_RADIUS` in types.rs. Enemy FOV: `ENEMY_FOV_RADIUS = 8`.
+- Enemy AI: BFS chase when player visible (`has_line_of_sight`), patrol in `PatrolArea` otherwise.
+- Level 4: room-based patrol; no-torchlight rooms have ≥2 enemies.
+- Audio off by default; `AudioManager::enable()` to turn on.
+- Errors: `BError` from bracket-lib in main.rs. `anyhow` in Cargo.toml but unused.
+- `unwrap()`/`expect()` in non-test source.
 
 ## Commands
 ```bash
@@ -79,27 +78,27 @@ cargo run              # Launch game in terminal
 ```
 
 ## Verification Checklist
-After any code change, run ALL of these before considering work complete:
-1. `cargo fmt --check` — ensure formatting is clean
+After any code change, run all:
+1. `cargo fmt --check` — formatting clean
 2. `cargo clippy` — zero warnings
-3. `cargo test` — all 393 tests pass
-4. Update `CHANGELOG.md` — add entry under `[Unreleased]` or new version section
+3. `cargo test` — all 393 pass
+4. Update `CHANGELOG.md` — add entry under `[Unreleased]` or new version
 
 ## Dependencies
 | Crate | Version | Used In |
 |-------|---------|---------|
-| anyhow | 1.0 | Listed but unused in source |
-| bracket-lib | 0.8.7 | main.rs (terminal + rendering), renderer.rs, audio.rs |
+| anyhow | 1.0 | Listed but unused |
+| bracket-lib | 0.8.7 | main.rs, renderer.rs, audio.rs |
 
 ## Notes
-- CI/CD: GitHub Actions for lint, test, build, and cross-platform release (`.github/workflows/`).
+- CI: GitHub Actions (`.github/workflows/`). Lint, test, build, cross-platform release.
 - No Makefile, build.rs, or custom scripts.
-- Config files: `rustfmt.toml` (formatting rules). No clippy.toml or .editorconfig.
-- Coordinate system: `grid[y][x]` — always bounds-check before access.
-- 4 dungeon levels: Level 1 (basic), Level 2 (inverted maze + obstacles), Level 3 (zigzag + BFS enemies), Level 4 (fortress rooms + FOV-aware patrol enemies).
-- Lives system: 3 lives; enemy collision costs a life; 0 lives → Lost state → retry current level.
-- HP system: Level 4 enemies have HP (`hp: Some(30)`); melee attack (x key) deals 10 damage; 3 hits to kill.
-- Torchlight checkpoints: step on torchlight to activate permanent FOV radius 6; death with checkpoint → respawn (HP restore + teleport).
-- `examples/spike.rs`: bracket-lib proof-of-concept spike.
+- Config: `rustfmt.toml` only. No clippy.toml or .editorconfig.
+- Coords: `grid[y][x]` — bounds-check before access.
+- Levels: 1 (basic), 2 (inverted maze + obstacles), 3 (zigzag + BFS enemies), 4 (fortress rooms + FOV patrol).
+- Lives: 3. Enemy collision = -1 life. 0 lives → Lost → retry level.
+- HP: Level 4 enemies have `hp: Some(30)`. Melee (x key) = 10 dmg. 3 hits kill.
+- Torchlight checkpoints: activate permanent FOV radius 6. Death with checkpoint → respawn (HP + teleport).
+- `examples/spike.rs`: bracket-lib PoC spike.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
