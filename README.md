@@ -1,4 +1,4 @@
-# vim-quake
+# vim-rogue
 
 A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vim motions through gameplay. Navigate four 80×40 dungeon levels using real Vim keybindings, dodge enemies, and reach the exit. Built with [bracket-lib](https://github.com/amethyst/bracket-lib) for roguelike-specific rendering, FOV, and tile-based graphics.
 

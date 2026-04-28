@@ -1,5 +1,5 @@
-use vim_quake::map::Map;
-use vim_quake::types::{Position, Tile, Zone};
+use vim_rogue::map::Map;
+use vim_rogue::types::{Position, Tile, Zone};
 
 #[test]
 fn map_new_creates_80x40_grid() {

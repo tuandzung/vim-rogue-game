@@ -23,24 +23,24 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact: vim-quake-x86_64-linux
+            artifact: vim-rogue-x86_64-linux
             strip: strip
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact: vim-quake-aarch64-linux
+            artifact: vim-rogue-aarch64-linux
             strip: aarch64-linux-gnu-strip
           - target: x86_64-apple-darwin
             os: macos-latest
-            artifact: vim-quake-x86_64-macos
+            artifact: vim-rogue-x86_64-macos
           - target: aarch64-apple-darwin
             os: macos-latest
-            artifact: vim-quake-aarch64-macos
+            artifact: vim-rogue-aarch64-macos
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            artifact: vim-quake-x86_64-windows
+            artifact: vim-rogue-x86_64-windows
           - target: aarch64-pc-windows-msvc
             os: windows-latest
-            artifact: vim-quake-aarch64-windows
+            artifact: vim-rogue-aarch64-windows
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -67,20 +67,20 @@ jobs:
           docker run --rm -v "$PWD/target:/target:Z" \
             "ghcr.io/cross-rs/${{ matrix.target }}:main" \
             "${{ matrix.strip }}" \
-            "/target/${{ matrix.target }}/release/vim-quake"
+            "/target/${{ matrix.target }}/release/vim-rogue"
       - name: Strip binary (macOS)
         if: runner.os == 'macOS'
-        run: strip target/${{ matrix.target }}/release/vim-quake
+        run: strip target/${{ matrix.target }}/release/vim-rogue
 
       - name: Package (tar.gz)
         if: runner.os != 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          tar czf ../../../${{ matrix.artifact }}.tar.gz vim-quake
+          tar czf ../../../${{ matrix.artifact }}.tar.gz vim-rogue
       - name: Package (zip)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path "target/${{ matrix.target }}/release/vim-quake.exe" -DestinationPath "${{ matrix.artifact }}.zip"
+        run: Compress-Archive -Path "target/${{ matrix.target }}/release/vim-rogue.exe" -DestinationPath "${{ matrix.artifact }}.zip"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -1,14 +1,14 @@
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
-use vim_quake::animation::{AnimationState, AnimationTimer, GameClock, TestClock};
-use vim_quake::audio::AudioManager;
-use vim_quake::map::Map;
-use vim_quake::player::Player;
-use vim_quake::types::*;
-use vim_quake::visibility::VisibilityMap;
+use vim_rogue::animation::{AnimationState, AnimationTimer, GameClock, TestClock};
+use vim_rogue::audio::AudioManager;
+use vim_rogue::map::Map;
+use vim_rogue::player::Player;
+use vim_rogue::types::*;
+use vim_rogue::visibility::VisibilityMap;
 
 #[cfg(debug_assertions)]
-use vim_quake::types::CheatBuffer;
+use vim_rogue::types::CheatBuffer;
 
 pub fn test_map(width: usize, height: usize) -> Map {
     Map {

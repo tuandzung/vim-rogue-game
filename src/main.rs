@@ -1,8 +1,8 @@
 use bracket_lib::prelude::*;
 
-use vim_quake::game;
-use vim_quake::renderer;
-use vim_quake::types::App;
+use vim_rogue::game;
+use vim_rogue::renderer;
+use vim_rogue::types::App;
 
 embedded_resource!(UNICODE_FONT, "../resources/Kjammer_16x16.png");
 
@@ -18,7 +18,7 @@ impl GameState for AppWrapper {
             game::handle_key(&mut self.app, key, ctx.shift);
         }
 
-        if self.app.game_state == vim_quake::types::GameState::Quit {
+        if self.app.game_state == vim_rogue::types::GameState::Quit {
             ctx.quit();
             return;
         }
@@ -38,7 +38,7 @@ fn main() -> BError {
         .with_font("Kjammer_16x16.png", 16, 16)
         .with_simple_console(80u32, 50u32, "Kjammer_16x16.png")
         .with_tile_dimensions(16u32, 16u32)
-        .with_title("vim-quake")
+        .with_title("vim-rogue")
         .build()?;
     main_loop(context, AppWrapper { app: App::new() })
 }

@@ -18,7 +18,7 @@ impl GameState for State {
 
 fn main() -> BError {
     let context = BTermBuilder::simple80x50()
-        .with_title("vim-quake spike")
+        .with_title("vim-rogue spike")
         .with_vsync(false)
         .with_fps_cap(30.0)
         .build()?;
@@ -65,7 +65,7 @@ mod tests {
     #[ignore = "opens a native window; run locally to smoke-test builder context creation"]
     fn builder_smoke_creates_an_80_by_50_context() {
         let _context = BTermBuilder::simple80x50()
-            .with_title("vim-quake spike")
+            .with_title("vim-rogue spike")
             .with_vsync(false)
             .with_fps_cap(30.0)
             .build()

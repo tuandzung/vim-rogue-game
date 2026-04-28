@@ -1,5 +1,5 @@
 use std::time::Instant;
-use vim_quake::audio::*;
+use vim_rogue::audio::*;
 
 #[test]
 fn audio_manager_new_is_created() {

@@ -1,9 +1,9 @@
 mod common;
 
 use common::test_map;
-use vim_quake::map::Map;
-use vim_quake::player::Player;
-use vim_quake::types::{Position, Tile, VimMotion, Zone};
+use vim_rogue::map::Map;
+use vim_rogue::player::Player;
+use vim_rogue::types::{Position, Tile, VimMotion, Zone};
 
 #[test]
 fn player_new_has_starting_position() {

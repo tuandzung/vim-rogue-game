@@ -4,16 +4,16 @@ use bracket_lib::prelude::VirtualKeyCode;
 use common::{started_app_with_map, test_map};
 use std::time::Duration;
 use std::time::Instant;
-use vim_quake::animation::{
+use vim_rogue::animation::{
     ATTACK_EFFECT_MS, AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS,
 };
-use vim_quake::game::{handle_key, tick};
-use vim_quake::map::Map;
-use vim_quake::types::{
+use vim_rogue::game::{handle_key, tick};
+use vim_rogue::map::Map;
+use vim_rogue::types::{
     App, Direction, Enemy, GameState, MAX_HP, PatrolArea, PauseOption, PendingInput, Position,
     TOTAL_LEVELS, Tile, VimMotion, Zone,
 };
-use vim_quake::visibility::{VisibilityMap, VisibilityState};
+use vim_rogue::visibility::{VisibilityMap, VisibilityState};
 
 #[test]
 fn app_new_starts_playing() {
@@ -379,12 +379,12 @@ fn no_animation_on_failed_move() {
 fn app_trail_caps_at_max() {
     let mut app = started_app_with_map(test_map(20, 1), Position { x: 1, y: 0 });
 
-    for _ in 0..(vim_quake::types::TRAIL_MAX + 2) {
+    for _ in 0..(vim_rogue::types::TRAIL_MAX + 2) {
         handle_key(&mut app, VirtualKeyCode::L, false);
         handle_key(&mut app, VirtualKeyCode::H, false);
     }
 
-    assert!(app.trail.len() <= vim_quake::types::TRAIL_MAX);
+    assert!(app.trail.len() <= vim_rogue::types::TRAIL_MAX);
 }
 
 #[test]
@@ -1465,7 +1465,7 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
     }];
 
     // Move right — enemy steps toward player, collision occurs, HP -> 0 -> checkpoint respawn
-    vim_quake::game::handle_key(&mut app, VirtualKeyCode::L, false);
+    vim_rogue::game::handle_key(&mut app, VirtualKeyCode::L, false);
 
     assert_eq!(app.game_state, GameState::Dying);
     tick(&mut app, ATTACK_EFFECT_MS);
@@ -1531,7 +1531,7 @@ fn advance_level_clears_attack_effects() {
     let mut map = test_map(10, 1);
     map.set_tile(4, 0, Tile::Exit);
     let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
-    app.attack_effects.push(vim_quake::animation::AttackEffect::new(
+    app.attack_effects.push(vim_rogue::animation::AttackEffect::new(
         AttackEffectKind::PlayerStrike,
         3,
         0,

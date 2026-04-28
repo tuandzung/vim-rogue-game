@@ -1,7 +1,7 @@
 mod common;
 
 use common::test_map;
-use vim_quake::types::{Enemy, PatrolArea, Position, Tile, Zone};
+use vim_rogue::types::{Enemy, PatrolArea, Position, Tile, Zone};
 
 #[test]
 fn enemy_new_has_default_glyph() {

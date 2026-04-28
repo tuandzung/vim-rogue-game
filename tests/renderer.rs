@@ -5,12 +5,12 @@ use common::{approx_eq, test_app};
 use std::collections::VecDeque;
 use std::time::Duration;
 use std::time::Instant;
-use vim_quake::animation::{AnimationState, AttackEffectKind, ENEMY_MOVE_MS};
-use vim_quake::map::Map;
-use vim_quake::player::Player;
-use vim_quake::renderer::*;
-use vim_quake::types::{App, Enemy, GameState, MAX_HP, Position, Tile, VimMotion, Zone};
-use vim_quake::visibility::{VisibilityMap, VisibilityState};
+use vim_rogue::animation::{AnimationState, AttackEffectKind, ENEMY_MOVE_MS};
+use vim_rogue::map::Map;
+use vim_rogue::player::Player;
+use vim_rogue::renderer::*;
+use vim_rogue::types::{App, Enemy, GameState, MAX_HP, Position, Tile, VimMotion, Zone};
+use vim_rogue::visibility::{VisibilityMap, VisibilityState};
 
 #[test]
 fn zone_wall_colors() {

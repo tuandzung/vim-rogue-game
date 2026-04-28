@@ -1,7 +1,7 @@
 mod common;
 
 use common::{assert_approx_eq, tick_state, tick_timer};
-use vim_quake::animation::*;
+use vim_rogue::animation::*;
 
 #[test]
 fn timer_at_zero_is_zero_progress() {

@@ -1,8 +1,8 @@
 mod common;
 
 use common::{all_transparent, with_transparent_tiles, with_walls};
-use vim_quake::types::Position;
-use vim_quake::visibility::{VisibilityMap, VisibilityState};
+use vim_rogue::types::Position;
+use vim_rogue::visibility::{VisibilityMap, VisibilityState};
 
 #[test]
 fn new_map_all_hidden() {

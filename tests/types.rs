@@ -1,4 +1,4 @@
-use vim_quake::types::*;
+use vim_rogue::types::*;
 
 #[test]
 fn tile_glyph_wall() {

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Renamed project from `vim-quake` to `vim-rogue`
 - Replaced `String`-based cheat buffer with fixed-size `[Option<char>; 2]` struct (`CheatBuffer`) for O(1) push operations (no `remove(0)` shifting)
 - Guarded all cheat-related fields, enums, functions, and tests behind `#[cfg(debug_assertions)]` — compiled out of production builds entirely
 - Added `can_pass_to()` helper on `Player` and `is_invincible()` helper on `App` for clean conditional access to debug-only behavior
@@ -86,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zilk 16x16 and Kjammer font support
 - CI pipeline for lint, test, build, and cross-platform release
 
-[0.2.2]: https://github.com/tuandzung/vim-quake-game/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/tuandzung/vim-quake-game/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/tuandzung/vim-quake-game/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/tuandzung/vim-quake-game/releases/tag/v0.1.0
+[0.2.2]: https://github.com/tuandzung/vim-rogue-game/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/tuandzung/vim-rogue-game/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/tuandzung/vim-rogue-game/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/tuandzung/vim-rogue-game/releases/tag/v0.1.0
