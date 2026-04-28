@@ -578,7 +578,7 @@ fn enemies_step(app: &mut App) {
                 app.session.game_state = GameState::Dying;
                 app.player.pending_respawn = app.player.last_checkpoint;
             } else {
-                app.session.status_message = format!("Hit! {} HP remaining.", app.player.hp);
+                app.session.status_message = app.player.damage_feedback();
             }
             if enemy.hp.is_some() {
                 let new_index = remaining_enemies.len();
@@ -622,31 +622,9 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
     let old_pos = app.player.inner.position;
     let old_zone = app.world.map.zone_at(old_pos);
 
-    let activated = match motion {
-        VimMotion::DeleteLine => {
-            app.session.status_message =
-                String::from("dd clears the nearest obstacle on your row.");
-            app.player.inner.handle_motion(motion, target, &mut app.world.map)
-        }
-        VimMotion::Find => {
-            let message = target
-                .map(|ch| format!("f{ch} searches forward for the next matching tile."))
-                .unwrap_or_else(|| String::from("Find motion ready."));
-            app.session.status_message = message;
-            app.player.inner.handle_motion(motion, target, &mut app.world.map)
-        }
-        VimMotion::Till => {
-            let message = target
-                .map(|ch| format!("t{ch} stops one tile before the next match."))
-                .unwrap_or_else(|| String::from("Till motion ready."));
-            app.session.status_message = message;
-            app.player.inner.handle_motion(motion, target, &mut app.world.map)
-        }
-        _ => {
-            app.session.status_message =
-                format!("{} — {}", motion.key_label(), motion.description());
-            app.player.inner.handle_motion(motion, target, &mut app.world.map)
-        }
+    let activated = {
+        app.session.status_message = app.player.motion_feedback(motion, target);
+        app.player.inner.handle_motion(motion, target, &mut app.world.map)
     };
 
     app.player.motion_count += 1;

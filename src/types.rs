@@ -477,6 +477,23 @@ impl PlayerState {
         self.last_checkpoint = None;
         self.pending_respawn = None;
     }
+
+    pub fn motion_feedback(&self, motion: VimMotion, target: Option<char>) -> String {
+        match motion {
+            VimMotion::DeleteLine => String::from("dd clears the nearest obstacle on your row."),
+            VimMotion::Find => target
+                .map(|ch| format!("f{ch} searches forward for the next matching tile."))
+                .unwrap_or_else(|| String::from("Find motion ready.")),
+            VimMotion::Till => target
+                .map(|ch| format!("t{ch} stops one tile before the next match."))
+                .unwrap_or_else(|| String::from("Till motion ready.")),
+            _ => format!("{} — {}", motion.key_label(), motion.description()),
+        }
+    }
+
+    pub fn damage_feedback(&self) -> String {
+        format!("Hit! {} HP remaining.", self.hp)
+    }
 }
 
 pub struct InputState {
