@@ -376,6 +376,41 @@ impl World {
         let visibility = VisibilityMap::new(map.width, map.height);
         Self { map, visibility, enemies: Vec::new(), activated_torchlights: HashSet::new() }
     }
+
+    pub fn reset_for_level(&mut self, level: usize) {
+        self.map = Map::level(level);
+        if self.visibility.width() != self.map.width || self.visibility.height() != self.map.height
+        {
+            self.visibility = VisibilityMap::new(self.map.width, self.map.height);
+        }
+        self.visibility.reset();
+        self.enemies.clear();
+        self.activated_torchlights.clear();
+    }
+
+    pub fn spawn_enemies(&mut self, level: usize) {
+        self.enemies = self
+            .map
+            .enemy_spawns
+            .iter()
+            .enumerate()
+            .map(|(i, &pos)| {
+                let patrol_area = self
+                    .map
+                    .enemy_patrol_areas
+                    .get(i)
+                    .copied()
+                    .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
+                if level == 4 {
+                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
+                } else {
+                    let mut e = Enemy::new(pos);
+                    e.patrol_area = patrol_area;
+                    e
+                }
+            })
+            .collect();
+    }
 }
 
 pub struct PlayerState {
@@ -402,6 +437,22 @@ impl PlayerState {
             pending_respawn: None,
         }
     }
+
+    pub fn advance_level(&mut self, level: usize, start: Position) {
+        self.level = level;
+        self.inner.position = start;
+        self.trail.clear();
+        self.last_checkpoint = None;
+        self.pending_respawn = None;
+    }
+
+    pub fn retry_level(&mut self, start: Position) {
+        self.inner.position = start;
+        self.hp = MAX_HP;
+        self.trail.clear();
+        self.last_checkpoint = None;
+        self.pending_respawn = None;
+    }
 }
 
 pub struct InputState {
@@ -412,6 +463,11 @@ pub struct InputState {
 impl InputState {
     pub fn new() -> Self {
         Self { input_queue: Vec::new(), pending_input: None }
+    }
+
+    pub fn clear(&mut self) {
+        self.input_queue.clear();
+        self.pending_input = None;
     }
 }
 

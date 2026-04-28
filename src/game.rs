@@ -8,8 +8,8 @@ use crate::animation::{
 use crate::audio::SoundEffect;
 use crate::map::Map;
 use crate::types::{
-    App, Enemy, FOV_RADIUS, GameState, InputState, MAX_HP, PatrolArea, PauseOption, PendingInput,
-    PlayerState, Session, TORCHLIGHT_FOV_RADIUS, Tile, VimMotion, World,
+    App, FOV_RADIUS, GameState, InputState, MAX_HP, PauseOption, PendingInput, PlayerState,
+    Session, TORCHLIGHT_FOV_RADIUS, Tile, VimMotion, World,
 };
 use crate::visibility::VisibilityMap;
 
@@ -92,78 +92,29 @@ impl App {
         }
     }
 
-    fn spawn_enemies_for_current_level(&mut self) {
-        self.world.enemies = self
-            .world
-            .map
-            .enemy_spawns
-            .iter()
-            .enumerate()
-            .map(|(i, &pos)| {
-                let patrol_area = self
-                    .world
-                    .map
-                    .enemy_patrol_areas
-                    .get(i)
-                    .copied()
-                    .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
-                if self.player.level == 4 {
-                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
-                } else {
-                    let mut e = Enemy::new(pos);
-                    e.patrol_area = patrol_area;
-                    e
-                }
-            })
-            .collect();
-    }
-
     pub fn advance_level(&mut self) {
-        self.player.level += 1;
-        self.world.map = Map::level(self.player.level);
-        self.player.inner.position = self.world.map.start;
+        let next_level = self.player.level + 1;
+        self.world.reset_for_level(next_level);
+        self.world.spawn_enemies(next_level);
+        self.player.advance_level(next_level, self.world.map.start);
         self.player_animation = None;
         self.enemy_animations.clear();
         self.attack_effects.clear();
-        self.player.pending_respawn = None;
-        self.input.input_queue.clear();
-        self.spawn_enemies_for_current_level();
-        self.player.trail.clear();
-        self.input.pending_input = None;
-        self.player.last_checkpoint = None;
-        self.world.activated_torchlights.clear();
-        if self.world.visibility.width() != self.world.map.width
-            || self.world.visibility.height() != self.world.map.height
-        {
-            self.world.visibility = VisibilityMap::new(self.world.map.width, self.world.map.height);
-        }
-        self.world.visibility.reset();
+        self.input.clear();
         self.update_visibility();
         self.session.status_message =
-            format!("Level {} — The dungeon shifts around you...", self.player.level);
+            format!("Level {} — The dungeon shifts around you...", next_level);
     }
 
     pub fn retry_level(&mut self) {
-        self.world.map = Map::level(self.player.level);
-        self.player.inner.position = self.world.map.start;
+        self.world.reset_for_level(self.player.level);
+        self.world.spawn_enemies(self.player.level);
+        self.player.retry_level(self.world.map.start);
         self.player_animation = None;
         self.enemy_animations.clear();
         self.attack_effects.clear();
-        self.player.pending_respawn = None;
-        self.input.input_queue.clear();
-        self.spawn_enemies_for_current_level();
-        self.player.hp = MAX_HP;
-        self.player.trail.clear();
-        self.input.pending_input = None;
+        self.input.clear();
         self.session.game_state = GameState::Playing;
-        self.player.last_checkpoint = None;
-        self.world.activated_torchlights.clear();
-        if self.world.visibility.width() != self.world.map.width
-            || self.world.visibility.height() != self.world.map.height
-        {
-            self.world.visibility = VisibilityMap::new(self.world.map.width, self.world.map.height);
-        }
-        self.world.visibility.reset();
         self.update_visibility();
         self.session.status_message = format!("Level {} — Try again!", self.player.level);
     }
