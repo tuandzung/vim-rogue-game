@@ -364,32 +364,201 @@ impl Default for CheatBuffer {
     }
 }
 
-pub struct App {
+pub struct World {
     pub map: Map,
     pub visibility: VisibilityMap,
-    pub player: Player,
-    pub player_animation: Option<AnimationState>,
-    pub enemy_animations: Vec<(usize, AnimationState)>,
-    pub attack_effects: Vec<AttackEffect>,
-    pub pending_respawn: Option<Position>,
-    pub input_queue: Vec<(VirtualKeyCode, bool)>,
     pub enemies: Vec<Enemy>,
+    pub activated_torchlights: HashSet<Position>,
+}
+
+impl World {
+    pub fn new(map: Map) -> Self {
+        let visibility = VisibilityMap::new(map.width, map.height);
+        Self { map, visibility, enemies: Vec::new(), activated_torchlights: HashSet::new() }
+    }
+
+    pub fn reset_for_level(&mut self, level: usize) {
+        self.map = Map::level(level);
+        if self.visibility.width() != self.map.width || self.visibility.height() != self.map.height
+        {
+            self.visibility = VisibilityMap::new(self.map.width, self.map.height);
+        }
+        self.visibility.reset();
+        self.enemies.clear();
+        self.activated_torchlights.clear();
+    }
+
+    pub fn spawn_enemies(&mut self, level: usize) {
+        self.enemies = self
+            .map
+            .enemy_spawns
+            .iter()
+            .enumerate()
+            .map(|(i, &pos)| {
+                let patrol_area = self
+                    .map
+                    .enemy_patrol_areas
+                    .get(i)
+                    .copied()
+                    .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
+                if level == 4 {
+                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
+                } else {
+                    let mut e = Enemy::new(pos);
+                    e.patrol_area = patrol_area;
+                    e
+                }
+            })
+            .collect();
+    }
+
+    pub fn update_visibility(&mut self, player_pos: Position) {
+        if self.visibility.width() != self.map.width || self.visibility.height() != self.map.height
+        {
+            self.visibility = VisibilityMap::new(self.map.width, self.map.height);
+        }
+        self.visibility.demote_visible_to_explored();
+        self.visibility.compute_fov(player_pos, FOV_RADIUS, |pos| {
+            matches!(
+                self.map.get_tile(pos.x, pos.y),
+                Tile::Floor | Tile::Exit | Tile::Obstacle | Tile::Torchlight
+            )
+        });
+        let sources: Vec<(Position, i32)> =
+            self.activated_torchlights.iter().map(|&pos| (pos, TORCHLIGHT_FOV_RADIUS)).collect();
+        if !sources.is_empty() {
+            self.visibility.compute_multi_fov(&sources, |pos| {
+                matches!(
+                    self.map.get_tile(pos.x, pos.y),
+                    Tile::Floor | Tile::Exit | Tile::Obstacle | Tile::Torchlight
+                )
+            });
+        }
+    }
+}
+
+pub struct PlayerState {
+    pub inner: Player,
     pub hp: i32,
+    pub trail: VecDeque<Position>,
+    pub motion_count: usize,
+    pub discovered_motions: HashSet<VimMotion>,
+    pub level: usize,
+    pub last_checkpoint: Option<Position>,
+    pub pending_respawn: Option<Position>,
+}
+
+impl PlayerState {
+    pub fn new(position: Position) -> Self {
+        Self {
+            inner: Player::new(position),
+            hp: MAX_HP,
+            trail: VecDeque::new(),
+            motion_count: 0,
+            discovered_motions: HashSet::new(),
+            level: 1,
+            last_checkpoint: None,
+            pending_respawn: None,
+        }
+    }
+
+    pub fn advance_level(&mut self, level: usize, start: Position) {
+        self.level = level;
+        self.inner.position = start;
+        self.trail.clear();
+        self.last_checkpoint = None;
+        self.pending_respawn = None;
+    }
+
+    pub fn retry_level(&mut self, start: Position) {
+        self.inner.position = start;
+        self.hp = MAX_HP;
+        self.trail.clear();
+        self.last_checkpoint = None;
+        self.pending_respawn = None;
+    }
+
+    pub fn motion_feedback(&self, motion: VimMotion, target: Option<char>) -> String {
+        match motion {
+            VimMotion::DeleteLine => String::from("dd clears the nearest obstacle on your row."),
+            VimMotion::Find => target
+                .map(|ch| format!("f{ch} searches forward for the next matching tile."))
+                .unwrap_or_else(|| String::from("Find motion ready.")),
+            VimMotion::Till => target
+                .map(|ch| format!("t{ch} stops one tile before the next match."))
+                .unwrap_or_else(|| String::from("Till motion ready.")),
+            _ => format!("{} — {}", motion.key_label(), motion.description()),
+        }
+    }
+
+    pub fn damage_feedback(&self) -> String {
+        format!("Hit! {} HP remaining.", self.hp)
+    }
+}
+
+pub struct InputState {
+    pub input_queue: Vec<(VirtualKeyCode, bool)>,
+    pub pending_input: Option<PendingInput>,
+}
+
+impl InputState {
+    pub fn new() -> Self {
+        Self { input_queue: Vec::new(), pending_input: None }
+    }
+
+    pub fn clear(&mut self) {
+        self.input_queue.clear();
+        self.pending_input = None;
+    }
+}
+
+impl Default for InputState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct Session {
     pub game_state: GameState,
     pub pause_selection: PauseOption,
     pub started: bool,
-    pub pending_input: Option<PendingInput>,
+    pub status_message: String,
     pub start_time: Instant,
     pub elapsed: Duration,
     pub final_time: Option<Duration>,
-    pub motion_count: usize,
-    pub status_message: String,
-    pub discovered_motions: HashSet<VimMotion>,
-    pub trail: VecDeque<Position>,
-    pub level: usize,
+}
+
+impl Session {
+    pub fn new() -> Self {
+        Self {
+            game_state: GameState::Playing,
+            pause_selection: PauseOption::Resume,
+            started: false,
+            status_message: String::from(
+                "Explore the dungeon and practice the highlighted motions.",
+            ),
+            start_time: Instant::now(),
+            elapsed: Duration::default(),
+            final_time: None,
+        }
+    }
+}
+
+impl Default for Session {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct App {
+    pub world: World,
+    pub player: PlayerState,
+    pub input: InputState,
+    pub session: Session,
+    pub player_animation: Option<AnimationState>,
+    pub enemy_animations: Vec<(usize, AnimationState)>,
+    pub attack_effects: Vec<AttackEffect>,
     pub audio: AudioManager,
-    pub last_checkpoint: Option<Position>,
-    pub activated_torchlights: HashSet<Position>,
     #[cfg(debug_assertions)]
     pub cheat_buf: CheatBuffer,
     #[cfg(debug_assertions)]

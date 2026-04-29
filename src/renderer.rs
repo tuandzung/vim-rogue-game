@@ -19,28 +19,28 @@ pub fn render(ctx: &mut BTerm, app: &App) {
         return;
     }
 
-    if !app.started {
+    if !app.session.started {
         render_title(ctx);
         return;
     }
 
-    if app.game_state == GameState::Won {
+    if app.session.game_state == GameState::Won {
         render_win(ctx, app);
         return;
     }
 
-    if app.game_state == GameState::Lost {
+    if app.session.game_state == GameState::Lost {
         render_lost(ctx, app);
         return;
     }
 
-    if app.game_state == GameState::Paused {
+    if app.session.game_state == GameState::Paused {
         render_gameplay(ctx, app);
         render_pause_overlay(ctx, app);
         return;
     }
 
-    if app.game_state == GameState::Dying {
+    if app.session.game_state == GameState::Dying {
         render_gameplay(ctx, app);
         return;
     }
@@ -114,23 +114,23 @@ fn render_map_viewport(ctx: &mut BTerm, app: &App, map_width: i32) {
     let mut left = player_draw_pos.x.saturating_sub(half_w);
     let mut top = player_draw_pos.y.saturating_sub(half_h);
 
-    if left + view_width > app.map.width {
-        left = app.map.width.saturating_sub(view_width);
+    if left + view_width > app.world.map.width {
+        left = app.world.map.width.saturating_sub(view_width);
     }
-    if top + view_height > app.map.height {
-        top = app.map.height.saturating_sub(view_height);
+    if top + view_height > app.world.map.height {
+        top = app.world.map.height.saturating_sub(view_height);
     }
 
-    let trail_positions: Vec<crate::types::Position> = app.trail.iter().copied().collect();
+    let trail_positions: Vec<crate::types::Position> = app.player.trail.iter().copied().collect();
 
     for screen_y in 0..view_height {
         let map_y = top + screen_y;
-        if map_y >= app.map.height {
+        if map_y >= app.world.map.height {
             break;
         }
         for screen_x in 0..view_width {
             let map_x = left + screen_x;
-            if map_x >= app.map.width {
+            if map_x >= app.world.map.width {
                 break;
             }
 
@@ -142,7 +142,7 @@ fn render_map_viewport(ctx: &mut BTerm, app: &App, map_width: i32) {
                 continue;
             }
 
-            let vis = app.visibility.get(Position { x: map_x, y: map_y });
+            let vis = app.world.visibility.get(Position { x: map_x, y: map_y });
 
             if vis == VisibilityState::Hidden {
                 ctx.print_color(draw_x, draw_y, black, black, " ");
@@ -167,11 +167,12 @@ fn render_map_viewport(ctx: &mut BTerm, app: &App, map_width: i32) {
                 }
             }
 
-            let tile = app.map.get_tile(map_x, map_y);
-            let zone = app.map.zone_at(Position { x: map_x, y: map_y });
-            let wall_glyph = wall_display_glyph(map_x, map_y, &app.map);
+            let tile = app.world.map.get_tile(map_x, map_y);
+            let zone = app.world.map.zone_at(Position { x: map_x, y: map_y });
+            let wall_glyph = wall_display_glyph(map_x, map_y, &app.world.map);
 
-            if let Some((glyph, fg)) = tile_fog_appearance(tile, zone, vis, app.elapsed, wall_glyph)
+            if let Some((glyph, fg)) =
+                tile_fog_appearance(tile, zone, vis, app.session.elapsed, wall_glyph)
             {
                 ctx.print_color(draw_x, draw_y, fg, black, glyph.to_string());
             }
@@ -198,16 +199,17 @@ pub fn visual_player_position(app: &App) -> Position {
     let (x, y) = app
         .player_animation
         .map(|animation| animation.current_position())
-        .unwrap_or((app.player.position.x as f64, app.player.position.y as f64));
+        .unwrap_or((app.player.inner.position.x as f64, app.player.inner.position.y as f64));
 
     Position {
-        x: x.round().clamp(0.0, app.map.width.saturating_sub(1) as f64) as usize,
-        y: y.round().clamp(0.0, app.map.height.saturating_sub(1) as f64) as usize,
+        x: x.round().clamp(0.0, app.world.map.width.saturating_sub(1) as f64) as usize,
+        y: y.round().clamp(0.0, app.world.map.height.saturating_sub(1) as f64) as usize,
     }
 }
 
 pub fn visual_enemy_positions(app: &App) -> Vec<Position> {
-    app.enemies
+    app.world
+        .enemies
         .iter()
         .enumerate()
         .map(|(enemy_index, enemy)| {
@@ -220,8 +222,8 @@ pub fn visual_enemy_positions(app: &App) -> Vec<Position> {
                 .unwrap_or((enemy.position.x as f64, enemy.position.y as f64));
 
             Position {
-                x: x.round().clamp(0.0, app.map.width.saturating_sub(1) as f64) as usize,
-                y: y.round().clamp(0.0, app.map.height.saturating_sub(1) as f64) as usize,
+                x: x.round().clamp(0.0, app.world.map.width.saturating_sub(1) as f64) as usize,
+                y: y.round().clamp(0.0, app.world.map.height.saturating_sub(1) as f64) as usize,
             }
         })
         .collect()
@@ -254,13 +256,25 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     ctx.print_color(sidebar_x, y, zone_color, black, zone.title());
     y += 2;
 
-    ctx.print_color(sidebar_x, y, white, black, format!("Level: {} / {}", app.level, TOTAL_LEVELS));
+    ctx.print_color(
+        sidebar_x,
+        y,
+        white,
+        black,
+        format!("Level: {} / {}", app.player.level, TOTAL_LEVELS),
+    );
     y += 1;
-    ctx.print_color(sidebar_x, y, white, black, format!("Time:  {}", format_duration(app.elapsed)));
+    ctx.print_color(
+        sidebar_x,
+        y,
+        white,
+        black,
+        format!("Time:  {}", format_duration(app.session.elapsed)),
+    );
     y += 1;
-    ctx.print_color(sidebar_x, y, white, black, format!("Moves: {}", app.motion_count));
+    ctx.print_color(sidebar_x, y, white, black, format!("Moves: {}", app.player.motion_count));
     y += 1;
-    let hp_ratio = app.hp as f32 / MAX_HP as f32;
+    let hp_ratio = app.player.hp as f32 / MAX_HP as f32;
     let hp_filled = (hp_ratio * 10.0).round() as usize;
     let hp_color = if hp_ratio > 0.5 {
         RGB::named(GREEN)
@@ -269,7 +283,7 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     } else {
         RGB::named(RED)
     };
-    let hp_text = format!("HP: {}/{}", app.hp, MAX_HP);
+    let hp_text = format!("HP: {}/{}", app.player.hp, MAX_HP);
     ctx.print_color(sidebar_x, y, hp_color, black, &hp_text);
     y += 1;
     let mut bar = String::with_capacity(12);
@@ -298,7 +312,7 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
             if y >= 47 {
                 break;
             }
-            let used = app.player.used_motions.contains(motion);
+            let used = app.player.inner.used_motions.contains(motion);
             let marker = if used { "✓" } else { "·" };
             let color = if used { green } else { dark_gray };
             let label = format!("{} {:<7} {}", marker, motion.key_label(), motion.display_name());
@@ -314,16 +328,16 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
     }
     if y < 48 {
         let max_width = (80 - sidebar_x) as usize;
-        let msg = if app.status_message.len() > max_width {
-            &app.status_message[..max_width]
+        let msg = if app.session.status_message.len() > max_width {
+            &app.session.status_message[..max_width]
         } else {
-            &app.status_message
+            &app.session.status_message
         };
         ctx.print_color(sidebar_x, y, dark_gray, black, msg);
         y += 2;
     }
 
-    if let Some(pending) = app.pending_input
+    if let Some(pending) = app.input.pending_input
         && y < 49
     {
         let prompt = match pending {
@@ -390,14 +404,14 @@ fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut 
         for mx in 0..MINIMAP_WIDTH {
             let (map_x, map_y) = minimap_map_coords(mx, my);
             let pos = Position { x: map_x, y: map_y };
-            let vis = app.visibility.get(pos);
+            let vis = app.world.visibility.get(pos);
 
             if vis == VisibilityState::Hidden {
                 continue;
             }
 
-            let tile = app.map.get_tile(map_x, map_y);
-            let zone = app.map.zone_at(pos);
+            let tile = app.world.map.get_tile(map_x, map_y);
+            let zone = app.world.map.zone_at(pos);
 
             let (glyph, color) = match tile {
                 Tile::Wall => ('█', dim_color(zone_wall_color(zone), 0.6)),
@@ -420,7 +434,7 @@ fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut 
         }
     }
 
-    let (px, py) = minimap_player_pos(app.player.position.x, app.player.position.y);
+    let (px, py) = minimap_player_pos(app.player.inner.position.x, app.player.inner.position.y);
     ctx.print_color(x + 1 + px, mm_y + 1 + py, RGB::named(GREEN), black, "@");
 
     *y_out = bottom_y + 1;
@@ -560,10 +574,10 @@ fn render_win(ctx: &mut BTerm, app: &App) {
     }
     y += 1;
 
-    let duration = format_duration(app.final_time.unwrap_or(app.elapsed));
+    let duration = format_duration(app.session.final_time.unwrap_or(app.session.elapsed));
     let stats = format!(
         "  Level: {} / {}    Time: {}    Moves: {}",
-        app.level, TOTAL_LEVELS, duration, app.motion_count
+        app.player.level, TOTAL_LEVELS, duration, app.player.motion_count
     );
     ctx.print_color(center_x(stats.len()), y, white, black, &stats);
     y += 2;
@@ -574,7 +588,8 @@ fn render_win(ctx: &mut BTerm, app: &App) {
 
     for (zone, motions) in phase_definitions() {
         let total = motions.len();
-        let discovered = motions.iter().filter(|m| app.discovered_motions.contains(m)).count();
+        let discovered =
+            motions.iter().filter(|m| app.player.discovered_motions.contains(m)).count();
         let bar_width = 8;
         let filled = if total == 0 {
             0
@@ -644,10 +659,10 @@ fn render_lost(ctx: &mut BTerm, app: &App) {
     }
     y += 1;
 
-    let duration = format_duration(app.final_time.unwrap_or(app.elapsed));
+    let duration = format_duration(app.session.final_time.unwrap_or(app.session.elapsed));
     let stats = format!(
         "  Level: {} / {}    Time: {}    Moves: {}",
-        app.level, TOTAL_LEVELS, duration, app.motion_count
+        app.player.level, TOTAL_LEVELS, duration, app.player.motion_count
     );
     ctx.print_color(center_x(stats.len()), y, white, black, &stats);
     y += 2;
@@ -705,7 +720,7 @@ fn render_pause_overlay(ctx: &mut BTerm, app: &App) {
     ];
 
     for (index, (option, label)) in options.iter().enumerate() {
-        let selected = app.pause_selection == *option;
+        let selected = app.session.pause_selection == *option;
         let prefix = if selected { "► " } else { "  " };
         let line = format!("{prefix}{label}");
         let color = if selected { yellow } else { dark_gray };

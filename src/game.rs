@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::time::Instant;
 
 use bracket_lib::prelude::VirtualKeyCode;
@@ -8,12 +7,10 @@ use crate::animation::{
 };
 use crate::audio::SoundEffect;
 use crate::map::Map;
-use crate::player::Player;
 use crate::types::{
-    App, Enemy, FOV_RADIUS, GameState, MAX_HP, PatrolArea, PauseOption, PendingInput,
-    TORCHLIGHT_FOV_RADIUS, Tile, VimMotion,
+    App, GameState, InputState, MAX_HP, PauseOption, PendingInput, PlayerState, Session, Tile,
+    VimMotion, World,
 };
-use crate::visibility::VisibilityMap;
 
 impl Default for App {
     fn default() -> Self {
@@ -24,35 +21,17 @@ impl Default for App {
 impl App {
     pub fn new() -> Self {
         let map = Map::new();
-        let player = Player::new(map.start);
+        let world = World::new(map);
+        let start = world.map.start;
         let mut app = Self {
-            map,
-            visibility: VisibilityMap::new(80, 40),
-            player,
+            world,
+            player: PlayerState::new(start),
+            input: InputState::new(),
+            session: Session::new(),
             player_animation: None,
             enemy_animations: Vec::new(),
             attack_effects: Vec::new(),
-            pending_respawn: None,
-            input_queue: Vec::new(),
-            enemies: Vec::new(),
-            hp: MAX_HP,
-            game_state: GameState::Playing,
-            pause_selection: PauseOption::Resume,
-            started: false,
-            pending_input: None,
-            start_time: Instant::now(),
-            elapsed: Default::default(),
-            final_time: None,
-            motion_count: 0,
-            status_message: String::from(
-                "Explore the dungeon and practice the highlighted motions.",
-            ),
-            discovered_motions: Default::default(),
-            trail: VecDeque::new(),
-            level: 1,
             audio: crate::audio::AudioManager::new(),
-            last_checkpoint: None,
-            activated_torchlights: Default::default(),
             #[cfg(debug_assertions)]
             cheat_buf: crate::types::CheatBuffer::new(),
             #[cfg(debug_assertions)]
@@ -63,119 +42,48 @@ impl App {
     }
 
     pub fn refresh_time(&mut self) {
-        if self.started && self.game_state == GameState::Playing {
-            self.elapsed = self.start_time.elapsed();
+        if self.session.started && self.session.game_state == GameState::Playing {
+            self.session.elapsed = self.session.start_time.elapsed();
         }
     }
 
     pub fn current_zone(&self) -> crate::types::Zone {
-        self.map.zone_at(self.player.position)
+        self.world.map.zone_at(self.player.inner.position)
     }
 
     pub fn unique_motions(&self) -> usize {
-        self.discovered_motions.len()
+        self.player.discovered_motions.len()
     }
 
     pub fn update_visibility(&mut self) {
-        if self.visibility.width() != self.map.width || self.visibility.height() != self.map.height
-        {
-            self.visibility = VisibilityMap::new(self.map.width, self.map.height);
-        }
-
-        let player_position = self.player.position;
-        let map = &self.map;
-
-        self.visibility.demote_visible_to_explored();
-        self.visibility.compute_fov(player_position, FOV_RADIUS, |pos| {
-            matches!(
-                map.get_tile(pos.x, pos.y),
-                Tile::Floor | Tile::Exit | Tile::Obstacle | Tile::Torchlight
-            )
-        });
-
-        let torchlight_sources: Vec<(crate::types::Position, i32)> =
-            self.activated_torchlights.iter().map(|&pos| (pos, TORCHLIGHT_FOV_RADIUS)).collect();
-
-        if !torchlight_sources.is_empty() {
-            let map_ref = &self.map;
-            self.visibility.compute_multi_fov(&torchlight_sources, |pos| {
-                matches!(
-                    map_ref.get_tile(pos.x, pos.y),
-                    Tile::Floor | Tile::Exit | Tile::Obstacle | Tile::Torchlight
-                )
-            });
-        }
-    }
-
-    fn spawn_enemies_for_current_level(&mut self) {
-        self.enemies = self
-            .map
-            .enemy_spawns
-            .iter()
-            .enumerate()
-            .map(|(i, &pos)| {
-                let patrol_area = self
-                    .map
-                    .enemy_patrol_areas
-                    .get(i)
-                    .copied()
-                    .unwrap_or_else(|| PatrolArea::point(pos.x, pos.y));
-                if self.level == 4 {
-                    Enemy { position: pos, glyph: 'e', hp: Some(30), stunned_turns: 0, patrol_area }
-                } else {
-                    let mut e = Enemy::new(pos);
-                    e.patrol_area = patrol_area;
-                    e
-                }
-            })
-            .collect();
+        self.world.update_visibility(self.player.inner.position);
     }
 
     pub fn advance_level(&mut self) {
-        self.level += 1;
-        self.map = Map::level(self.level);
-        self.player.position = self.map.start;
+        let next_level = self.player.level + 1;
+        self.world.reset_for_level(next_level);
+        self.world.spawn_enemies(next_level);
+        self.player.advance_level(next_level, self.world.map.start);
         self.player_animation = None;
         self.enemy_animations.clear();
         self.attack_effects.clear();
-        self.pending_respawn = None;
-        self.input_queue.clear();
-        self.spawn_enemies_for_current_level();
-        self.trail.clear();
-        self.pending_input = None;
-        self.last_checkpoint = None;
-        self.activated_torchlights.clear();
-        if self.visibility.width() != self.map.width || self.visibility.height() != self.map.height
-        {
-            self.visibility = VisibilityMap::new(self.map.width, self.map.height);
-        }
-        self.visibility.reset();
+        self.input.clear();
         self.update_visibility();
-        self.status_message = format!("Level {} — The dungeon shifts around you...", self.level);
+        self.session.status_message =
+            format!("Level {} — The dungeon shifts around you...", next_level);
     }
 
     pub fn retry_level(&mut self) {
-        self.map = Map::level(self.level);
-        self.player.position = self.map.start;
+        self.world.reset_for_level(self.player.level);
+        self.world.spawn_enemies(self.player.level);
+        self.player.retry_level(self.world.map.start);
         self.player_animation = None;
         self.enemy_animations.clear();
         self.attack_effects.clear();
-        self.pending_respawn = None;
-        self.input_queue.clear();
-        self.spawn_enemies_for_current_level();
-        self.hp = MAX_HP;
-        self.trail.clear();
-        self.pending_input = None;
-        self.game_state = GameState::Playing;
-        self.last_checkpoint = None;
-        self.activated_torchlights.clear();
-        if self.visibility.width() != self.map.width || self.visibility.height() != self.map.height
-        {
-            self.visibility = VisibilityMap::new(self.map.width, self.map.height);
-        }
-        self.visibility.reset();
+        self.input.clear();
+        self.session.game_state = GameState::Playing;
         self.update_visibility();
-        self.status_message = format!("Level {} — Try again!", self.level);
+        self.session.status_message = format!("Level {} — Try again!", self.player.level);
     }
 
     #[cfg(debug_assertions)]
@@ -190,28 +98,28 @@ impl App {
 }
 
 pub fn tick(app: &mut App, delta_ms: f64) {
-    if app.game_state == GameState::Paused {
+    if app.session.game_state == GameState::Paused {
         return;
     }
 
-    if app.game_state == GameState::Dying {
+    if app.session.game_state == GameState::Dying {
         app.attack_effects.retain(|e| !e.is_complete());
         if app.attack_effects.is_empty() {
-            let checkpoint = app.pending_respawn.take();
+            let checkpoint = app.player.pending_respawn.take();
             match checkpoint {
                 Some(pos) => {
                     app.enemy_animations.clear();
-                    app.hp = MAX_HP;
-                    app.player.position = pos;
+                    app.player.hp = MAX_HP;
+                    app.player.inner.position = pos;
                     app.player_animation = None;
-                    app.game_state = GameState::Playing;
+                    app.session.game_state = GameState::Playing;
                     push_enemies_off_position(app, pos);
                     app.update_visibility();
-                    app.status_message = String::from("Respawned at checkpoint!");
+                    app.session.status_message = String::from("Respawned at checkpoint!");
                 }
                 None => {
-                    app.game_state = GameState::Lost;
-                    app.status_message = String::from("You were caught! Game over.");
+                    app.session.game_state = GameState::Lost;
+                    app.session.status_message = String::from("You were caught! Game over.");
                 }
             }
             app.attack_effects.clear();
@@ -253,12 +161,12 @@ pub fn tick(app: &mut App, delta_ms: f64) {
         effect.update(delta_ms);
     }
 
-    while app.player_animation.is_none() && !app.input_queue.is_empty() {
-        let (key, shift) = app.input_queue.remove(0);
+    while app.player_animation.is_none() && !app.input.input_queue.is_empty() {
+        let (key, shift) = app.input.input_queue.remove(0);
         handle_key(app, key, shift);
 
-        if matches!(app.game_state, GameState::Quit | GameState::Won | GameState::Dying) {
-            app.input_queue.clear();
+        if matches!(app.session.game_state, GameState::Quit | GameState::Won | GameState::Dying) {
+            app.input.input_queue.clear();
             break;
         }
     }
@@ -346,33 +254,33 @@ fn check_cheat_code(app: &mut App, key: VirtualKeyCode, shift: bool) -> Option<C
 fn apply_cheat(app: &mut App, cheat: CheatCode) {
     match cheat {
         CheatCode::NextLevel => {
-            if app.level < crate::types::TOTAL_LEVELS {
+            if app.player.level < crate::types::TOTAL_LEVELS {
                 app.advance_level();
-                app.status_message = String::from("CHEAT: Level skip!");
+                app.session.status_message = String::from("CHEAT: Level skip!");
             } else {
-                app.game_state = GameState::Won;
-                let final_time = app.start_time.elapsed();
-                app.final_time = Some(final_time);
-                app.elapsed = final_time;
-                app.status_message = String::from("CHEAT: Instant victory!");
+                app.session.game_state = GameState::Won;
+                let final_time = app.session.start_time.elapsed();
+                app.session.final_time = Some(final_time);
+                app.session.elapsed = final_time;
+                app.session.status_message = String::from("CHEAT: Instant victory!");
             }
         }
         CheatCode::GodMode => {
             app.cheat_god_mode = !app.cheat_god_mode;
-            app.status_message = if app.cheat_god_mode {
+            app.session.status_message = if app.cheat_god_mode {
                 String::from("CHEAT: God mode ON")
             } else {
                 String::from("CHEAT: God mode OFF")
             };
         }
         CheatCode::KillEnemies => {
-            app.enemies.clear();
+            app.world.enemies.clear();
             app.enemy_animations.clear();
-            app.status_message = String::from("CHEAT: All enemies eliminated!");
+            app.session.status_message = String::from("CHEAT: All enemies eliminated!");
         }
         CheatCode::Noclip => {
-            app.player.noclip = !app.player.noclip;
-            app.status_message = if app.player.noclip {
+            app.player.inner.noclip = !app.player.inner.noclip;
+            app.session.status_message = if app.player.inner.noclip {
                 String::from("CHEAT: Noclip ON")
             } else {
                 String::from("CHEAT: Noclip OFF")
@@ -382,11 +290,11 @@ fn apply_cheat(app: &mut App, cheat: CheatCode) {
 }
 
 pub fn handle_key(app: &mut App, key: VirtualKeyCode, shift: bool) {
-    if !app.started {
-        app.started = true;
-        app.start_time = Instant::now();
-        app.elapsed = Default::default();
-        app.status_message =
+    if !app.session.started {
+        app.session.started = true;
+        app.session.start_time = Instant::now();
+        app.session.elapsed = Default::default();
+        app.session.status_message =
             String::from("Use hjkl to move. Every motion is available from the start.");
         return;
     }
@@ -397,30 +305,30 @@ pub fn handle_key(app: &mut App, key: VirtualKeyCode, shift: bool) {
         return;
     }
 
-    if app.game_state == GameState::Dying {
+    if app.session.game_state == GameState::Dying {
         return;
     }
 
     if app.player_animation.is_some() {
-        app.input_queue.push((key, shift));
+        app.input.input_queue.push((key, shift));
         return;
     }
 
-    if app.game_state == GameState::Paused {
+    if app.session.game_state == GameState::Paused {
         match key {
             VirtualKeyCode::Escape => {
-                app.game_state = GameState::Playing;
+                app.session.game_state = GameState::Playing;
             }
             VirtualKeyCode::Up | VirtualKeyCode::K if !shift => {
-                app.pause_selection = app.pause_selection.prev();
+                app.session.pause_selection = app.session.pause_selection.prev();
             }
             VirtualKeyCode::Down | VirtualKeyCode::J if !shift => {
-                app.pause_selection = app.pause_selection.next();
+                app.session.pause_selection = app.session.pause_selection.next();
             }
-            VirtualKeyCode::Return => match app.pause_selection {
-                PauseOption::Resume => app.game_state = GameState::Playing,
+            VirtualKeyCode::Return => match app.session.pause_selection {
+                PauseOption::Resume => app.session.game_state = GameState::Playing,
                 PauseOption::RetryLevel => app.retry_level(),
-                PauseOption::QuitGame => app.game_state = GameState::Quit,
+                PauseOption::QuitGame => app.session.game_state = GameState::Quit,
             },
             _ => {}
         }
@@ -428,24 +336,24 @@ pub fn handle_key(app: &mut App, key: VirtualKeyCode, shift: bool) {
     }
 
     if matches!(key, VirtualKeyCode::Escape) || (key == VirtualKeyCode::Q && !shift) {
-        app.input_queue.clear();
-        app.pending_input = None;
-        app.game_state = GameState::Paused;
-        app.pause_selection = PauseOption::Resume;
+        app.input.input_queue.clear();
+        app.input.pending_input = None;
+        app.session.game_state = GameState::Paused;
+        app.session.pause_selection = PauseOption::Resume;
         return;
     }
 
-    if app.game_state == GameState::Won {
+    if app.session.game_state == GameState::Won {
         return;
     }
 
-    if app.game_state == GameState::Lost {
+    if app.session.game_state == GameState::Lost {
         app.retry_level();
         return;
     }
 
-    if let Some(pending) = app.pending_input {
-        app.pending_input = None;
+    if let Some(pending) = app.input.pending_input {
+        app.input.pending_input = None;
         match pending {
             PendingInput::Find => {
                 if let Some(target) = vkey_to_char(key, shift) {
@@ -461,14 +369,16 @@ pub fn handle_key(app: &mut App, key: VirtualKeyCode, shift: bool) {
                 if key == VirtualKeyCode::D && !shift {
                     execute_motion(app, VimMotion::DeleteLine, None);
                 } else {
-                    app.status_message = String::from("dd needs a second d. Command cancelled.");
+                    app.session.status_message =
+                        String::from("dd needs a second d. Command cancelled.");
                 }
             }
             PendingInput::GotoLine => {
                 if key == VirtualKeyCode::G && !shift {
                     execute_motion(app, VimMotion::GotoLine, None);
                 } else {
-                    app.status_message = String::from("gg needs a second g. Command cancelled.");
+                    app.session.status_message =
+                        String::from("gg needs a second g. Command cancelled.");
                 }
             }
         }
@@ -483,8 +393,8 @@ pub fn handle_key(app: &mut App, key: VirtualKeyCode, shift: bool) {
     match parse_motion(key, shift) {
         Some(ParsedInput::Immediate(motion)) => execute_motion(app, motion, None),
         Some(ParsedInput::AwaitTarget(pending)) => {
-            app.pending_input = Some(pending);
-            app.status_message = match pending {
+            app.input.pending_input = Some(pending);
+            app.session.status_message = match pending {
                 PendingInput::Find => {
                     String::from("Find: type the target tile character (., #, >, ▒).")
                 }
@@ -528,11 +438,18 @@ fn parse_motion(key: VirtualKeyCode, shift: bool) -> Option<ParsedInput> {
 fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
     use std::collections::{HashSet, VecDeque};
     let directions: [(isize, isize); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
-    let mut new_positions: Vec<Option<crate::types::Position>> = vec![None; app.enemies.len()];
+    let mut new_positions: Vec<Option<crate::types::Position>> =
+        vec![None; app.world.enemies.len()];
     let mut claimed: HashSet<crate::types::Position> = HashSet::new();
 
-    let enemies_on_pos: Vec<usize> =
-        app.enemies.iter().enumerate().filter(|(_, e)| e.position == pos).map(|(i, _)| i).collect();
+    let enemies_on_pos: Vec<usize> = app
+        .world
+        .enemies
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| e.position == pos)
+        .map(|(i, _)| i)
+        .collect();
 
     if enemies_on_pos.is_empty() {
         return;
@@ -544,7 +461,10 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
     for (dx, dy) in &directions {
         let nx = (pos.x as isize + dx) as usize;
         let ny = (pos.y as isize + dy) as usize;
-        if nx < app.map.width && ny < app.map.height && app.map.is_passable(nx, ny) {
+        if nx < app.world.map.width
+            && ny < app.world.map.height
+            && app.world.map.is_passable(nx, ny)
+        {
             let neighbor = crate::types::Position { x: nx, y: ny };
             if visited.insert(neighbor) {
                 bfs.push_back(neighbor);
@@ -559,11 +479,11 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
             None => break,
         };
 
-        if candidate.x < app.map.width
-            && candidate.y < app.map.height
-            && app.map.is_passable(candidate.x, candidate.y)
+        if candidate.x < app.world.map.width
+            && candidate.y < app.world.map.height
+            && app.world.map.is_passable(candidate.x, candidate.y)
             && !claimed.contains(&candidate)
-            && !app.enemies.iter().any(|e| e.position == candidate)
+            && !app.world.enemies.iter().any(|e| e.position == candidate)
         {
             let idx = enemies_on_pos[assigned];
             new_positions[idx] = Some(candidate);
@@ -574,7 +494,10 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
         for (dx, dy) in &directions {
             let nx = (candidate.x as isize + dx) as usize;
             let ny = (candidate.y as isize + dy) as usize;
-            if nx < app.map.width && ny < app.map.height && app.map.is_passable(nx, ny) {
+            if nx < app.world.map.width
+                && ny < app.world.map.height
+                && app.world.map.is_passable(nx, ny)
+            {
                 let neighbor = crate::types::Position { x: nx, y: ny };
                 if visited.insert(neighbor) {
                     bfs.push_back(neighbor);
@@ -583,7 +506,7 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
         }
     }
 
-    for (i, enemy) in app.enemies.iter_mut().enumerate() {
+    for (i, enemy) in app.world.enemies.iter_mut().enumerate() {
         if let Some(new_pos) = new_positions[i] {
             enemy.position = new_pos;
         }
@@ -591,16 +514,17 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
 }
 
 fn enemies_step(app: &mut App) {
-    let player_pos = app.player.position;
-    let mut prior_animations = vec![None; app.enemies.len()];
+    let player_pos = app.player.inner.position;
+    let mut prior_animations = vec![None; app.world.enemies.len()];
     for (enemy_index, animation) in std::mem::take(&mut app.enemy_animations) {
         if enemy_index < prior_animations.len() {
             prior_animations[enemy_index] = Some(animation);
         }
     }
     let old_positions: Vec<crate::types::Position> =
-        app.enemies.iter().map(|enemy| enemy.position).collect();
+        app.world.enemies.iter().map(|enemy| enemy.position).collect();
     let old_visual_positions: Vec<(f64, f64)> = app
+        .world
         .enemies
         .iter()
         .enumerate()
@@ -611,14 +535,14 @@ fn enemies_step(app: &mut App) {
         })
         .collect();
 
-    for enemy in &mut app.enemies {
+    for enemy in &mut app.world.enemies {
         if enemy.stunned_turns > 0 {
             enemy.stunned_turns -= 1;
         } else {
-            let moved = if enemy.has_line_of_sight(player_pos, &app.map) {
-                enemy.step_toward_player(player_pos, &app.map)
+            let moved = if enemy.has_line_of_sight(player_pos, &app.world.map) {
+                enemy.step_toward_player(player_pos, &app.world.map)
             } else {
-                enemy.patrol_step(&app.map)
+                enemy.patrol_step(&app.world.map)
             };
             if moved {
                 app.audio.play(SoundEffect::EnemyStep);
@@ -626,32 +550,35 @@ fn enemies_step(app: &mut App) {
         }
     }
 
-    let player_pos = app.player.position;
+    let player_pos = app.player.inner.position;
     let invincible = app.is_invincible();
-    let mut remaining_enemies = Vec::with_capacity(app.enemies.len());
+    let mut remaining_enemies = Vec::with_capacity(app.world.enemies.len());
     let mut next_animations = Vec::new();
-    for (old_index, ((old_position, old_visual_position), enemy)) in
-        old_positions.into_iter().zip(old_visual_positions).zip(app.enemies.drain(..)).enumerate()
+    for (old_index, ((old_position, old_visual_position), enemy)) in old_positions
+        .into_iter()
+        .zip(old_visual_positions)
+        .zip(app.world.enemies.drain(..))
+        .enumerate()
     {
         if enemy.position == player_pos
             && enemy.stunned_turns == 0
-            && app.game_state == GameState::Playing
+            && app.session.game_state == GameState::Playing
             && !invincible
         {
             app.audio.play(SoundEffect::Damage);
-            app.hp -= 10;
+            app.player.hp -= 10;
             app.attack_effects.push(AttackEffect::new(
                 AttackEffectKind::EnemyHit,
                 player_pos.x,
                 player_pos.y,
             ));
-            if app.hp <= 0 {
-                app.hp = 0;
-                app.input_queue.clear();
-                app.game_state = GameState::Dying;
-                app.pending_respawn = app.last_checkpoint;
+            if app.player.hp <= 0 {
+                app.player.hp = 0;
+                app.input.input_queue.clear();
+                app.session.game_state = GameState::Dying;
+                app.player.pending_respawn = app.player.last_checkpoint;
             } else {
-                app.status_message = format!("Hit! {} HP remaining.", app.hp);
+                app.session.status_message = app.player.damage_feedback();
             }
             if enemy.hp.is_some() {
                 let new_index = remaining_enemies.len();
@@ -687,113 +614,97 @@ fn enemies_step(app: &mut App) {
         }
     }
 
-    app.enemies = remaining_enemies;
+    app.world.enemies = remaining_enemies;
     app.enemy_animations = next_animations;
 }
 
 fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
-    let old_pos = app.player.position;
-    let old_zone = app.map.zone_at(old_pos);
+    let old_pos = app.player.inner.position;
+    let old_zone = app.world.map.zone_at(old_pos);
 
-    let activated = match motion {
-        VimMotion::DeleteLine => {
-            app.status_message = String::from("dd clears the nearest obstacle on your row.");
-            app.player.handle_motion(motion, target, &mut app.map)
-        }
-        VimMotion::Find => {
-            let message = target
-                .map(|ch| format!("f{ch} searches forward for the next matching tile."))
-                .unwrap_or_else(|| String::from("Find motion ready."));
-            app.status_message = message;
-            app.player.handle_motion(motion, target, &mut app.map)
-        }
-        VimMotion::Till => {
-            let message = target
-                .map(|ch| format!("t{ch} stops one tile before the next match."))
-                .unwrap_or_else(|| String::from("Till motion ready."));
-            app.status_message = message;
-            app.player.handle_motion(motion, target, &mut app.map)
-        }
-        _ => {
-            app.status_message = format!("{} — {}", motion.key_label(), motion.description());
-            app.player.handle_motion(motion, target, &mut app.map)
-        }
+    let activated = {
+        app.session.status_message = app.player.motion_feedback(motion, target);
+        app.player.inner.handle_motion(motion, target, &mut app.world.map)
     };
 
-    app.motion_count += 1;
-    app.discovered_motions.insert(motion);
+    app.player.motion_count += 1;
+    app.player.discovered_motions.insert(motion);
     app.refresh_time();
 
-    if activated && old_pos != app.player.position {
+    if activated && old_pos != app.player.inner.position {
         app.player_animation = Some(AnimationState::new(
             PLAYER_MOVE_MS,
             (old_pos.x as f64, old_pos.y as f64),
-            (app.player.position.x as f64, app.player.position.y as f64),
+            (app.player.inner.position.x as f64, app.player.inner.position.y as f64),
         ));
-        app.trail.push_front(old_pos);
-        if app.trail.len() > crate::types::TRAIL_MAX {
-            app.trail.pop_back();
+        app.player.trail.push_front(old_pos);
+        if app.player.trail.len() > crate::types::TRAIL_MAX {
+            app.player.trail.pop_back();
         }
         app.audio.play(SoundEffect::Movement);
-        let new_zone = app.map.zone_at(app.player.position);
+        let new_zone = app.world.map.zone_at(app.player.inner.position);
         if new_zone != old_zone {
             app.audio.play(SoundEffect::ZoneEntry);
         }
     }
 
     if !activated {
-        app.status_message.push_str(" No valid destination from here.");
+        app.session.status_message.push_str(" No valid destination from here.");
     }
 
-    if app.map.get_tile(app.player.position.x, app.player.position.y) == Tile::Torchlight {
-        let torch_pos = app.player.position;
-        if !app.activated_torchlights.contains(&torch_pos) {
-            app.activated_torchlights.insert(torch_pos);
-            app.last_checkpoint = Some(torch_pos);
-            app.status_message = String::from("Checkpoint activated! Torchlight lit.");
+    if app.world.map.get_tile(app.player.inner.position.x, app.player.inner.position.y)
+        == Tile::Torchlight
+    {
+        let torch_pos = app.player.inner.position;
+        if !app.world.activated_torchlights.contains(&torch_pos) {
+            app.world.activated_torchlights.insert(torch_pos);
+            app.player.last_checkpoint = Some(torch_pos);
+            app.session.status_message = String::from("Checkpoint activated! Torchlight lit.");
         }
     }
 
-    if app.map.get_tile(app.player.position.x, app.player.position.y) == Tile::Exit {
-        if app.level < crate::types::TOTAL_LEVELS {
+    if app.world.map.get_tile(app.player.inner.position.x, app.player.inner.position.y)
+        == Tile::Exit
+    {
+        if app.player.level < crate::types::TOTAL_LEVELS {
             app.audio.play(SoundEffect::LevelComplete);
             app.advance_level();
         } else {
             app.audio.play(SoundEffect::Victory);
-            app.game_state = GameState::Won;
-            let final_time = app.start_time.elapsed();
-            app.final_time = Some(final_time);
-            app.elapsed = final_time;
-            app.status_message = String::from("You conquered all levels of the dungeon!");
+            app.session.game_state = GameState::Won;
+            let final_time = app.session.start_time.elapsed();
+            app.session.final_time = Some(final_time);
+            app.session.elapsed = final_time;
+            app.session.status_message = String::from("You conquered all levels of the dungeon!");
         }
         return;
     }
 
-    if activated && old_pos != app.player.position {
+    if activated && old_pos != app.player.inner.position {
         app.update_visibility();
         enemies_step(app);
     }
 }
 
 fn handle_melee_attack(app: &mut App) {
-    let facing = match app.player.last_direction {
+    let facing = match app.player.inner.last_direction {
         Some(dir) => dir,
         None => {
-            app.status_message = String::from("No direction — move first.");
+            app.session.status_message = String::from("No direction — move first.");
             return;
         }
     };
 
     let (dx, dy) = facing.delta();
-    let target_x = (app.player.position.x as isize + dx) as usize;
-    let target_y = (app.player.position.y as isize + dy) as usize;
+    let target_x = (app.player.inner.position.x as isize + dx) as usize;
+    let target_y = (app.player.inner.position.y as isize + dy) as usize;
 
     let enemy_index =
-        app.enemies.iter().position(|e| e.position.x == target_x && e.position.y == target_y);
+        app.world.enemies.iter().position(|e| e.position.x == target_x && e.position.y == target_y);
 
     match enemy_index {
         Some(idx) => {
-            let enemy_hp = app.enemies[idx].hp;
+            let enemy_hp = app.world.enemies[idx].hp;
             match enemy_hp {
                 Some(hp) if hp > 0 => {
                     app.attack_effects.push(AttackEffect::new(
@@ -803,25 +714,25 @@ fn handle_melee_attack(app: &mut App) {
                     ));
                     let new_hp = hp - 10;
                     if new_hp <= 0 {
-                        app.enemies.remove(idx);
-                        app.status_message = String::from("Enemy defeated!");
+                        app.world.enemies.remove(idx);
+                        app.session.status_message = String::from("Enemy defeated!");
                     } else {
-                        app.enemies[idx].hp = Some(new_hp);
-                        app.enemies[idx].stunned_turns = 1;
-                        app.status_message = format!("Hit! Enemy HP: {}", new_hp);
+                        app.world.enemies[idx].hp = Some(new_hp);
+                        app.world.enemies[idx].stunned_turns = 1;
+                        app.session.status_message = format!("Hit! Enemy HP: {}", new_hp);
                     }
-                    app.motion_count += 1;
+                    app.player.motion_count += 1;
                     app.refresh_time();
                     enemies_step(app);
                 }
                 _ => {
-                    app.status_message = String::from("Can't attack this enemy.");
+                    app.session.status_message = String::from("Can't attack this enemy.");
                 }
             }
         }
         None => {
-            app.status_message = String::from("Nothing there.");
-            app.motion_count += 1;
+            app.session.status_message = String::from("Nothing there.");
+            app.player.motion_count += 1;
             app.refresh_time();
             enemies_step(app);
         }

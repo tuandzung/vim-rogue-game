@@ -18,7 +18,7 @@ impl GameState for AppWrapper {
             game::handle_key(&mut self.app, key, ctx.shift);
         }
 
-        if self.app.game_state == vim_rogue::types::GameState::Quit {
+        if self.app.session.game_state == vim_rogue::types::GameState::Quit {
             ctx.quit();
             return;
         }

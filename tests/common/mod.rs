@@ -1,11 +1,8 @@
-use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 use vim_rogue::animation::{AnimationState, AnimationTimer, GameClock, TestClock};
 use vim_rogue::audio::AudioManager;
 use vim_rogue::map::Map;
-use vim_rogue::player::Player;
 use vim_rogue::types::*;
-use vim_rogue::visibility::VisibilityMap;
 
 #[cfg(debug_assertions)]
 use vim_rogue::types::CheatBuffer;
@@ -24,75 +21,47 @@ pub fn test_map(width: usize, height: usize) -> Map {
 }
 
 pub fn started_app_with_map(map: Map, position: Position) -> App {
-    let visibility = VisibilityMap::new(map.width, map.height);
+    let world = World::new(map);
     let mut app = App {
-        map,
-        visibility,
-        player: Player::new(position),
+        world,
+        player: PlayerState::new(position),
+        input: InputState::new(),
+        session: Session::new(),
         player_animation: None,
         enemy_animations: Vec::new(),
         attack_effects: Vec::new(),
-        pending_respawn: None,
-        input_queue: Vec::new(),
-        enemies: Vec::new(),
-        hp: MAX_HP,
-        game_state: GameState::Playing,
-        pause_selection: PauseOption::Resume,
-        started: true,
-        pending_input: None,
-        start_time: Instant::now(),
-        elapsed: Duration::default(),
-        final_time: None,
-        motion_count: 0,
-        status_message: String::new(),
-        discovered_motions: Default::default(),
-        trail: VecDeque::new(),
-        level: 1,
         audio: AudioManager::new(),
-        last_checkpoint: None,
-        activated_torchlights: Default::default(),
         #[cfg(debug_assertions)]
         cheat_buf: CheatBuffer::new(),
         #[cfg(debug_assertions)]
         cheat_god_mode: false,
     };
+    app.session.started = true;
     app.update_visibility();
     app
 }
 
 pub fn test_app() -> App {
     let map = Map::new();
-    App {
-        player: Player::new(map.start),
-        visibility: VisibilityMap::new(map.width, map.height),
-        map,
+    let start = map.start;
+    let world = World::new(map);
+    let mut app = App {
+        world,
+        player: PlayerState::new(start),
+        input: InputState::new(),
+        session: Session::new(),
         player_animation: None,
         enemy_animations: Vec::new(),
         attack_effects: Vec::new(),
-        pending_respawn: None,
-        input_queue: Vec::new(),
-        enemies: Vec::new(),
-        hp: MAX_HP,
-        game_state: GameState::Playing,
-        pause_selection: PauseOption::Resume,
-        started: true,
-        pending_input: None,
-        start_time: Instant::now(),
-        elapsed: Duration::default(),
-        final_time: None,
-        motion_count: 0,
-        status_message: String::new(),
-        discovered_motions: Default::default(),
-        trail: VecDeque::new(),
-        level: 1,
         audio: AudioManager::new(),
-        last_checkpoint: None,
-        activated_torchlights: Default::default(),
         #[cfg(debug_assertions)]
         cheat_buf: CheatBuffer::new(),
         #[cfg(debug_assertions)]
         cheat_god_mode: false,
-    }
+    };
+    app.session.started = true;
+    app.update_visibility();
+    app
 }
 
 pub fn approx_eq(a: f32, b: f32) -> bool {
