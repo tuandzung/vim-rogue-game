@@ -8,7 +8,6 @@ use bracket_lib::prelude::VirtualKeyCode;
 use crate::animation::{AnimationState, AttackEffect};
 use crate::audio::AudioManager;
 use crate::map::Map;
-use crate::player::Player;
 use crate::visibility::VisibilityMap;
 
 pub const TRAIL_MAX: usize = 8;
@@ -438,7 +437,11 @@ impl World {
 }
 
 pub struct PlayerState {
-    pub inner: Player,
+    pub position: Position,
+    pub used_motions: HashSet<VimMotion>,
+    pub last_direction: Option<Direction>,
+    #[cfg(debug_assertions)]
+    pub noclip: bool,
     pub hp: i32,
     pub trail: VecDeque<Position>,
     pub motion_count: usize,
@@ -451,7 +454,11 @@ pub struct PlayerState {
 impl PlayerState {
     pub fn new(position: Position) -> Self {
         Self {
-            inner: Player::new(position),
+            position,
+            used_motions: HashSet::new(),
+            last_direction: None,
+            #[cfg(debug_assertions)]
+            noclip: false,
             hp: MAX_HP,
             trail: VecDeque::new(),
             motion_count: 0,
@@ -464,14 +471,14 @@ impl PlayerState {
 
     pub fn advance_level(&mut self, level: usize, start: Position) {
         self.level = level;
-        self.inner.position = start;
+        self.position = start;
         self.trail.clear();
         self.last_checkpoint = None;
         self.pending_respawn = None;
     }
 
     pub fn retry_level(&mut self, start: Position) {
-        self.inner.position = start;
+        self.position = start;
         self.hp = MAX_HP;
         self.trail.clear();
         self.last_checkpoint = None;

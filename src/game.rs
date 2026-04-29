@@ -48,7 +48,7 @@ impl App {
     }
 
     pub fn current_zone(&self) -> crate::types::Zone {
-        self.world.map.zone_at(self.player.inner.position)
+        self.world.map.zone_at(self.player.position)
     }
 
     pub fn unique_motions(&self) -> usize {
@@ -56,7 +56,7 @@ impl App {
     }
 
     pub fn update_visibility(&mut self) {
-        self.world.update_visibility(self.player.inner.position);
+        self.world.update_visibility(self.player.position);
     }
 
     pub fn advance_level(&mut self) {
@@ -110,7 +110,7 @@ pub fn tick(app: &mut App, delta_ms: f64) {
                 Some(pos) => {
                     app.enemy_animations.clear();
                     app.player.hp = MAX_HP;
-                    app.player.inner.position = pos;
+                    app.player.position = pos;
                     app.player_animation = None;
                     app.session.game_state = GameState::Playing;
                     push_enemies_off_position(app, pos);
@@ -279,8 +279,8 @@ fn apply_cheat(app: &mut App, cheat: CheatCode) {
             app.session.status_message = String::from("CHEAT: All enemies eliminated!");
         }
         CheatCode::Noclip => {
-            app.player.inner.noclip = !app.player.inner.noclip;
-            app.session.status_message = if app.player.inner.noclip {
+            app.player.noclip = !app.player.noclip;
+            app.session.status_message = if app.player.noclip {
                 String::from("CHEAT: Noclip ON")
             } else {
                 String::from("CHEAT: Noclip OFF")
@@ -514,7 +514,7 @@ fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
 }
 
 fn enemies_step(app: &mut App) {
-    let player_pos = app.player.inner.position;
+    let player_pos = app.player.position;
     let mut prior_animations = vec![None; app.world.enemies.len()];
     for (enemy_index, animation) in std::mem::take(&mut app.enemy_animations) {
         if enemy_index < prior_animations.len() {
@@ -550,7 +550,7 @@ fn enemies_step(app: &mut App) {
         }
     }
 
-    let player_pos = app.player.inner.position;
+    let player_pos = app.player.position;
     let invincible = app.is_invincible();
     let mut remaining_enemies = Vec::with_capacity(app.world.enemies.len());
     let mut next_animations = Vec::new();
@@ -619,30 +619,28 @@ fn enemies_step(app: &mut App) {
 }
 
 fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
-    let old_pos = app.player.inner.position;
+    let old_pos = app.player.position;
     let old_zone = app.world.map.zone_at(old_pos);
 
     let activated = {
         app.session.status_message = app.player.motion_feedback(motion, target);
-        app.player.inner.handle_motion(motion, target, &mut app.world.map)
+        app.player.handle_motion(motion, target, &mut app.world.map)
     };
 
-    app.player.motion_count += 1;
-    app.player.discovered_motions.insert(motion);
     app.refresh_time();
 
-    if activated && old_pos != app.player.inner.position {
+    if activated && old_pos != app.player.position {
         app.player_animation = Some(AnimationState::new(
             PLAYER_MOVE_MS,
             (old_pos.x as f64, old_pos.y as f64),
-            (app.player.inner.position.x as f64, app.player.inner.position.y as f64),
+            (app.player.position.x as f64, app.player.position.y as f64),
         ));
         app.player.trail.push_front(old_pos);
         if app.player.trail.len() > crate::types::TRAIL_MAX {
             app.player.trail.pop_back();
         }
         app.audio.play(SoundEffect::Movement);
-        let new_zone = app.world.map.zone_at(app.player.inner.position);
+        let new_zone = app.world.map.zone_at(app.player.position);
         if new_zone != old_zone {
             app.audio.play(SoundEffect::ZoneEntry);
         }
@@ -652,10 +650,8 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
         app.session.status_message.push_str(" No valid destination from here.");
     }
 
-    if app.world.map.get_tile(app.player.inner.position.x, app.player.inner.position.y)
-        == Tile::Torchlight
-    {
-        let torch_pos = app.player.inner.position;
+    if app.world.map.get_tile(app.player.position.x, app.player.position.y) == Tile::Torchlight {
+        let torch_pos = app.player.position;
         if !app.world.activated_torchlights.contains(&torch_pos) {
             app.world.activated_torchlights.insert(torch_pos);
             app.player.last_checkpoint = Some(torch_pos);
@@ -663,9 +659,7 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
         }
     }
 
-    if app.world.map.get_tile(app.player.inner.position.x, app.player.inner.position.y)
-        == Tile::Exit
-    {
+    if app.world.map.get_tile(app.player.position.x, app.player.position.y) == Tile::Exit {
         if app.player.level < crate::types::TOTAL_LEVELS {
             app.audio.play(SoundEffect::LevelComplete);
             app.advance_level();
@@ -680,14 +674,14 @@ fn execute_motion(app: &mut App, motion: VimMotion, target: Option<char>) {
         return;
     }
 
-    if activated && old_pos != app.player.inner.position {
+    if activated && old_pos != app.player.position {
         app.update_visibility();
         enemies_step(app);
     }
 }
 
 fn handle_melee_attack(app: &mut App) {
-    let facing = match app.player.inner.last_direction {
+    let facing = match app.player.last_direction {
         Some(dir) => dir,
         None => {
             app.session.status_message = String::from("No direction — move first.");
@@ -696,8 +690,8 @@ fn handle_melee_attack(app: &mut App) {
     };
 
     let (dx, dy) = facing.delta();
-    let target_x = (app.player.inner.position.x as isize + dx) as usize;
-    let target_y = (app.player.inner.position.y as isize + dy) as usize;
+    let target_x = (app.player.position.x as isize + dx) as usize;
+    let target_y = (app.player.position.y as isize + dy) as usize;
 
     let enemy_index =
         app.world.enemies.iter().position(|e| e.position.x == target_x && e.position.y == target_y);

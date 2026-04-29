@@ -7,7 +7,6 @@ use std::time::Duration;
 use std::time::Instant;
 use vim_rogue::animation::{AnimationState, AttackEffectKind, ENEMY_MOVE_MS};
 use vim_rogue::map::Map;
-use vim_rogue::player::Player;
 use vim_rogue::renderer::*;
 use vim_rogue::types::{App, Enemy, GameState, MAX_HP, Position, Tile, VimMotion, Zone};
 use vim_rogue::visibility::{VisibilityMap, VisibilityState};
@@ -335,7 +334,7 @@ fn minimap_hidden_tile_is_blank() {
 #[test]
 fn minimap_player_position_at_start() {
     let app = test_app();
-    let (px, py) = minimap_player_pos(app.player.inner.position.x, app.player.inner.position.y);
+    let (px, py) = minimap_player_pos(app.player.position.x, app.player.position.y);
     assert!(px >= 0 && px < MINIMAP_WIDTH as i32, "player minimap x should be in range, got {px}");
     assert!(py >= 0 && py < MINIMAP_HEIGHT as i32, "player minimap y should be in range, got {py}");
 }
