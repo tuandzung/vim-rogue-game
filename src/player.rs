@@ -1,27 +1,7 @@
-use std::collections::HashSet;
-
 use crate::map::Map;
-use crate::types::{Direction, Position, Tile, VimMotion};
+use crate::types::{Direction, PlayerState, Position, Tile, VimMotion};
 
-pub struct Player {
-    pub position: Position,
-    pub used_motions: HashSet<VimMotion>,
-    pub last_direction: Option<Direction>,
-    #[cfg(debug_assertions)]
-    pub noclip: bool,
-}
-
-impl Player {
-    pub fn new(position: Position) -> Self {
-        Self {
-            position,
-            used_motions: HashSet::new(),
-            last_direction: None,
-            #[cfg(debug_assertions)]
-            noclip: false,
-        }
-    }
-
+impl PlayerState {
     pub fn can_pass_to(&self, x: usize, y: usize, map: &Map) -> bool {
         #[cfg(debug_assertions)]
         if self.noclip {
@@ -37,6 +17,8 @@ impl Player {
         map: &mut Map,
     ) -> bool {
         self.used_motions.insert(motion);
+        self.motion_count += 1;
+        self.discovered_motions.insert(motion);
         let old_pos = self.position;
 
         let activated = match motion {
@@ -55,7 +37,6 @@ impl Player {
             VimMotion::GotoLine => self.jump_to_column_top(map),
         };
 
-        // Update facing based on net displacement
         if activated && self.position != old_pos {
             let dx = self.position.x as isize - old_pos.x as isize;
             let dy = self.position.y as isize - old_pos.y as isize;

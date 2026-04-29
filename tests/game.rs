@@ -65,7 +65,7 @@ fn app_new_has_visibility_map() {
 
     assert_eq!(app.world.visibility.width(), 80);
     assert_eq!(app.world.visibility.height(), 40);
-    assert_eq!(app.world.visibility.get(app.player.inner.position), VisibilityState::Visible);
+    assert_eq!(app.world.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn update_visibility_makes_area_visible() {
     app.world.visibility.reset();
     app.update_visibility();
 
-    assert_eq!(app.world.visibility.get(app.player.inner.position), VisibilityState::Visible);
+    assert_eq!(app.world.visibility.get(app.player.position), VisibilityState::Visible);
     assert_eq!(app.world.visibility.get(Position { x: 3, y: 2 }), VisibilityState::Visible);
 }
 
@@ -155,7 +155,7 @@ fn app_h_motion_moves_player() {
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 1, y: 0 });
+    assert_eq!(app.player.position, Position { x: 1, y: 0 });
 }
 
 #[test]
@@ -217,7 +217,7 @@ fn input_queued_during_animation() {
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 2, y: 0 });
+    assert_eq!(app.player.position, Position { x: 2, y: 0 });
     assert_eq!(app.input.input_queue, vec![(VirtualKeyCode::L, false)]);
 }
 
@@ -230,7 +230,7 @@ fn queued_input_executed_after_animation() {
     tick(&mut app, PLAYER_MOVE_MS);
 
     let animation = app.player_animation.expect("queued move should start a new animation");
-    assert_eq!(app.player.inner.position, Position { x: 3, y: 0 });
+    assert_eq!(app.player.position, Position { x: 3, y: 0 });
     assert!(app.input.input_queue.is_empty());
     assert_eq!((animation.start_x, animation.start_y), (2.0, 0.0));
     assert_eq!((animation.end_x, animation.end_y), (3.0, 0.0));
@@ -245,7 +245,7 @@ fn queued_multi_key_motion_executes_without_stalling() {
     handle_key(&mut app, VirtualKeyCode::G, false);
     tick(&mut app, PLAYER_MOVE_MS);
 
-    assert_eq!(app.player.inner.position, Position { x: 3, y: 0 });
+    assert_eq!(app.player.position, Position { x: 3, y: 0 });
     assert_eq!(app.input.pending_input, None);
     assert!(app.player_animation.is_some());
     assert!(app.input.input_queue.is_empty());
@@ -270,7 +270,7 @@ fn queued_find_preserves_pending_input_after_animation() {
     handle_key(&mut app, VirtualKeyCode::Period, true);
 
     assert_eq!(app.input.pending_input, None);
-    assert_eq!(app.player.inner.position, Position { x: 4, y: 0 });
+    assert_eq!(app.player.position, Position { x: 4, y: 0 });
 }
 
 #[test]
@@ -289,7 +289,7 @@ fn queued_till_preserves_pending_input_after_animation() {
     handle_key(&mut app, VirtualKeyCode::Period, true);
 
     assert_eq!(app.input.pending_input, None);
-    assert_eq!(app.player.inner.position, Position { x: 4, y: 0 });
+    assert_eq!(app.player.position, Position { x: 4, y: 0 });
 }
 
 #[test]
@@ -325,7 +325,7 @@ fn queued_goto_line_preserves_pending_input_after_animation() {
     handle_key(&mut app, VirtualKeyCode::G, false);
 
     assert_eq!(app.input.pending_input, None);
-    assert_eq!(app.player.inner.position.y, 0);
+    assert_eq!(app.player.position.y, 0);
 }
 
 #[test]
@@ -341,7 +341,7 @@ fn rapid_keypresses_preserve_order_without_double_triggering() {
     tick(&mut app, PLAYER_MOVE_MS);
     tick(&mut app, PLAYER_MOVE_MS);
 
-    assert_eq!(app.player.inner.position, Position { x: 3, y: 0 });
+    assert_eq!(app.player.position, Position { x: 3, y: 0 });
     assert_eq!(app.player.motion_count, 4);
     assert!(app.input.input_queue.is_empty());
     assert!(app.player_animation.is_some());
@@ -362,7 +362,7 @@ fn rapid_keypresses_can_queue_find_and_target_together() {
     tick(&mut app, PLAYER_MOVE_MS);
 
     assert_eq!(app.input.pending_input, None);
-    assert_eq!(app.player.inner.position, Position { x: 4, y: 0 });
+    assert_eq!(app.player.position, Position { x: 4, y: 0 });
     assert!(app.input.input_queue.is_empty());
 }
 
@@ -421,7 +421,7 @@ fn app_f_then_char_finds() {
     handle_key(&mut app, VirtualKeyCode::F, false);
     handle_key(&mut app, VirtualKeyCode::Period, true);
 
-    assert_eq!(app.player.inner.position, Position { x: 4, y: 0 });
+    assert_eq!(app.player.position, Position { x: 4, y: 0 });
 }
 
 #[test]
@@ -538,7 +538,7 @@ fn app_level_transition_resets_player_position() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    assert_eq!(app.player.inner.position, app.world.map.start);
+    assert_eq!(app.player.position, app.world.map.start);
 }
 
 #[test]
@@ -552,7 +552,7 @@ fn app_level_transition_loads_new_map() {
     handle_key(&mut app, VirtualKeyCode::L, false);
 
     assert_eq!(app.player.level, 2);
-    assert_eq!(app.player.inner.position, app.world.map.start);
+    assert_eq!(app.player.position, app.world.map.start);
 }
 
 #[test]
@@ -561,7 +561,7 @@ fn app_g_jump_to_column_bottom() {
 
     handle_key(&mut app, VirtualKeyCode::G, true);
 
-    assert_eq!(app.player.inner.position, Position { x: 2, y: 4 });
+    assert_eq!(app.player.position, Position { x: 2, y: 4 });
     assert_eq!(app.input.pending_input, None);
 }
 
@@ -574,7 +574,7 @@ fn app_gg_two_keys_jump_to_column_top() {
 
     handle_key(&mut app, VirtualKeyCode::G, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 2, y: 0 });
+    assert_eq!(app.player.position, Position { x: 2, y: 0 });
     assert_eq!(app.input.pending_input, None);
 }
 
@@ -585,7 +585,7 @@ fn app_g_then_other_cancels() {
     handle_key(&mut app, VirtualKeyCode::G, false);
     handle_key(&mut app, VirtualKeyCode::X, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 2, y: 2 });
+    assert_eq!(app.player.position, Position { x: 2, y: 2 });
     assert_eq!(app.input.pending_input, None);
     assert!(app.session.status_message.contains("cancelled"));
 }
@@ -600,7 +600,7 @@ fn app_lost_state_any_key_restarts_level() {
     handle_key(&mut app, VirtualKeyCode::H, false);
 
     assert_eq!(app.session.game_state, GameState::Playing);
-    assert_eq!(app.player.inner.position, app.world.map.start);
+    assert_eq!(app.player.position, app.world.map.start);
     assert!(app.player.trail.is_empty());
     assert_eq!(app.player.level, 2);
 }
@@ -615,7 +615,7 @@ fn advance_level_resets_visibility() {
     app.advance_level();
 
     assert_eq!(app.world.visibility.get(far_tile), VisibilityState::Hidden);
-    assert_eq!(app.world.visibility.get(app.player.inner.position), VisibilityState::Visible);
+    assert_eq!(app.world.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -628,7 +628,7 @@ fn retry_level_resets_visibility() {
     app.retry_level();
 
     assert_eq!(app.world.visibility.get(far_tile), VisibilityState::Hidden);
-    assert_eq!(app.world.visibility.get(app.player.inner.position), VisibilityState::Visible);
+    assert_eq!(app.world.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -798,7 +798,7 @@ fn audio_movement_plays_on_successful_move() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    assert_ne!(app.player.inner.position, Position { x: 2, y: 0 });
+    assert_ne!(app.player.position, Position { x: 2, y: 0 });
 }
 
 #[test]
@@ -808,7 +808,7 @@ fn audio_no_sound_on_failed_move() {
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 0, y: 0 });
+    assert_eq!(app.player.position, Position { x: 0, y: 0 });
 }
 
 #[test]
@@ -825,7 +825,7 @@ fn audio_zone_entry_plays_on_zone_change() {
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 16, y: 0 });
+    assert_eq!(app.player.position, Position { x: 16, y: 0 });
 }
 
 #[test]
@@ -836,7 +836,7 @@ fn audio_no_zone_entry_sound_when_same_zone() {
     handle_key(&mut app, VirtualKeyCode::L, false);
 
     assert_eq!(
-        app.world.map.zone_at(app.player.inner.position),
+        app.world.map.zone_at(app.player.position),
         app.world.map.zone_at(Position { x: 2, y: 0 })
     );
 }
@@ -1022,7 +1022,7 @@ fn visibility_updates_after_each_move() {
     handle_key(&mut app, VirtualKeyCode::L, false);
 
     assert_eq!(app.world.visibility.get(Position { x: 6, y: 10 }), VisibilityState::Visible);
-    assert_eq!(app.world.visibility.get(app.player.inner.position), VisibilityState::Visible);
+    assert_eq!(app.world.visibility.get(app.player.position), VisibilityState::Visible);
 }
 
 #[test]
@@ -1034,7 +1034,7 @@ fn audio_enabled_does_not_crash_during_movement() {
     handle_key(&mut app, VirtualKeyCode::H, false);
     handle_key(&mut app, VirtualKeyCode::L, false);
 
-    assert_eq!(app.player.inner.position, Position { x: 3, y: 0 });
+    assert_eq!(app.player.position, Position { x: 3, y: 0 });
 }
 
 fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
@@ -1042,45 +1042,45 @@ fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
     let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.world.enemies = vec![Enemy { position: enemy_pos, hp: enemy_hp, ..Enemy::new(enemy_pos) }];
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
     app
 }
 
 #[test]
 fn facing_updates_on_l_movement() {
     let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
-    assert_eq!(app.player.inner.last_direction, None);
+    assert_eq!(app.player.last_direction, None);
     handle_key(&mut app, VirtualKeyCode::L, false);
-    assert_eq!(app.player.inner.last_direction, Some(Direction::Right));
+    assert_eq!(app.player.last_direction, Some(Direction::Right));
 }
 
 #[test]
 fn facing_updates_on_h_movement() {
     let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
     handle_key(&mut app, VirtualKeyCode::H, false);
-    assert_eq!(app.player.inner.last_direction, Some(Direction::Left));
+    assert_eq!(app.player.last_direction, Some(Direction::Left));
 }
 
 #[test]
 fn facing_updates_on_j_movement() {
     let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 2 });
     handle_key(&mut app, VirtualKeyCode::J, false);
-    assert_eq!(app.player.inner.last_direction, Some(Direction::Down));
+    assert_eq!(app.player.last_direction, Some(Direction::Down));
 }
 
 #[test]
 fn facing_updates_on_k_movement() {
     let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 2 });
     handle_key(&mut app, VirtualKeyCode::K, false);
-    assert_eq!(app.player.inner.last_direction, Some(Direction::Up));
+    assert_eq!(app.player.last_direction, Some(Direction::Up));
 }
 
 #[test]
 fn facing_does_not_update_on_failed_move() {
     let mut app = started_app_with_map(test_map(5, 1), Position { x: 0, y: 0 });
-    assert_eq!(app.player.inner.last_direction, None);
+    assert_eq!(app.player.last_direction, None);
     handle_key(&mut app, VirtualKeyCode::H, false);
-    assert_eq!(app.player.inner.last_direction, None);
+    assert_eq!(app.player.last_direction, None);
 }
 
 #[test]
@@ -1106,7 +1106,7 @@ fn melee_attack_kills_enemy_after_3_hits() {
         hp: Some(20),
         ..Enemy::new(Position { x: 6, y: 5 })
     }];
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
 
     handle_key(&mut app, VirtualKeyCode::X, false);
     assert!(app.session.status_message.contains("Hit"));
@@ -1117,7 +1117,7 @@ fn melee_attack_kills_enemy_after_3_hits() {
         hp: Some(10),
         ..Enemy::new(Position { x: 6, y: 5 })
     }];
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
 
     handle_key(&mut app, VirtualKeyCode::X, false);
     assert!(app.session.status_message.contains("defeated"));
@@ -1145,7 +1145,7 @@ fn melee_attack_noop_on_level_1_non_hp_enemy() {
 #[test]
 fn melee_attack_no_facing() {
     let mut app = level4_app_with_enemy(Position { x: 6, y: 5 }, Some(30));
-    app.player.inner.last_direction = None;
+    app.player.last_direction = None;
     let initial_motions = app.player.motion_count;
     handle_key(&mut app, VirtualKeyCode::X, false);
     assert!(
@@ -1208,7 +1208,7 @@ fn stunned_enemy_does_not_deal_damage() {
         stunned_turns: 1,
         ..Enemy::new(Position { x: 4, y: 5 })
     }];
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
 
     // Player moves right to (6,5) — enemies_step runs, stunned enemy stays put
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -1232,7 +1232,7 @@ fn stun_wears_off_after_one_turn() {
         stunned_turns: 1,
         ..Enemy::new(Position { x: 6, y: 5 })
     }];
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
 
     // Turn 1: enemy is stunned, stun decrements to 0
     handle_key(&mut app, VirtualKeyCode::X, false);
@@ -1258,7 +1258,7 @@ fn stun_prevents_enemy_counterattack_after_melee() {
     let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.player.hp = 10;
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
     app.world.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
         hp: Some(20),
@@ -1298,7 +1298,7 @@ fn death_with_checkpoint_respawns_at_torchlight() {
     tick(&mut app, 0.0);
     assert_eq!(app.player.hp, MAX_HP, "HP should be restored to MAX_HP after checkpoint respawn");
     assert_eq!(
-        app.player.inner.position,
+        app.player.position,
         Position { x: 10, y: 10 },
         "Player should respawn at checkpoint"
     );
@@ -1395,7 +1395,7 @@ fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
     tick(&mut app, ATTACK_EFFECT_MS);
     tick(&mut app, 0.0);
     assert_eq!(app.session.game_state, GameState::Playing);
-    assert_eq!(app.player.inner.position, checkpoint, "Player should be at checkpoint");
+    assert_eq!(app.player.position, checkpoint, "Player should be at checkpoint");
     let enemy_on_checkpoint = app.world.enemies.iter().any(|e| e.position == checkpoint);
     assert!(!enemy_on_checkpoint, "Enemy should be pushed off checkpoint tile");
     assert_eq!(app.world.enemies.len(), 1, "One surviving enemy after respawn");
@@ -1487,7 +1487,7 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
     let checkpoint = Position { x: 10, y: 10 };
     app.player.last_checkpoint = Some(checkpoint);
     app.world.activated_torchlights.insert(checkpoint);
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
     // Level 4 enemy with hp: Some(30)
     app.world.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
@@ -1504,7 +1504,7 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
 
     // Player should have respawned at checkpoint
     assert_eq!(app.player.hp, MAX_HP, "HP should be restored to MAX_HP");
-    assert_eq!(app.player.inner.position, checkpoint, "Player should respawn at checkpoint");
+    assert_eq!(app.player.position, checkpoint, "Player should respawn at checkpoint");
     assert_eq!(app.session.game_state, GameState::Playing, "Should be Playing after respawn");
 
     // The Level 4 enemy should persist (not despawn)
@@ -1617,7 +1617,7 @@ fn checkpoint_respawn_preserves_hit_effect() {
     let checkpoint = Position { x: 10, y: 10 };
     app.player.last_checkpoint = Some(checkpoint);
     app.world.activated_torchlights.insert(checkpoint);
-    app.player.inner.last_direction = Some(Direction::Right);
+    app.player.last_direction = Some(Direction::Right);
     app.world.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
         hp: Some(30),
@@ -1629,7 +1629,7 @@ fn checkpoint_respawn_preserves_hit_effect() {
     tick(&mut app, ATTACK_EFFECT_MS);
     tick(&mut app, 0.0);
     assert_eq!(app.session.game_state, GameState::Playing);
-    assert_eq!(app.player.inner.position, checkpoint);
+    assert_eq!(app.player.position, checkpoint);
 }
 
 #[test]
@@ -1695,9 +1695,9 @@ fn dying_state_ignores_input() {
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
     assert_eq!(app.session.game_state, GameState::Dying);
-    let pos_before = app.player.inner.position;
+    let pos_before = app.player.position;
     handle_key(&mut app, VirtualKeyCode::L, false);
-    assert_eq!(app.player.inner.position, pos_before, "input should be ignored during Dying");
+    assert_eq!(app.player.position, pos_before, "input should be ignored during Dying");
 }
 
 #[test]
@@ -1728,7 +1728,7 @@ fn two_enemies_same_turn_both_hit_at_high_hp() {
     app.world.enemies.push(Enemy::new(Position { x: 4, y: 0 }));
     app.world.enemies.push(Enemy::new(Position { x: 4, y: 2 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
-    assert_eq!(app.player.inner.position, Position { x: 4, y: 1 });
+    assert_eq!(app.player.position, Position { x: 4, y: 1 });
     assert_eq!(app.player.hp, 0);
     assert_eq!(app.session.game_state, GameState::Dying);
     assert_eq!(app.attack_effects.len(), 2);
@@ -1756,18 +1756,18 @@ fn checkpoint_respawn_pushes_stacked_enemies_off_checkpoint() {
     app.player.hp = 10;
     app.player.last_checkpoint = Some(checkpoint);
     app.world.activated_torchlights.insert(checkpoint);
-    app.player.inner.last_direction = Some(Direction::Up);
+    app.player.last_direction = Some(Direction::Up);
     app.world.enemies = vec![
         Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) },
         Enemy { position: checkpoint, hp: Some(30), ..Enemy::new(checkpoint) },
     ];
     handle_key(&mut app, VirtualKeyCode::K, false);
-    assert_eq!(app.player.inner.position, Position { x: 5, y: 5 });
+    assert_eq!(app.player.position, Position { x: 5, y: 5 });
     assert_eq!(app.session.game_state, GameState::Dying);
     tick(&mut app, ATTACK_EFFECT_MS);
     tick(&mut app, 0.0);
     assert_eq!(app.session.game_state, GameState::Playing);
-    assert_eq!(app.player.inner.position, checkpoint);
+    assert_eq!(app.player.position, checkpoint);
     assert_eq!(app.world.enemies.len(), 2);
     let on_checkpoint = app.world.enemies.iter().any(|e| e.position == checkpoint);
     assert!(!on_checkpoint, "no enemy should remain on checkpoint tile");
@@ -1799,7 +1799,7 @@ fn push_enemies_bfs_respects_walls() {
     tick(&mut app, ATTACK_EFFECT_MS);
     tick(&mut app, 0.0);
     assert_eq!(app.session.game_state, GameState::Playing);
-    assert_eq!(app.player.inner.position, checkpoint);
+    assert_eq!(app.player.position, checkpoint);
     assert_eq!(app.world.enemies.len(), 2);
     // Enemies stay at checkpoint since all neighbors are impassable walls
     assert!(
@@ -1980,14 +1980,14 @@ fn cheat_ie_kills_all_enemies() {
 #[cfg(debug_assertions)]
 fn cheat_ip_toggles_noclip() {
     let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
-    assert!(!app.player.inner.noclip);
+    assert!(!app.player.noclip);
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::P, false);
-    assert!(app.player.inner.noclip);
+    assert!(app.player.noclip);
     assert!(app.session.status_message.contains("Noclip ON"));
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::P, false);
-    assert!(!app.player.inner.noclip);
+    assert!(!app.player.noclip);
     assert!(app.session.status_message.contains("Noclip OFF"));
 }
 
@@ -1998,11 +1998,11 @@ fn cheat_noclip_allows_wall_walking() {
     map.set_tile(6, 5, Tile::Wall);
     let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
     handle_key(&mut app, VirtualKeyCode::L, false);
-    assert_eq!(app.player.inner.position, Position { x: 5, y: 5 });
+    assert_eq!(app.player.position, Position { x: 5, y: 5 });
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::P, false);
     handle_key(&mut app, VirtualKeyCode::L, false);
-    assert_eq!(app.player.inner.position, Position { x: 6, y: 5 });
+    assert_eq!(app.player.position, Position { x: 6, y: 5 });
 }
 
 #[test]

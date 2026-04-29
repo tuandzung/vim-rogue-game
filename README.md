@@ -59,7 +59,7 @@ Reach the exit (`>`) on each level. Complete all 4 levels to win. Lose all lives
 
 ```bash
 cargo build            # Compile
-cargo test             # Run 393 integration tests
+cargo test             # Run 396 integration tests
 cargo fmt              # Format code (uses rustfmt.toml)
 cargo fmt --check      # Check formatting without writing
 cargo clippy           # Lint
@@ -71,7 +71,7 @@ cargo run              # Play
 ```
 src/main.rs       bracket-lib BTerm setup + GameState event loop, quit handling
 src/game.rs       App coordinator — sequences cross-aggregate flows (level transitions, collision → damage, pause/resume)
-src/player.rs     Player + 13 motion implementations
+src/player.rs     PlayerState impl — 13 motion implementations + motion tracking
 src/map.rs        80×40 grid, 5 zones, corridor carving, 4 dungeon levels, enemy spawn points + patrol areas
 src/renderer.rs   bracket-lib rendering: title, viewport, sidebar, minimap, win/loss/pause screens, fog of war
 src/types.rs      Shared types (Position, Tile, Zone, VimMotion, Enemy, PatrolArea, GameState, PauseOption, App, aggregates, …)
@@ -84,7 +84,7 @@ src/lib.rs        Module re-exports
 
 ### Key Design Decisions
 
-- **Domain aggregates over god object** — `App` decomposed into `World` (terrain, visibility, enemies), `PlayerState` (position, HP, trail, progression), `InputState` (Vim key buffering), `Session` (lifecycle, timing, pause); `App` is a thin coordinator with no business logic
+- **Domain aggregates over god object** — `App` decomposed into `World` (terrain, visibility, enemies), `PlayerState` (position, motions, HP, trail, progression; impl in player.rs), `InputState` (Vim key buffering), `Session` (lifecycle, timing, pause); `App` is a thin coordinator with no business logic
 - **`renderer.rs` is read-only** — never mutates game state
 - **Deterministic timing** — `TestClock` for tests, `RealClock` for production (via `GameClock` trait)
 - **FOV-aware enemy AI** — enemies use Bresenham line-of-sight within their FOV radius to detect the player; they chase via BFS when visible and patrol their room when not

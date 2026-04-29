@@ -199,7 +199,7 @@ pub fn visual_player_position(app: &App) -> Position {
     let (x, y) = app
         .player_animation
         .map(|animation| animation.current_position())
-        .unwrap_or((app.player.inner.position.x as f64, app.player.inner.position.y as f64));
+        .unwrap_or((app.player.position.x as f64, app.player.position.y as f64));
 
     Position {
         x: x.round().clamp(0.0, app.world.map.width.saturating_sub(1) as f64) as usize,
@@ -312,7 +312,7 @@ fn render_sidebar(ctx: &mut BTerm, app: &App, sidebar_x: i32) {
             if y >= 47 {
                 break;
             }
-            let used = app.player.inner.used_motions.contains(motion);
+            let used = app.player.used_motions.contains(motion);
             let marker = if used { "✓" } else { "·" };
             let color = if used { green } else { dark_gray };
             let label = format!("{} {:<7} {}", marker, motion.key_label(), motion.display_name());
@@ -434,7 +434,7 @@ fn render_minimap(ctx: &mut BTerm, app: &App, x: i32, start_y: i32, y_out: &mut 
         }
     }
 
-    let (px, py) = minimap_player_pos(app.player.inner.position.x, app.player.inner.position.y);
+    let (px, py) = minimap_player_pos(app.player.position.x, app.player.position.y);
     ctx.print_color(x + 1 + px, mm_y + 1 + py, RGB::named(GREEN), black, "@");
 
     *y_out = bottom_y + 1;

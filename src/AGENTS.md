@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-17 | Updated: 2026-04-29 -->
+<!-- Generated: 2026-04-17 | Updated: 2026-04-29 (PR#11) -->
 # src
 
 All vim-rogue source. Tests in `tests/` (integration only).
@@ -10,10 +10,10 @@ All vim-rogue source. Tests in `tests/` (integration only).
 | `main.rs` | 44 | Binary entry — bracket-lib setup, event loop, `ctx.quit()`, delegates to game/renderer |
 | `lib.rs` | 9 | Library root — `pub mod` re-exports |
 | `game.rs` | 740 | App coordinator — `handle_key`/`tick`, sequences cross-aggregate flows (level transitions, collision→damage, pause/resume) |
-| `player.rs` | 262 | `Player` + 13 motion impls (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
+| `player.rs` | 260 | `PlayerState` impl — 13 motions + motion tracking (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
 | `map.rs` | 471 | `Map`, 80×40 grid, 5 zones, 4 levels (`carve_level`, `build_level_2/3/4`), enemy spawns + patrol areas |
 | `renderer.rs` | 914 | bracket-lib render — title/gameplay/win/lost/pause screens, viewport, sidebar, minimap, zone colors |
-| `types.rs` | 566 | Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, App + 4 aggregates (World, PlayerState, InputState, Session), RenderGrid, ViewModel, ScreenModel |
+| `types.rs` | 560 | Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, PlayerState (position, motions, noclip), App + 3 aggregates (World, InputState, Session), RenderGrid, ViewModel, ScreenModel |
 | `animation.rs` | 182 | `GameClock` trait, `RealClock`/`TestClock`, `AnimationState`, `AnimationTimer`, `Interpolator` |
 | `visibility.rs` | 124 | `VisibilityMap` + `compute_fov`, `VisibilityState` (Hidden/Explored/Visible) |
 | `enemy.rs` | 180 | `Enemy` + FOV-aware BFS `step_toward_player`, `has_line_of_sight`, `patrol_step` |
@@ -22,7 +22,7 @@ All vim-rogue source. Tests in `tests/` (integration only).
 ## Where To Look
 | Task | File | What to change |
 |------|------|----------------|
-| Add Vim motion | `player.rs` + `types.rs` | VimMotion enum, handle_motion arm, game.rs parse_motion |
+| Add Vim motion | `player.rs` + `types.rs` | VimMotion enum, handle_motion arm on PlayerState, game.rs parse_motion |
 | Change dungeon | `map.rs` | carve_level, build_level_2/3/4, assign_zones |
 | Change UI | `renderer.rs` | Display only — never mutates state |
 | Change game flow | `game.rs` | handle_key, tick, pending_input for f/t/dd/gg; ESC/q opens pause |
@@ -30,7 +30,7 @@ All vim-rogue source. Tests in `tests/` (integration only).
 | Add shared type | `types.rs` | All modules `use crate::types::*` |
 | Change enemy AI | `enemy.rs` | step_toward_player (BFS), has_line_of_sight (Bresenham), patrol_step, called via World.enemies_step |
 | Change visibility | `visibility.rs` | compute_fov, VisibilityMap, demote_visible_to_explored |
-| Change aggregate logic | `types.rs` | World (terrain, visibility, enemies), PlayerState (position, HP, trail, progression), InputState (key buffering), Session (lifecycle, timing, pause) |
+| Change aggregate logic | `types.rs` + `player.rs` | World (terrain, visibility, enemies), PlayerState (position, motions, HP, trail, progression; impl in player.rs), InputState (key buffering), Session (lifecycle, timing, pause) |
 | Add animation | `animation.rs` | AnimationState + Interpolator; durations as constants |
 | Add sound | `audio.rs` | SoundEffect enum + AudioManager.play() |
 
@@ -51,9 +51,9 @@ lib.rs        ← main.rs (implicit)
 ## Conventions
 - `rustfmt.toml`: `use_small_heuristics = "Max"`, `edition = "2024"`. Run `cargo fmt --check` pre-commit.
 - `grid[y][x]` row-major — always bounds-check.
-- **Aggregates**: `App` is a thin coordinator (8 fields) delegating to 4 domain aggregates:
+- **Aggregates**: `App` is a thin coordinator delegating to 3 domain aggregates + PlayerState:
   - `World` — terrain, visibility, enemies, torchlights; owns `update_visibility`, `enemies_step`, `reset_for_level`
-  - `PlayerState` — position, HP, trail, motion tracking, level, checkpoint, pending respawn; owns motion/damage status messages
+  - `PlayerState` — flat struct (position, used_motions, last_direction, noclip, HP, trail, motion tracking, level, checkpoint, pending respawn); `impl PlayerState` in player.rs owns all motion logic + tracking (motion_count, discovered_motions)
   - `InputState` — `input_queue` + `pending_input` for two-phase Vim commands (f/t/dd/gg)
   - `Session` — game state, pause selection, timing, status message
 - Single-key motions fire immediately; f/t/dd/gg set `pending_input` via InputState for next key.
@@ -67,7 +67,7 @@ lib.rs        ← main.rs (implicit)
 - Audio: disabled default; `play()` no-ops when off.
 
 ## Tests
-393 integration tests in `tests/` (no inline tests in src/):
+396 integration tests in `tests/` (no inline tests in src/):
 | File | Tests | Coverage |
 |------|-------|----------|
 | `tests/game.rs` | 140 | Motions, pending input, animations, input queue, level transitions, enemies, audio, trail, visibility, win/loss/retry, pause, melee |
@@ -75,7 +75,7 @@ lib.rs        ← main.rs (implicit)
 | `tests/map.rs` | 46 | Dimensions, tiles, passability, zones, corridors, obstacles, 4 levels, reachability, spawns, patrol, torchlight |
 | `tests/animation.rs` | 34 | Timer progress, interpolation, easing, AnimationState, TestClock |
 | `tests/visibility.rs` | 29 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases |
-| `tests/player.rs` | 29 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + recording |
+| `tests/player.rs` | 32 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + recording + motion_count + discovered_motions |
 | `tests/enemy.rs` | 21 | BFS movement, diagonal, walls, adjacency, corridors, shortest path, LOS, patrol |
 | `tests/types.rs` | 25 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
 | `tests/audio.rs` | 16 | Lifecycle, play no-op, enable/disable, rapid play, variants |
