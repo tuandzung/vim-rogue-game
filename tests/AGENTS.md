@@ -2,7 +2,7 @@
 
 # tests
 
-393 integration tests, 9 files. No inline tests in src/. Shared helpers in `tests/common/mod.rs`.
+396 integration tests, 9 files. No inline tests in src/. Shared helpers in `tests/common/mod.rs`.
 
 ## Test Files
 | File | Tests | Lines | Coverage |
@@ -11,7 +11,7 @@
 | `map.rs` | 46 | 539 | Dimensions, tiles, passability, zones, corridors, obstacles, 4 levels, reachability, enemy spawns, patrol areas, torchlight room presence |
 | `renderer.rs` | 53 | 428 | Zone colors, wall glyphs, duration formatting, phases, exit glow, trail colors, minimap, fog, centering |
 | `visibility.rs` | 29 | 420 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases, multi-source FOV |
-| `player.rs` | 29 | 324 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + motion recording |
+| `player.rs` | 32 | 371 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + motion recording + motion_count + discovered_motions |
 | `animation.rs` | 34 | 349 | Timer progress, interpolation, easing, AnimationState, TestClock determinism, attack effects |
 | `types.rs` | 25 | 216 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
 | `enemy.rs` | 21 | 265 | BFS movement, diagonal, walls, adjacency, corridors, shortest path, LOS, patrol |
@@ -38,7 +38,7 @@
 
 ## Conventions
 - Test file mirrors src/ module (`tests/player.rs` ↔ `src/player.rs`).
-- `handle_key(app, VirtualKeyCode, shift: bool)` = main input entry for game tests. Access aggregates via `app.world`, `app.player_state`, `app.input_state`, `app.session`.
+- `handle_key(app, VirtualKeyCode, shift: bool)` = main input entry for game tests. Access aggregates via `app.world`, `app.player`, `app.input`, `app.session`.
 - `tick(&mut app, delta_ms: f64)` advances clock, processes one frame.
 - Animation constants: `PLAYER_MOVE_MS = 150.0`, `ENEMY_MOVE_MS = 200.0`, `ATTACK_EFFECT_MS = 200.0` — import from `vim_rogue::animation`.
 - `TestClock` = deterministic timing. Always use in tests, never `RealClock`.

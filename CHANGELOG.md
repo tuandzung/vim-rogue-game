@@ -13,10 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Move reset logic into aggregate methods** — each aggregate owns its own constructors and reset behavior
 - **Move `update_visibility` into `World`** — FOV computation belongs to the aggregate that owns the map
 - **Extract motion/damage feedback into `PlayerState`** — status message generation lives with the aggregate that produces it
+- **Merge `Player` into `PlayerState`** — eliminate shallow `inner: Player` wrapper; PlayerState now holds position, used_motions, last_direction, noclip directly. `handle_motion` owns motion tracking (motion_count, discovered_motions)
 
 ### Tests
 
-- 393 integration tests (no behavior changes)
+- 396 integration tests (+3 covering motion_count and discovered_motions behavior)
 
 ## [0.2.2] - 2026-04-22
 

@@ -1,5 +1,5 @@
 <!-- Generated: 2026-04-17 | Updated: 2026-04-29 -->
-<!-- Commit: 45519e5 | Branch: refactor/aggregate-app-split -->
+<!-- Commit: HEAD | Branch: refactor/merge-player-into-playerstate -->
 
 # vim-rogue
 
@@ -9,7 +9,7 @@ Roguelike dungeon game (Rust + bracket-lib). Teaches Vim motions through gamepla
 ```
 vim-rogue/
 ├── src/          # Application source code (see src/AGENTS.md)
-├── tests/        # Integration tests — 393 tests across 9 files (see tests/AGENTS.md)
+├── tests/        # Integration tests — 396 tests across 9 files (see tests/AGENTS.md)
 ├── examples/     # Spike/prototype code (spike.rs)
 ├── resources/    # CP437 font sprite sheets (PNG) for bracket-lib rendering
 ├── Cargo.toml    # Edition 2024, deps: anyhow (unused), bracket-lib
@@ -22,10 +22,10 @@ vim-rogue/
 ```
 main.rs       → bracket-lib setup + event loop (44 lines)
 game.rs       → App coordinator — sequences cross-aggregate flows: level transitions, collision→damage, pause/resume (740 lines)
-player.rs     → Player + 13 motion implementations (262 lines)
+player.rs     → PlayerState impl — 13 motions + motion tracking (260 lines)
 map.rs        → 80×40 grid, 5 zones, 4 dungeon levels, corridor carving, enemy spawns + patrol areas (471 lines)
 renderer.rs   → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (914 lines)
-types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, App + 4 aggregates (World, PlayerState, InputState, Session), RenderGrid, ViewModel (566 lines)
+types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, PlayerState (position, motions, noclip), App + 3 aggregates (World, InputState, Session), RenderGrid, ViewModel (560 lines)
 animation.rs  → GameClock, AnimationState, AnimationTimer, Interpolator (easing) (182 lines)
 visibility.rs → VisibilityMap with FOV (explored/visible/hidden states) (124 lines)
 enemy.rs      → Enemy struct with FOV-aware BFS chase + room patrol (180 lines)
@@ -36,7 +36,7 @@ lib.rs        → Re-exports all modules (9 lines)
 ## Where To Look
 | Task | Location | Notes |
 |------|----------|-------|
-| Add new Vim motion | `src/player.rs` + `src/types.rs` (VimMotion enum) | Update `game.rs` parse_motion too |
+| Add new Vim motion | `src/player.rs` + `src/types.rs` (VimMotion enum) | handle_motion on PlayerState; Update `game.rs` parse_motion too |
 | Change dungeon layout | `src/map.rs` (carve_level, build_level_2/3/4) | `grid[y][x]` row-major; 4 levels |
 | Add UI elements | `src/renderer.rs` | Display only — never mutates state |
 | Change game flow | `src/game.rs` (handle_key, tick, execute_motion) | Two-phase input for f/t/dd/gg; ESC/q = pause |
@@ -44,21 +44,21 @@ lib.rs        → Re-exports all modules (9 lines)
 | Add new types | `src/types.rs` | All modules use `crate::types::*` |
 | Change enemy AI | `src/enemy.rs` (step_toward_player, has_line_of_sight, patrol_step) | FOV-gated BFS chase + patrol, called from World.enemies_step |
 | Change FOV/visibility | `src/visibility.rs` (compute_fov) | Hidden/Explored/Visible states |
-| Change aggregate logic | `src/types.rs` (World, PlayerState, InputState, Session) | Each aggregate owns its domain; App coordinates |
+| Change aggregate logic | `src/types.rs` (World, InputState, Session) + `src/player.rs` (PlayerState) | PlayerState flat struct; each aggregate owns its domain; App coordinates |
 | Add animations | `src/animation.rs` | AnimationState + Interpolator; GameClock trait |
 | Add sound effects | `src/audio.rs` (SoundEffect enum + AudioManager) | Disabled by default |
-| Fix bug | `tests/` (393 integration tests, 9 files) | main.rs + lib.rs have no tests |
+| Fix bug | `tests/` (396 integration tests, 9 files) | main.rs + lib.rs have no tests |
 
 ## Conventions
 - Rust edition 2024. `rustfmt.toml`: `use_small_heuristics = "Max"`, `edition = "2024"`.
-- 393 integration tests in `tests/` (9 files). Shared helpers in `tests/common/mod.rs`.
+- 396 integration tests in `tests/` (9 files). Shared helpers in `tests/common/mod.rs`.
 - Helpers: `test_map()`, `started_app_with_map()`, `test_app()`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
 - `renderer.rs` internals `pub` for test access (e.g. `screen_meets_minimum_size`, `phase_definitions`, `exit_glow`).
 - `lib.rs` re-exports all. `main.rs` thin (~32 lines).
 - `is_passable` = `Tile::Floor`, `Tile::Exit`, `Tile::Torchlight`. `Tile::Obstacle` not passable but `dd` destroys it.
 - w/b: horizontal scan, stop at non-passable. G/gg: vertical scan, stop at non-passable.
 - `renderer.rs` read-only — never mutates App.
-- `Player::handle_motion` takes `&mut Map` (dd deletes obstacles).
+- `PlayerState::handle_motion` takes `&mut Map` (dd deletes obstacles). Owns motion tracking (motion_count, discovered_motions).
 - `GameClock` trait: `RealClock` prod, `TestClock` tests.
 - Animations: player 150ms (`PLAYER_MOVE_MS`), enemy 200ms (`ENEMY_MOVE_MS`).
 - FOV: `FOV_RADIUS` in types.rs. Enemy FOV: `ENEMY_FOV_RADIUS = 8`.
@@ -73,7 +73,7 @@ lib.rs        → Re-exports all modules (9 lines)
 cargo fmt              # Format code (uses rustfmt.toml)
 cargo fmt --check      # Check formatting without writing
 cargo clippy           # Lint
-cargo test             # Run 393 integration tests
+cargo test             # Run 396 integration tests
 cargo build            # Compile
 cargo run              # Launch game in terminal
 ```
@@ -82,7 +82,7 @@ cargo run              # Launch game in terminal
 After any code change, run all:
 1. `cargo fmt --check` — formatting clean
 2. `cargo clippy` — zero warnings
-3. `cargo test` — all 393 pass
+3. `cargo test` — all 396 pass
 4. Update `CHANGELOG.md` — add entry under `[Unreleased]` or new version
 
 ## Dependencies
