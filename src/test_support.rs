@@ -3,6 +3,8 @@ use crate::map::Map;
 use crate::types::*;
 
 impl App {
+    /// Internal test seam — do not use outside integration tests.
+    #[doc(hidden)]
     pub fn for_test(map: Map, position: Position) -> Self {
         let world = World::new(map);
         let mut app = Self {

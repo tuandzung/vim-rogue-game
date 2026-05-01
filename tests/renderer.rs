@@ -217,7 +217,9 @@ fn rgb8_converts_correctly() {
 
 #[test]
 fn visual_enemy_positions_use_active_animation() {
-    let mut app = App::for_test(Map::new(), Map::new().start);
+    let map = Map::new();
+    let start = map.start;
+    let mut app = App::for_test(map, start);
     app.world
         .enemies
         .push(Enemy { position: Position { x: 4, y: 2 }, ..Enemy::new(Position { x: 4, y: 2 }) });
@@ -323,7 +325,9 @@ fn minimap_scaling_covers_full_map() {
 
 #[test]
 fn minimap_hidden_tile_is_blank() {
-    let mut app = App::for_test(Map::new(), Map::new().start);
+    let map = Map::new();
+    let start = map.start;
+    let mut app = App::for_test(map, start);
     let pos = Position { x: 10, y: 10 };
     app.world.map.set_tile(10, 10, Tile::Floor);
     assert_eq!(app.world.visibility.get(pos), VisibilityState::Hidden);
@@ -331,7 +335,9 @@ fn minimap_hidden_tile_is_blank() {
 
 #[test]
 fn minimap_player_position_at_start() {
-    let app = App::for_test(Map::new(), Map::new().start);
+    let map = Map::new();
+    let start = map.start;
+    let app = App::for_test(map, start);
     let (px, py) = minimap_player_pos(app.player.position.x, app.player.position.y);
     assert!(px >= 0 && px < MINIMAP_WIDTH as i32, "player minimap x should be in range, got {px}");
     assert!(py >= 0 && py < MINIMAP_HEIGHT as i32, "player minimap y should be in range, got {py}");

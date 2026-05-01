@@ -8,4 +8,5 @@ pub mod renderer;
 pub mod types;
 pub mod visibility;
 
+#[doc(hidden)]
 pub mod test_support;
