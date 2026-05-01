@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Move enemy turn into World aggregate** — `enemies_step` AI dispatch (LOS check, chase, patrol, stun decrement) moved from game.rs into `World::step_enemies`, returning structured `EnemyTurn` result; `push_enemies_off_position` (BFS respawn displacement) moved into `World::push_enemies_off_position`; game.rs `enemies_step` reduced to thin coordinator handling collision outcomes, animation, and audio from returned data
+
+### Added
+
+- `EnemyMovement` and `EnemyTurn` structs — structured result types for `World::step_enemies`
+
 ## [0.3.0] - 2026-04-29
 
 ### Changed

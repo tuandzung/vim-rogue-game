@@ -113,7 +113,7 @@ pub fn tick(app: &mut App, delta_ms: f64) {
                     app.player.position = pos;
                     app.player_animation = None;
                     app.session.game_state = GameState::Playing;
-                    push_enemies_off_position(app, pos);
+                    app.world.push_enemies_off_position(pos);
                     app.update_visibility();
                     app.session.status_message = String::from("Respawned at checkpoint!");
                 }
@@ -435,132 +435,45 @@ fn parse_motion(key: VirtualKeyCode, shift: bool) -> Option<ParsedInput> {
     }
 }
 
-fn push_enemies_off_position(app: &mut App, pos: crate::types::Position) {
-    use std::collections::{HashSet, VecDeque};
-    let directions: [(isize, isize); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
-    let mut new_positions: Vec<Option<crate::types::Position>> =
-        vec![None; app.world.enemies.len()];
-    let mut claimed: HashSet<crate::types::Position> = HashSet::new();
-
-    let enemies_on_pos: Vec<usize> = app
-        .world
-        .enemies
-        .iter()
-        .enumerate()
-        .filter(|(_, e)| e.position == pos)
-        .map(|(i, _)| i)
-        .collect();
-
-    if enemies_on_pos.is_empty() {
-        return;
-    }
-
-    let mut visited: HashSet<crate::types::Position> = HashSet::new();
-    visited.insert(pos);
-    let mut bfs: VecDeque<crate::types::Position> = VecDeque::new();
-    for (dx, dy) in &directions {
-        let nx = (pos.x as isize + dx) as usize;
-        let ny = (pos.y as isize + dy) as usize;
-        if nx < app.world.map.width
-            && ny < app.world.map.height
-            && app.world.map.is_passable(nx, ny)
-        {
-            let neighbor = crate::types::Position { x: nx, y: ny };
-            if visited.insert(neighbor) {
-                bfs.push_back(neighbor);
-            }
-        }
-    }
-
-    let mut assigned = 0;
-    while assigned < enemies_on_pos.len() {
-        let candidate = match bfs.pop_front() {
-            Some(c) => c,
-            None => break,
-        };
-
-        if candidate.x < app.world.map.width
-            && candidate.y < app.world.map.height
-            && app.world.map.is_passable(candidate.x, candidate.y)
-            && !claimed.contains(&candidate)
-            && !app.world.enemies.iter().any(|e| e.position == candidate)
-        {
-            let idx = enemies_on_pos[assigned];
-            new_positions[idx] = Some(candidate);
-            claimed.insert(candidate);
-            assigned += 1;
-        }
-
-        for (dx, dy) in &directions {
-            let nx = (candidate.x as isize + dx) as usize;
-            let ny = (candidate.y as isize + dy) as usize;
-            if nx < app.world.map.width
-                && ny < app.world.map.height
-                && app.world.map.is_passable(nx, ny)
-            {
-                let neighbor = crate::types::Position { x: nx, y: ny };
-                if visited.insert(neighbor) {
-                    bfs.push_back(neighbor);
-                }
-            }
-        }
-    }
-
-    for (i, enemy) in app.world.enemies.iter_mut().enumerate() {
-        if let Some(new_pos) = new_positions[i] {
-            enemy.position = new_pos;
-        }
-    }
-}
-
 fn enemies_step(app: &mut App) {
     let player_pos = app.player.position;
+    let turn = app.world.step_enemies(player_pos);
+
     let mut prior_animations = vec![None; app.world.enemies.len()];
     for (enemy_index, animation) in std::mem::take(&mut app.enemy_animations) {
         if enemy_index < prior_animations.len() {
             prior_animations[enemy_index] = Some(animation);
         }
     }
-    let old_positions: Vec<crate::types::Position> =
-        app.world.enemies.iter().map(|enemy| enemy.position).collect();
-    let old_visual_positions: Vec<(f64, f64)> = app
-        .world
-        .enemies
+
+    let old_visual_positions: Vec<(f64, f64)> = turn
+        .prior_positions
         .iter()
         .enumerate()
-        .map(|(index, enemy)| {
+        .map(|(index, old_pos)| {
             prior_animations[index]
                 .map(|animation| animation.current_position())
-                .unwrap_or((enemy.position.x as f64, enemy.position.y as f64))
+                .unwrap_or((old_pos.x as f64, old_pos.y as f64))
         })
         .collect();
 
-    for enemy in &mut app.world.enemies {
-        if enemy.stunned_turns > 0 {
-            enemy.stunned_turns -= 1;
-        } else {
-            let moved = if enemy.has_line_of_sight(player_pos, &app.world.map) {
-                enemy.step_toward_player(player_pos, &app.world.map)
-            } else {
-                enemy.patrol_step(&app.world.map)
-            };
-            if moved {
-                app.audio.play(SoundEffect::EnemyStep);
-            }
-        }
+    for _ in &turn.movements {
+        app.audio.play(SoundEffect::EnemyStep);
     }
 
     let player_pos = app.player.position;
     let invincible = app.is_invincible();
     let mut remaining_enemies = Vec::with_capacity(app.world.enemies.len());
     let mut next_animations = Vec::new();
-    for (old_index, ((old_position, old_visual_position), enemy)) in old_positions
+    for (old_index, ((old_position, old_visual_position), enemy)) in turn
+        .prior_positions
         .into_iter()
         .zip(old_visual_positions)
         .zip(app.world.enemies.drain(..))
         .enumerate()
     {
-        if enemy.position == player_pos
+        let collided = turn.collisions.contains(&old_index);
+        if collided
             && enemy.stunned_turns == 0
             && app.session.game_state == GameState::Playing
             && !invincible

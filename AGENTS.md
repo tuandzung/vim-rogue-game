@@ -1,5 +1,5 @@
-<!-- Generated: 2026-04-17 | Updated: 2026-04-29 -->
-<!-- Commit: HEAD | Branch: refactor/merge-player-into-playerstate -->
+<!-- Generated: 2026-04-17 | Updated: 2026-05-01 -->
+<!-- Commit: HEAD | Branch: refactor/enemy-turn-into-world -->
 
 # vim-rogue
 
@@ -21,11 +21,11 @@ vim-rogue/
 ## Architecture
 ```
 main.rs       → bracket-lib setup + event loop (44 lines)
-game.rs       → App coordinator — sequences cross-aggregate flows: level transitions, collision→damage, pause/resume (740 lines)
+game.rs       → App coordinator — thin enemies_step coordinator (collision outcomes, animation, audio), sequences cross-aggregate flows: level transitions, pause/resume (647 lines)
 player.rs     → PlayerState impl — 13 motions + motion tracking (260 lines)
 map.rs        → 80×40 grid, 5 zones, 4 dungeon levels, corridor carving, enemy spawns + patrol areas (471 lines)
 renderer.rs   → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (914 lines)
-types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, PlayerState (position, motions, noclip), App + 3 aggregates (World, InputState, Session), RenderGrid, ViewModel (560 lines)
+types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, EnemyMovement, EnemyTurn, PlayerState, App + 3 aggregates (World owns step_enemies + push_enemies_off_position, InputState, Session), RenderGrid, ViewModel (691 lines)
 animation.rs  → GameClock, AnimationState, AnimationTimer, Interpolator (easing) (182 lines)
 visibility.rs → VisibilityMap with FOV (explored/visible/hidden states) (124 lines)
 enemy.rs      → Enemy struct with FOV-aware BFS chase + room patrol (180 lines)
@@ -42,7 +42,7 @@ lib.rs        → Re-exports all modules (9 lines)
 | Change game flow | `src/game.rs` (handle_key, tick, execute_motion) | Two-phase input for f/t/dd/gg; ESC/q = pause |
 | Change pause menu | `src/game.rs` + `src/renderer.rs` + `src/types.rs` | GameState::Paused, PauseOption, render_pause_overlay |
 | Add new types | `src/types.rs` | All modules use `crate::types::*` |
-| Change enemy AI | `src/enemy.rs` (step_toward_player, has_line_of_sight, patrol_step) | FOV-gated BFS chase + patrol, called from World.enemies_step |
+| Change enemy AI | `src/enemy.rs` + `src/types.rs` (World::step_enemies) | FOV-gated BFS chase + patrol in enemy.rs; turn orchestration in World |
 | Change FOV/visibility | `src/visibility.rs` (compute_fov) | Hidden/Explored/Visible states |
 | Change aggregate logic | `src/types.rs` (World, InputState, Session) + `src/player.rs` (PlayerState) | PlayerState flat struct; each aggregate owns its domain; App coordinates |
 | Add animations | `src/animation.rs` | AnimationState + Interpolator; GameClock trait |

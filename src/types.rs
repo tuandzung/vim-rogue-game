@@ -323,6 +323,20 @@ pub struct Enemy {
     pub patrol_area: PatrolArea,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnemyMovement {
+    pub old_index: usize,
+    pub old_pos: Position,
+    pub new_pos: Position,
+}
+
+#[derive(Debug, Clone)]
+pub struct EnemyTurn {
+    pub movements: Vec<EnemyMovement>,
+    pub collisions: HashSet<usize>,
+    pub prior_positions: Vec<Position>,
+}
+
 #[cfg(debug_assertions)]
 #[derive(Debug, Clone)]
 pub struct CheatBuffer {
@@ -409,6 +423,110 @@ impl World {
                 }
             })
             .collect();
+    }
+
+    pub fn step_enemies(&mut self, player_pos: Position) -> EnemyTurn {
+        let prior_positions: Vec<Position> = self.enemies.iter().map(|e| e.position).collect();
+        let mut movements = Vec::new();
+
+        for enemy in &mut self.enemies {
+            if enemy.stunned_turns > 0 {
+                enemy.stunned_turns -= 1;
+            } else if enemy.has_line_of_sight(player_pos, &self.map) {
+                enemy.step_toward_player(player_pos, &self.map);
+            } else {
+                enemy.patrol_step(&self.map);
+            }
+        }
+
+        for (i, (old_pos, enemy)) in prior_positions.iter().zip(self.enemies.iter()).enumerate() {
+            if enemy.position != *old_pos {
+                movements.push(EnemyMovement {
+                    old_index: i,
+                    old_pos: *old_pos,
+                    new_pos: enemy.position,
+                });
+            }
+        }
+
+        let collisions: HashSet<usize> = self
+            .enemies
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.position == player_pos)
+            .map(|(i, _)| i)
+            .collect();
+
+        EnemyTurn { movements, collisions, prior_positions }
+    }
+
+    pub fn push_enemies_off_position(&mut self, pos: Position) {
+        let directions: [(isize, isize); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+        let mut new_positions: Vec<Option<Position>> = vec![None; self.enemies.len()];
+        let mut claimed: HashSet<Position> = HashSet::new();
+
+        let enemies_on_pos: Vec<usize> = self
+            .enemies
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.position == pos)
+            .map(|(i, _)| i)
+            .collect();
+
+        if enemies_on_pos.is_empty() {
+            return;
+        }
+
+        let mut visited: HashSet<Position> = HashSet::new();
+        visited.insert(pos);
+        let mut bfs: std::collections::VecDeque<Position> = std::collections::VecDeque::new();
+        for (dx, dy) in &directions {
+            let nx = (pos.x as isize + dx) as usize;
+            let ny = (pos.y as isize + dy) as usize;
+            if nx < self.map.width && ny < self.map.height && self.map.is_passable(nx, ny) {
+                let neighbor = Position { x: nx, y: ny };
+                if visited.insert(neighbor) {
+                    bfs.push_back(neighbor);
+                }
+            }
+        }
+
+        let mut assigned = 0;
+        while assigned < enemies_on_pos.len() {
+            let candidate = match bfs.pop_front() {
+                Some(c) => c,
+                None => break,
+            };
+
+            if candidate.x < self.map.width
+                && candidate.y < self.map.height
+                && self.map.is_passable(candidate.x, candidate.y)
+                && !claimed.contains(&candidate)
+                && !self.enemies.iter().any(|e| e.position == candidate)
+            {
+                let idx = enemies_on_pos[assigned];
+                new_positions[idx] = Some(candidate);
+                claimed.insert(candidate);
+                assigned += 1;
+            }
+
+            for (dx, dy) in &directions {
+                let nx = (candidate.x as isize + dx) as usize;
+                let ny = (candidate.y as isize + dy) as usize;
+                if nx < self.map.width && ny < self.map.height && self.map.is_passable(nx, ny) {
+                    let neighbor = Position { x: nx, y: ny };
+                    if visited.insert(neighbor) {
+                        bfs.push_back(neighbor);
+                    }
+                }
+            }
+        }
+
+        for (i, enemy) in self.enemies.iter_mut().enumerate() {
+            if let Some(new_pos) = new_positions[i] {
+                enemy.position = new_pos;
+            }
+        }
     }
 
     pub fn update_visibility(&mut self, player_pos: Position) {
