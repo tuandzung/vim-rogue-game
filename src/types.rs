@@ -333,7 +333,7 @@ pub struct EnemyMovement {
 #[derive(Debug, Clone)]
 pub struct EnemyTurn {
     pub movements: Vec<EnemyMovement>,
-    pub collisions: Vec<usize>,
+    pub collisions: HashSet<usize>,
     pub prior_positions: Vec<Position>,
 }
 
@@ -449,7 +449,7 @@ impl World {
             }
         }
 
-        let collisions: Vec<usize> = self
+        let collisions: HashSet<usize> = self
             .enemies
             .iter()
             .enumerate()

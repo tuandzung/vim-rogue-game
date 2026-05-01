@@ -457,7 +457,7 @@ fn enemies_step(app: &mut App) {
         })
         .collect();
 
-    if !turn.movements.is_empty() {
+    for _ in &turn.movements {
         app.audio.play(SoundEffect::EnemyStep);
     }
 
