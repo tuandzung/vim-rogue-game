@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-17 | Updated: 2026-05-01 (PR#12) -->
+<!-- Generated: 2026-04-17 | Updated: 2026-05-01 (PR#13) -->
 # src
 
 All vim-rogue source. Tests in `tests/` (integration only).
@@ -8,7 +8,7 @@ All vim-rogue source. Tests in `tests/` (integration only).
 | File | Lines | Role |
 |------|-------|------|
 | `main.rs` | 44 | Binary entry — bracket-lib setup, event loop, `ctx.quit()`, delegates to game/renderer |
-| `lib.rs` | 9 | Library root — `pub mod` re-exports |
+| `lib.rs` | 11 | Library root — `pub mod` re-exports + `test_support` module |
 | `game.rs` | 647 | App coordinator — `handle_key`/`tick`, thin `enemies_step` coordinator (collision outcomes, animation, audio) |
 | `player.rs` | 260 | `PlayerState` impl — 13 motions + motion tracking (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
 | `map.rs` | 471 | `Map`, 80×40 grid, 5 zones, 4 levels (`carve_level`, `build_level_2/3/4`), enemy spawns + patrol areas |
@@ -18,6 +18,7 @@ All vim-rogue source. Tests in `tests/` (integration only).
 | `visibility.rs` | 124 | `VisibilityMap` + `compute_fov`, `VisibilityState` (Hidden/Explored/Visible) |
 | `enemy.rs` | 180 | `Enemy` + FOV-aware BFS `step_toward_player`, `has_line_of_sight`, `patrol_step` |
 | `audio.rs` | 55 | `AudioManager` + `SoundEffect` enum, no-op fallback |
+| `test_support.rs` | 26 | `App::for_test` constructor — centralized test seam for integration tests |
 
 ## Where To Look
 | Task | File | What to change |
@@ -33,6 +34,7 @@ All vim-rogue source. Tests in `tests/` (integration only).
 | Change aggregate logic | `types.rs` + `player.rs` | World (terrain, visibility, enemies), PlayerState (position, motions, HP, trail, progression; impl in player.rs), InputState (key buffering), Session (lifecycle, timing, pause) |
 | Add animation | `animation.rs` | AnimationState + Interpolator; durations as constants |
 | Add sound | `audio.rs` | SoundEffect enum + AudioManager.play() |
+| Add test constructor | `test_support.rs` | `App::for_test(map, position)` — single seam for all integration tests |
 
 ## Internal Dependencies
 ```

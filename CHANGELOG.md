@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `EnemyMovement` and `EnemyTurn` structs — structured result types for `World::step_enemies`
+- `App::for_test(map, position)` constructor in `src/test_support.rs` — centralized test seam; adding an App field no longer breaks all tests
+- `test_support` module registered in `lib.rs`
+
+### Removed
+
+- `started_app_with_map` and `test_app` helpers from `tests/common/mod.rs` — replaced by `App::for_test`
 
 ## [0.3.0] - 2026-04-29
 

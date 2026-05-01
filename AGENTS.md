@@ -1,5 +1,5 @@
 <!-- Generated: 2026-04-17 | Updated: 2026-05-01 -->
-<!-- Commit: HEAD | Branch: refactor/enemy-turn-into-world -->
+<!-- Commit: HEAD | Branch: refactor/app-for-test-constructor -->
 
 # vim-rogue
 
@@ -30,7 +30,8 @@ animation.rs  → GameClock, AnimationState, AnimationTimer, Interpolator (easin
 visibility.rs → VisibilityMap with FOV (explored/visible/hidden states) (124 lines)
 enemy.rs      → Enemy struct with FOV-aware BFS chase + room patrol (180 lines)
 audio.rs      → AudioManager with SoundEffect enum, graceful fallback (55 lines)
-lib.rs        → Re-exports all modules (9 lines)
+test_support.rs → `App::for_test` constructor for integration tests (26 lines)
+lib.rs        → Re-exports all modules + test_support (11 lines)
 ```
 
 ## Where To Look
@@ -47,12 +48,13 @@ lib.rs        → Re-exports all modules (9 lines)
 | Change aggregate logic | `src/types.rs` (World, InputState, Session) + `src/player.rs` (PlayerState) | PlayerState flat struct; each aggregate owns its domain; App coordinates |
 | Add animations | `src/animation.rs` | AnimationState + Interpolator; GameClock trait |
 | Add sound effects | `src/audio.rs` (SoundEffect enum + AudioManager) | Disabled by default |
+| Change test seam | `src/test_support.rs` | `App::for_test(map, position)` — single constructor for all tests |
 | Fix bug | `tests/` (396 integration tests, 9 files) | main.rs + lib.rs have no tests |
 
 ## Conventions
 - Rust edition 2024. `rustfmt.toml`: `use_small_heuristics = "Max"`, `edition = "2024"`.
 - 396 integration tests in `tests/` (9 files). Shared helpers in `tests/common/mod.rs`.
-- Helpers: `test_map()`, `started_app_with_map()`, `test_app()`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
+- Helpers: `test_map()`, `App::for_test(map, pos)`, `assert_approx_eq()`, `approx_eq()`, `tick_timer()`, `tick_state()`.
 - `renderer.rs` internals `pub` for test access (e.g. `screen_meets_minimum_size`, `phase_definitions`, `exit_glow`).
 - `lib.rs` re-exports all. `main.rs` thin (~32 lines).
 - `is_passable` = `Tile::Floor`, `Tile::Exit`, `Tile::Torchlight`. `Tile::Obstacle` not passable but `dd` destroys it.

@@ -1,11 +1,6 @@
-use std::time::{Duration, Instant};
 use vim_rogue::animation::{AnimationState, AnimationTimer, GameClock, TestClock};
-use vim_rogue::audio::AudioManager;
 use vim_rogue::map::Map;
 use vim_rogue::types::*;
-
-#[cfg(debug_assertions)]
-use vim_rogue::types::CheatBuffer;
 
 pub fn test_map(width: usize, height: usize) -> Map {
     Map {
@@ -18,50 +13,6 @@ pub fn test_map(width: usize, height: usize) -> Map {
         enemy_spawns: vec![],
         enemy_patrol_areas: vec![],
     }
-}
-
-pub fn started_app_with_map(map: Map, position: Position) -> App {
-    let world = World::new(map);
-    let mut app = App {
-        world,
-        player: PlayerState::new(position),
-        input: InputState::new(),
-        session: Session::new(),
-        player_animation: None,
-        enemy_animations: Vec::new(),
-        attack_effects: Vec::new(),
-        audio: AudioManager::new(),
-        #[cfg(debug_assertions)]
-        cheat_buf: CheatBuffer::new(),
-        #[cfg(debug_assertions)]
-        cheat_god_mode: false,
-    };
-    app.session.started = true;
-    app.update_visibility();
-    app
-}
-
-pub fn test_app() -> App {
-    let map = Map::new();
-    let start = map.start;
-    let world = World::new(map);
-    let mut app = App {
-        world,
-        player: PlayerState::new(start),
-        input: InputState::new(),
-        session: Session::new(),
-        player_animation: None,
-        enemy_animations: Vec::new(),
-        attack_effects: Vec::new(),
-        audio: AudioManager::new(),
-        #[cfg(debug_assertions)]
-        cheat_buf: CheatBuffer::new(),
-        #[cfg(debug_assertions)]
-        cheat_god_mode: false,
-    };
-    app.session.started = true;
-    app.update_visibility();
-    app
 }
 
 pub fn approx_eq(a: f32, b: f32) -> bool {

@@ -21,16 +21,17 @@
 | Helper | Signature | Purpose |
 |--------|-----------|---------|
 | `test_map(w, h)` | `-> Map` | Blank map, all-Floor grid |
-| `started_app_with_map(map, pos)` | `-> App` | App at pos on map, GameState::Playing |
-| `test_app()` | `-> App` | App on default Level 1 map |
 | `tick_timer(timer, clock, delta_ms)` | | Advance timer with TestClock |
 | `tick_state(state, clock, delta_ms)` | | Advance AnimationState with TestClock |
 | `tick(app, delta_ms)` | | Advance App clock + call `tick()` |
 
+## Test Constructor
+- `App::for_test(map, position)` in `src/test_support.rs` — creates App with `session.started = true` and visibility computed. Use instead of struct-literal construction.
+
 ## Where To Look
 | Task | File | Notes |
 |------|------|-------|
-| Test motion | `player.rs` | `test_app()` + `handle_key()` |
+| Test motion | `player.rs` | `App::for_test()` + `handle_key()` |
 | Test enemy | `enemy.rs` | Manual enemy + `step_toward_player` |
 | Test level layout | `map.rs` | `Map::level(N)` + grid assertions |
 | Test state transitions | `game.rs` | `handle_key()`, `tick()`, state assertions |
@@ -43,7 +44,7 @@
 - Animation constants: `PLAYER_MOVE_MS = 150.0`, `ENEMY_MOVE_MS = 200.0`, `ATTACK_EFFECT_MS = 200.0` — import from `vim_rogue::animation`.
 - `TestClock` = deterministic timing. Always use in tests, never `RealClock`.
 - Enemy: `Enemy::new(pos)` default; override with `Enemy { position: pos, hp: Some(30), ..Enemy::new(pos) }` for Level 4.
-- Level 4 helper: `level4_app_with_enemy(pos, hp)` in `tests/game.rs` — app on Level 4 map, one enemy at pos.
+- Level 4 helper: `level4_app_with_enemy(pos, hp)` in `tests/game.rs` — uses `App::for_test` internally, one enemy at pos.
 - `renderer.rs` internals `pub` for test access (`screen_meets_minimum_size`, `phase_definitions`, `exit_glow`).
 
 ## Notes

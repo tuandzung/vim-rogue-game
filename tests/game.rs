@@ -1,8 +1,7 @@
 mod common;
 
 use bracket_lib::prelude::VirtualKeyCode;
-use common::{started_app_with_map, test_map};
-use std::time::Duration;
+use common::test_map;
 use std::time::Instant;
 use vim_rogue::animation::{
     ATTACK_EFFECT_MS, AttackEffect, AttackEffectKind, ENEMY_MOVE_MS, PLAYER_MOVE_MS,
@@ -13,7 +12,7 @@ use vim_rogue::types::{
     App, Direction, Enemy, GameState, MAX_HP, PatrolArea, PauseOption, PendingInput, Position,
     TOTAL_LEVELS, Tile, VimMotion, Zone,
 };
-use vim_rogue::visibility::{VisibilityMap, VisibilityState};
+use vim_rogue::visibility::VisibilityState;
 
 #[test]
 fn app_new_starts_playing() {
@@ -47,7 +46,7 @@ fn app_trail_starts_empty() {
 fn app_current_zone_tracks_position() {
     let mut map = test_map(3, 1);
     map.zones[0][1] = Zone::Zone4;
-    let app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let app = App::for_test(map, Position { x: 1, y: 0 });
 
     assert_eq!(app.current_zone(), Zone::Zone4);
 }
@@ -99,7 +98,7 @@ fn update_visibility_crosses_zone_boundaries() {
         }
     }
 
-    let app = started_app_with_map(map, Position { x: 9, y: 2 });
+    let app = App::for_test(map, Position { x: 9, y: 2 });
 
     assert_eq!(app.current_zone(), Zone::Zone1);
     assert_eq!(app.world.map.zone_at(Position { x: 10, y: 2 }), Zone::Zone2);
@@ -112,7 +111,7 @@ fn update_visibility_treats_obstacles_as_transparent() {
     map.set_tile(2, 2, Tile::Obstacle);
     map.set_tile(3, 2, Tile::Floor);
 
-    let app = started_app_with_map(map, Position { x: 1, y: 2 });
+    let app = App::for_test(map, Position { x: 1, y: 2 });
 
     assert_eq!(app.world.visibility.get(Position { x: 2, y: 2 }), VisibilityState::Visible);
     assert_eq!(app.world.visibility.get(Position { x: 3, y: 2 }), VisibilityState::Visible);
@@ -151,7 +150,7 @@ fn app_q_opens_pause_menu() {
 
 #[test]
 fn app_h_motion_moves_player() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
@@ -160,7 +159,7 @@ fn app_h_motion_moves_player() {
 
 #[test]
 fn app_trail_records_successful_motion() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
@@ -170,7 +169,7 @@ fn app_trail_records_successful_motion() {
 
 #[test]
 fn app_trail_does_not_record_failed_motion() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 0, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 0, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
@@ -179,7 +178,7 @@ fn app_trail_does_not_record_failed_motion() {
 
 #[test]
 fn player_animation_starts_on_move() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
@@ -190,7 +189,7 @@ fn player_animation_starts_on_move() {
 
 #[test]
 fn player_animation_completes_after_duration() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     tick(&mut app, PLAYER_MOVE_MS);
@@ -200,7 +199,7 @@ fn player_animation_completes_after_duration() {
 
 #[test]
 fn player_animation_interpolates_position() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
@@ -212,7 +211,7 @@ fn player_animation_interpolates_position() {
 
 #[test]
 fn input_queued_during_animation() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -223,7 +222,7 @@ fn input_queued_during_animation() {
 
 #[test]
 fn queued_input_executed_after_animation() {
-    let mut app = started_app_with_map(test_map(6, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(6, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -238,7 +237,7 @@ fn queued_input_executed_after_animation() {
 
 #[test]
 fn queued_multi_key_motion_executes_without_stalling() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 4 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 4 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::G, false);
@@ -256,7 +255,7 @@ fn queued_find_preserves_pending_input_after_animation() {
     let mut map = test_map(6, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let mut app = App::for_test(map, Position { x: 1, y: 0 });
     app.player.level = TOTAL_LEVELS;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -277,7 +276,7 @@ fn queued_find_preserves_pending_input_after_animation() {
 fn queued_till_preserves_pending_input_after_animation() {
     let mut map = test_map(7, 1);
     map.set_tile(5, 0, Tile::Exit);
-    let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let mut app = App::for_test(map, Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::T, false);
@@ -296,7 +295,7 @@ fn queued_till_preserves_pending_input_after_animation() {
 fn queued_delete_preserves_pending_input_after_animation() {
     let mut map = test_map(6, 1);
     map.set_tile(4, 0, Tile::Obstacle);
-    let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let mut app = App::for_test(map, Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::D, false);
@@ -313,7 +312,7 @@ fn queued_delete_preserves_pending_input_after_animation() {
 
 #[test]
 fn queued_goto_line_preserves_pending_input_after_animation() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 4 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 4 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::G, false);
@@ -330,7 +329,7 @@ fn queued_goto_line_preserves_pending_input_after_animation() {
 
 #[test]
 fn rapid_keypresses_preserve_order_without_double_triggering() {
-    let mut app = started_app_with_map(test_map(8, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(8, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -352,7 +351,7 @@ fn rapid_keypresses_can_queue_find_and_target_together() {
     let mut map = test_map(6, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let mut app = App::for_test(map, Position { x: 1, y: 0 });
     app.player.level = TOTAL_LEVELS;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -368,7 +367,7 @@ fn rapid_keypresses_can_queue_find_and_target_together() {
 
 #[test]
 fn no_animation_on_failed_move() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 0, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 0, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::H, false);
 
@@ -377,7 +376,7 @@ fn no_animation_on_failed_move() {
 
 #[test]
 fn app_trail_caps_at_max() {
-    let mut app = started_app_with_map(test_map(20, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(20, 1), Position { x: 1, y: 0 });
 
     for _ in 0..(vim_rogue::types::TRAIL_MAX + 2) {
         handle_key(&mut app, VirtualKeyCode::L, false);
@@ -391,7 +390,7 @@ fn app_trail_caps_at_max() {
 fn app_d_then_d_deletes_obstacle() {
     let mut map = test_map(6, 1);
     map.set_tile(3, 0, Tile::Obstacle);
-    let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let mut app = App::for_test(map, Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::D, false);
     handle_key(&mut app, VirtualKeyCode::D, false);
@@ -402,7 +401,7 @@ fn app_d_then_d_deletes_obstacle() {
 
 #[test]
 fn app_d_then_other_cancels() {
-    let mut app = started_app_with_map(test_map(6, 1), Position { x: 1, y: 0 });
+    let mut app = App::for_test(test_map(6, 1), Position { x: 1, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::D, false);
     handle_key(&mut app, VirtualKeyCode::X, false);
@@ -415,7 +414,7 @@ fn app_d_then_other_cancels() {
 fn app_f_then_char_finds() {
     let mut map = test_map(6, 1);
     map.set_tile(4, 0, Tile::Exit);
-    let mut app = started_app_with_map(map, Position { x: 1, y: 0 });
+    let mut app = App::for_test(map, Position { x: 1, y: 0 });
     app.player.level = TOTAL_LEVELS;
 
     handle_key(&mut app, VirtualKeyCode::F, false);
@@ -429,7 +428,7 @@ fn app_win_condition_on_exit_tile() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = TOTAL_LEVELS;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -439,7 +438,7 @@ fn app_win_condition_on_exit_tile() {
 
 #[test]
 fn app_motion_count_increments() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
@@ -457,7 +456,7 @@ fn app_exit_on_level_1_transitions_to_level_2() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -471,7 +470,7 @@ fn app_exit_on_level_2_transitions_to_level_3() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 2;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -485,7 +484,7 @@ fn app_level_transition_preserves_stats() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.player.motion_count = 42;
     app.player.discovered_motions.insert(VimMotion::H);
@@ -503,7 +502,7 @@ fn app_level_transition_clears_trail() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.player.trail.push_front(Position { x: 2, y: 0 });
 
@@ -518,7 +517,7 @@ fn app_level_transition_clears_pending_input() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.input.pending_input = Some(PendingInput::Delete);
 
@@ -533,7 +532,7 @@ fn app_level_transition_resets_player_position() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -546,7 +545,7 @@ fn app_level_transition_loads_new_map() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -557,7 +556,7 @@ fn app_level_transition_loads_new_map() {
 
 #[test]
 fn app_g_jump_to_column_bottom() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 2 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 2 });
 
     handle_key(&mut app, VirtualKeyCode::G, true);
 
@@ -567,7 +566,7 @@ fn app_g_jump_to_column_bottom() {
 
 #[test]
 fn app_gg_two_keys_jump_to_column_top() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 4 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 4 });
 
     handle_key(&mut app, VirtualKeyCode::G, false);
     assert_eq!(app.input.pending_input, Some(PendingInput::GotoLine));
@@ -580,7 +579,7 @@ fn app_gg_two_keys_jump_to_column_top() {
 
 #[test]
 fn app_g_then_other_cancels() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 2 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 2 });
 
     handle_key(&mut app, VirtualKeyCode::G, false);
     handle_key(&mut app, VirtualKeyCode::X, false);
@@ -592,7 +591,7 @@ fn app_g_then_other_cancels() {
 
 #[test]
 fn app_lost_state_any_key_restarts_level() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 3, y: 3 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 3, y: 3 });
     app.player.level = 2;
     app.session.game_state = GameState::Lost;
     app.player.trail.push_front(Position { x: 2, y: 2 });
@@ -607,7 +606,7 @@ fn app_lost_state_any_key_restarts_level() {
 
 #[test]
 fn advance_level_resets_visibility() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 3, y: 3 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 3, y: 3 });
     let far_tile = Position { x: 79, y: 0 };
     app.player.level = 1;
     app.world.visibility.set(far_tile, VisibilityState::Explored);
@@ -620,7 +619,7 @@ fn advance_level_resets_visibility() {
 
 #[test]
 fn retry_level_resets_visibility() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 3, y: 3 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 3, y: 3 });
     let far_tile = Position { x: 79, y: 0 };
     app.player.level = 2;
     app.world.visibility.set(far_tile, VisibilityState::Explored);
@@ -634,7 +633,7 @@ fn retry_level_resets_visibility() {
 #[test]
 fn app_enemy_collision_decrements_hp_and_removes_enemy() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = MAX_HP;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
 
@@ -649,7 +648,7 @@ fn app_enemy_collision_decrements_hp_and_removes_enemy() {
 #[test]
 fn enemy_animation_starts_on_move() {
     let map = test_map(6, 3);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 1 });
+    let mut app = App::for_test(map, Position { x: 3, y: 1 });
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 1 }));
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -664,7 +663,7 @@ fn enemy_animation_starts_on_move() {
 #[test]
 fn enemy_animation_completes_after_duration() {
     let map = test_map(6, 3);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 1 });
+    let mut app = App::for_test(map, Position { x: 3, y: 1 });
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 1 }));
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -676,7 +675,7 @@ fn enemy_animation_completes_after_duration() {
 #[test]
 fn multiple_enemies_animate_simultaneously() {
     let map = test_map(8, 5);
-    let mut app = started_app_with_map(map, Position { x: 4, y: 2 });
+    let mut app = App::for_test(map, Position { x: 4, y: 2 });
     app.world.enemies.push(Enemy::new(Position { x: 0, y: 0 }));
     app.world.enemies.push(Enemy::new(Position { x: 0, y: 2 }));
     app.world.enemies.push(Enemy::new(Position { x: 0, y: 4 }));
@@ -692,7 +691,7 @@ fn multiple_enemies_animate_simultaneously() {
 #[test]
 fn enemy_animation_interpolates_position() {
     let map = test_map(6, 3);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 1 });
+    let mut app = App::for_test(map, Position { x: 3, y: 1 });
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 1 }));
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -707,7 +706,7 @@ fn enemy_animation_interpolates_position() {
 #[test]
 fn app_enemy_collision_sets_lost_when_hp_depleted() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
 
@@ -727,7 +726,7 @@ fn app_advance_level_spawns_enemies_from_map() {
     let mut map = test_map(5, 5);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 2;
 
     app.advance_level();
@@ -745,7 +744,7 @@ fn app_advance_level_preserves_hp() {
     let mut map = test_map(5, 5);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.player.hp = 20;
 
@@ -767,7 +766,7 @@ fn app_advance_level_level_2_to_3_spawns_enemies() {
     let mut map = test_map(5, 5);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 2;
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -782,7 +781,7 @@ fn app_advance_level_preserves_motion_count() {
     let mut map = test_map(5, 5);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.player.motion_count = 42;
 
@@ -793,7 +792,7 @@ fn app_advance_level_preserves_motion_count() {
 
 #[test]
 fn audio_movement_plays_on_successful_move() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
     app.audio.enable();
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -803,7 +802,7 @@ fn audio_movement_plays_on_successful_move() {
 
 #[test]
 fn audio_no_sound_on_failed_move() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 0, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 0, y: 0 });
     app.audio.enable();
 
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -820,7 +819,7 @@ fn audio_zone_entry_plays_on_zone_change() {
     for x in 16..32 {
         map.zones[0][x] = Zone::Zone2;
     }
-    let mut app = started_app_with_map(map, Position { x: 15, y: 0 });
+    let mut app = App::for_test(map, Position { x: 15, y: 0 });
     app.audio.enable();
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -830,7 +829,7 @@ fn audio_zone_entry_plays_on_zone_change() {
 
 #[test]
 fn audio_no_zone_entry_sound_when_same_zone() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
     app.audio.enable();
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -844,7 +843,7 @@ fn audio_no_zone_entry_sound_when_same_zone() {
 #[test]
 fn audio_damage_plays_on_enemy_hit() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = MAX_HP;
     app.audio.enable();
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
@@ -860,7 +859,7 @@ fn audio_victory_plays_on_win() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = TOTAL_LEVELS;
     app.audio.enable();
 
@@ -874,7 +873,7 @@ fn audio_level_complete_plays_on_advance() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.audio.enable();
 
@@ -887,7 +886,7 @@ fn audio_level_complete_plays_on_advance() {
 #[test]
 fn audio_enemy_step_plays_when_enemies_move() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 4, y: 0 });
+    let mut app = App::for_test(map, Position { x: 4, y: 0 });
     app.audio.enable();
     app.world.enemies.push(Enemy::new(Position { x: 2, y: 2 }));
 
@@ -901,7 +900,7 @@ fn audio_no_panic_when_disabled() {
     let mut map = test_map(5, 1);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 2, y: 0 });
+    let mut app = App::for_test(map, Position { x: 2, y: 0 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     assert!(!app.audio.is_enabled());
@@ -909,13 +908,13 @@ fn audio_no_panic_when_disabled() {
     let mut map2 = test_map(5, 1);
     map2.set_tile(4, 0, Tile::Exit);
     map2.exit = Position { x: 4, y: 0 };
-    let mut app2 = started_app_with_map(map2, Position { x: 3, y: 0 });
+    let mut app2 = App::for_test(map2, Position { x: 3, y: 0 });
     app2.player.level = TOTAL_LEVELS;
     handle_key(&mut app2, VirtualKeyCode::L, false);
     assert_eq!(app2.session.game_state, GameState::Won);
 
     let map3 = test_map(5, 5);
-    let mut app3 = started_app_with_map(map3, Position { x: 3, y: 0 });
+    let mut app3 = App::for_test(map3, Position { x: 3, y: 0 });
     app3.player.hp = MAX_HP;
     app3.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app3, VirtualKeyCode::H, false);
@@ -932,7 +931,7 @@ fn audio_app_new_has_disabled_audio() {
 fn torchlight_activation_on_step() {
     let mut map = test_map(20, 20);
     map.set_tile(6, 5, Tile::Torchlight);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
@@ -946,7 +945,7 @@ fn torchlight_activation_idempotent() {
     let mut map = test_map(20, 20);
     map.set_tile(6, 5, Tile::Torchlight);
     map.set_tile(7, 5, Tile::Floor);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     assert!(app.world.activated_torchlights.contains(&Position { x: 6, y: 5 }));
@@ -961,7 +960,7 @@ fn torchlight_activation_idempotent() {
 fn torchlight_reveals_nearby_tiles() {
     let mut map = test_map(40, 40);
     map.set_tile(20, 20, Tile::Torchlight);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
 
     app.world.activated_torchlights.insert(Position { x: 20, y: 20 });
     app.update_visibility();
@@ -974,7 +973,7 @@ fn torchlight_reveals_nearby_tiles() {
 fn torchlight_visibility_persists_after_player_moves_away() {
     let mut map = test_map(40, 40);
     map.set_tile(20, 20, Tile::Torchlight);
-    let mut app = started_app_with_map(map, Position { x: 19, y: 20 });
+    let mut app = App::for_test(map, Position { x: 19, y: 20 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
     assert!(app.world.activated_torchlights.contains(&Position { x: 20, y: 20 }));
@@ -989,7 +988,7 @@ fn advance_level_clears_torchlight_checkpoints() {
     let mut map = test_map(5, 5);
     map.set_tile(4, 0, Tile::Exit);
     map.exit = Position { x: 4, y: 0 };
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.level = 1;
     app.world.activated_torchlights.insert(Position { x: 2, y: 2 });
     app.player.last_checkpoint = Some(Position { x: 2, y: 2 });
@@ -1002,8 +1001,8 @@ fn advance_level_clears_torchlight_checkpoints() {
 
 #[test]
 fn retry_level_clears_torchlight_checkpoints() {
-    let mut map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 3 });
+    let map = test_map(5, 5);
+    let mut app = App::for_test(map, Position { x: 3, y: 3 });
     app.player.level = 2;
     app.world.activated_torchlights.insert(Position { x: 2, y: 2 });
     app.player.last_checkpoint = Some(Position { x: 2, y: 2 });
@@ -1016,8 +1015,8 @@ fn retry_level_clears_torchlight_checkpoints() {
 
 #[test]
 fn visibility_updates_after_each_move() {
-    let mut map = test_map(40, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 10 });
+    let map = test_map(40, 20);
+    let mut app = App::for_test(map, Position { x: 5, y: 10 });
 
     handle_key(&mut app, VirtualKeyCode::L, false);
 
@@ -1027,7 +1026,7 @@ fn visibility_updates_after_each_move() {
 
 #[test]
 fn audio_enabled_does_not_crash_during_movement() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
     app.audio.enable();
 
     handle_key(&mut app, VirtualKeyCode::L, false);
@@ -1039,7 +1038,7 @@ fn audio_enabled_does_not_crash_during_movement() {
 
 fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.world.enemies = vec![Enemy { position: enemy_pos, hp: enemy_hp, ..Enemy::new(enemy_pos) }];
     app.player.last_direction = Some(Direction::Right);
@@ -1048,7 +1047,7 @@ fn level4_app_with_enemy(enemy_pos: Position, enemy_hp: Option<i32>) -> App {
 
 #[test]
 fn facing_updates_on_l_movement() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
     assert_eq!(app.player.last_direction, None);
     handle_key(&mut app, VirtualKeyCode::L, false);
     assert_eq!(app.player.last_direction, Some(Direction::Right));
@@ -1056,28 +1055,28 @@ fn facing_updates_on_l_movement() {
 
 #[test]
 fn facing_updates_on_h_movement() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 2, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 2, y: 0 });
     handle_key(&mut app, VirtualKeyCode::H, false);
     assert_eq!(app.player.last_direction, Some(Direction::Left));
 }
 
 #[test]
 fn facing_updates_on_j_movement() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 2 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 2 });
     handle_key(&mut app, VirtualKeyCode::J, false);
     assert_eq!(app.player.last_direction, Some(Direction::Down));
 }
 
 #[test]
 fn facing_updates_on_k_movement() {
-    let mut app = started_app_with_map(test_map(5, 5), Position { x: 2, y: 2 });
+    let mut app = App::for_test(test_map(5, 5), Position { x: 2, y: 2 });
     handle_key(&mut app, VirtualKeyCode::K, false);
     assert_eq!(app.player.last_direction, Some(Direction::Up));
 }
 
 #[test]
 fn facing_does_not_update_on_failed_move() {
-    let mut app = started_app_with_map(test_map(5, 1), Position { x: 0, y: 0 });
+    let mut app = App::for_test(test_map(5, 1), Position { x: 0, y: 0 });
     assert_eq!(app.player.last_direction, None);
     handle_key(&mut app, VirtualKeyCode::H, false);
     assert_eq!(app.player.last_direction, None);
@@ -1198,7 +1197,7 @@ fn stunned_enemy_does_not_move() {
 #[test]
 fn stunned_enemy_does_not_deal_damage() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.player.hp = 10;
     // Enemy adjacent on the left — would step onto player if not stunned
@@ -1224,7 +1223,7 @@ fn stunned_enemy_does_not_deal_damage() {
 #[test]
 fn stun_wears_off_after_one_turn() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.world.enemies = vec![Enemy {
         position: Position { x: 6, y: 5 },
@@ -1255,7 +1254,7 @@ fn stun_wears_off_after_one_turn() {
 #[test]
 fn stun_prevents_enemy_counterattack_after_melee() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.player.hp = 10;
     app.player.last_direction = Some(Direction::Right);
@@ -1285,7 +1284,7 @@ fn stun_prevents_enemy_counterattack_after_melee() {
 #[test]
 fn death_with_checkpoint_respawns_at_torchlight() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.player.last_checkpoint = Some(Position { x: 10, y: 10 });
     app.world.activated_torchlights.insert(Position { x: 10, y: 10 });
@@ -1313,7 +1312,7 @@ fn death_with_checkpoint_respawns_at_torchlight() {
 #[test]
 fn death_without_checkpoint_triggers_lost() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.player.last_checkpoint = None;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
@@ -1331,7 +1330,7 @@ fn death_without_checkpoint_triggers_lost() {
 #[test]
 fn checkpoint_state_persists_after_respawn() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     let checkpoint = Position { x: 10, y: 10 };
     app.player.last_checkpoint = Some(checkpoint);
@@ -1354,7 +1353,7 @@ fn checkpoint_state_persists_after_respawn() {
 #[test]
 fn surviving_enemies_persist_after_checkpoint_respawn() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.player.last_checkpoint = Some(Position { x: 10, y: 10 });
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
@@ -1381,7 +1380,7 @@ fn surviving_enemies_persist_after_checkpoint_respawn() {
 #[test]
 fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     let checkpoint = Position { x: 10, y: 10 };
     app.player.last_checkpoint = Some(checkpoint);
@@ -1404,7 +1403,7 @@ fn enemy_on_checkpoint_tile_is_pushed_on_respawn() {
 #[test]
 fn level_transition_clears_checkpoints() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 3 });
+    let mut app = App::for_test(map, Position { x: 3, y: 3 });
     app.player.last_checkpoint = Some(Position { x: 10, y: 10 });
     app.world.activated_torchlights.insert(Position { x: 10, y: 10 });
 
@@ -1481,7 +1480,7 @@ fn level_4_colliding_enemy_persists_on_checkpoint_respawn() {
     // Level 4 enemies with hp: Some(30) should persist even after colliding with the player,
     // unlike Level 3 enemies (hp: None) which despawn on contact.
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.player.hp = 10;
     let checkpoint = Position { x: 10, y: 10 };
@@ -1561,7 +1560,7 @@ fn attack_effect_does_not_block_input() {
 fn advance_level_clears_attack_effects() {
     let mut map = test_map(10, 1);
     map.set_tile(4, 0, Tile::Exit);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.attack_effects.push(vim_rogue::animation::AttackEffect::new(
         AttackEffectKind::PlayerStrike,
         3,
@@ -1585,7 +1584,7 @@ fn retry_level_clears_attack_effects() {
 #[test]
 fn enemy_collision_spawns_hit_effect_on_player() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = MAX_HP;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1599,7 +1598,7 @@ fn enemy_collision_spawns_hit_effect_on_player() {
 #[test]
 fn fatal_enemy_hit_preserves_effect() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1611,7 +1610,7 @@ fn fatal_enemy_hit_preserves_effect() {
 #[test]
 fn checkpoint_respawn_preserves_hit_effect() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.level = 4;
     app.player.hp = 10;
     let checkpoint = Position { x: 10, y: 10 };
@@ -1635,7 +1634,7 @@ fn checkpoint_respawn_preserves_hit_effect() {
 #[test]
 fn attack_effects_expire_after_duration() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = MAX_HP;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1648,7 +1647,7 @@ fn attack_effects_expire_after_duration() {
 #[test]
 fn dying_transitions_to_lost_after_effects_expire() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1662,7 +1661,7 @@ fn dying_transitions_to_lost_after_effects_expire() {
 #[test]
 fn nonfatal_effect_survives_oversized_first_delta() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = MAX_HP;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1690,7 +1689,7 @@ fn player_strike_survives_oversized_first_delta() {
 #[test]
 fn dying_state_ignores_input() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1703,7 +1702,7 @@ fn dying_state_ignores_input() {
 #[test]
 fn dying_large_delta_still_shows_effects_before_transition() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     handle_key(&mut app, VirtualKeyCode::H, false);
@@ -1723,7 +1722,7 @@ fn dying_large_delta_still_shows_effects_before_transition() {
 #[test]
 fn two_enemies_same_turn_both_hit_at_high_hp() {
     let map = test_map(10, 3);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 1 });
+    let mut app = App::for_test(map, Position { x: 5, y: 1 });
     app.player.hp = 20;
     app.world.enemies.push(Enemy::new(Position { x: 4, y: 0 }));
     app.world.enemies.push(Enemy::new(Position { x: 4, y: 2 }));
@@ -1737,7 +1736,7 @@ fn two_enemies_same_turn_both_hit_at_high_hp() {
 #[test]
 fn two_enemies_fatal_first_skips_second() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 3, y: 0 });
+    let mut app = App::for_test(map, Position { x: 3, y: 0 });
     app.player.hp = 10;
     app.world.enemies.push(Enemy::new(Position { x: 1, y: 0 }));
     app.world.enemies.push(Enemy::new(Position { x: 4, y: 0 }));
@@ -1751,7 +1750,7 @@ fn two_enemies_fatal_first_skips_second() {
 fn checkpoint_respawn_pushes_stacked_enemies_off_checkpoint() {
     let map = test_map(10, 10);
     let checkpoint = Position { x: 5, y: 5 };
-    let mut app = started_app_with_map(map, Position { x: 5, y: 6 });
+    let mut app = App::for_test(map, Position { x: 5, y: 6 });
     app.player.level = 4;
     app.player.hp = 10;
     app.player.last_checkpoint = Some(checkpoint);
@@ -1788,7 +1787,7 @@ fn push_enemies_bfs_respects_walls() {
     map.set_tile(6, 5, Tile::Wall);
     map.set_tile(5, 4, Tile::Wall);
     map.set_tile(5, 6, Tile::Wall);
-    let mut app = started_app_with_map(map, Position { x: 8, y: 8 });
+    let mut app = App::for_test(map, Position { x: 8, y: 8 });
     app.session.game_state = GameState::Dying;
     app.player.pending_respawn = Some(checkpoint);
     app.attack_effects.push(AttackEffect::new(AttackEffectKind::EnemyHit, 8, 8));
@@ -1811,7 +1810,7 @@ fn push_enemies_bfs_respects_walls() {
 #[test]
 fn dying_with_empty_effects_transitions_immediately() {
     let map = test_map(5, 5);
-    let mut app = started_app_with_map(map, Position { x: 2, y: 2 });
+    let mut app = App::for_test(map, Position { x: 2, y: 2 });
     app.session.game_state = GameState::Dying;
     app.player.pending_respawn = None;
     assert!(app.attack_effects.is_empty());
@@ -1823,7 +1822,7 @@ fn dying_with_empty_effects_transitions_immediately() {
 fn mixed_age_dying_removes_completed_effects_first() {
     let map = test_map(10, 10);
     let checkpoint = Position { x: 5, y: 5 };
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     app.player.hp = 10;
     app.player.last_checkpoint = Some(checkpoint);
     app.world.activated_torchlights.insert(checkpoint);
@@ -1846,7 +1845,7 @@ fn mixed_age_dying_removes_completed_effects_first() {
 #[test]
 fn enemy_chases_when_player_visible() {
     let map = test_map(20, 20);
-    let mut app = started_app_with_map(map, Position { x: 15, y: 10 });
+    let mut app = App::for_test(map, Position { x: 15, y: 10 });
     app.player.level = 3;
     let mut enemy = Enemy::new(Position { x: 12, y: 10 });
     enemy.patrol_area = PatrolArea { min_x: 0, min_y: 0, max_x: 19, max_y: 19 };
@@ -1867,7 +1866,7 @@ fn enemy_patrols_when_player_not_visible() {
     for y in 0..40 {
         map.set_tile(40, y, Tile::Wall);
     }
-    let mut app = started_app_with_map(map, Position { x: 60, y: 20 });
+    let mut app = App::for_test(map, Position { x: 60, y: 20 });
     app.player.level = 3;
     let mut enemy = Enemy::new(Position { x: 10, y: 20 });
     enemy.patrol_area = PatrolArea { min_x: 0, min_y: 0, max_x: 39, max_y: 39 };
@@ -1890,7 +1889,7 @@ fn enemy_patrols_when_player_not_visible() {
 #[test]
 fn enemy_patrol_does_not_leave_room_over_many_turns() {
     let map = test_map(80, 40);
-    let mut app = started_app_with_map(map, Position { x: 70, y: 35 });
+    let mut app = App::for_test(map, Position { x: 70, y: 35 });
     app.player.level = 3;
     let mut enemy = Enemy::new(Position { x: 10, y: 5 });
     enemy.patrol_area = PatrolArea { min_x: 4, min_y: 2, max_x: 15, max_y: 9 };
@@ -1912,7 +1911,7 @@ fn enemy_patrol_does_not_leave_room_over_many_turns() {
 #[test]
 #[cfg(debug_assertions)]
 fn cheat_iv_advances_to_next_level() {
-    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    let mut app = App::for_test(test_map(10, 10), Position { x: 5, y: 5 });
     assert_eq!(app.player.level, 1);
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::V, false);
@@ -1923,7 +1922,7 @@ fn cheat_iv_advances_to_next_level() {
 #[test]
 #[cfg(debug_assertions)]
 fn cheat_iv_on_last_level_triggers_win() {
-    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    let mut app = App::for_test(test_map(10, 10), Position { x: 5, y: 5 });
     app.player.level = TOTAL_LEVELS;
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::V, false);
@@ -1934,7 +1933,7 @@ fn cheat_iv_on_last_level_triggers_win() {
 #[test]
 #[cfg(debug_assertions)]
 fn cheat_im_toggles_god_mode() {
-    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    let mut app = App::for_test(test_map(10, 10), Position { x: 5, y: 5 });
     assert!(!app.cheat_god_mode);
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::M, false);
@@ -1979,7 +1978,7 @@ fn cheat_ie_kills_all_enemies() {
 #[test]
 #[cfg(debug_assertions)]
 fn cheat_ip_toggles_noclip() {
-    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    let mut app = App::for_test(test_map(10, 10), Position { x: 5, y: 5 });
     assert!(!app.player.noclip);
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::P, false);
@@ -1996,7 +1995,7 @@ fn cheat_ip_toggles_noclip() {
 fn cheat_noclip_allows_wall_walking() {
     let mut map = test_map(10, 10);
     map.set_tile(6, 5, Tile::Wall);
-    let mut app = started_app_with_map(map, Position { x: 5, y: 5 });
+    let mut app = App::for_test(map, Position { x: 5, y: 5 });
     handle_key(&mut app, VirtualKeyCode::L, false);
     assert_eq!(app.player.position, Position { x: 5, y: 5 });
     handle_key(&mut app, VirtualKeyCode::I, false);
@@ -2008,7 +2007,7 @@ fn cheat_noclip_allows_wall_walking() {
 #[test]
 #[cfg(debug_assertions)]
 fn cheat_buffer_resets_on_non_char_key() {
-    let mut app = started_app_with_map(test_map(10, 10), Position { x: 5, y: 5 });
+    let mut app = App::for_test(test_map(10, 10), Position { x: 5, y: 5 });
     handle_key(&mut app, VirtualKeyCode::I, false);
     handle_key(&mut app, VirtualKeyCode::Escape, false);
     handle_key(&mut app, VirtualKeyCode::V, false);
