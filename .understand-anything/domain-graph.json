@@ -2,58 +2,35 @@
   "version": "1.0.0",
   "project": {
     "name": "vim-rogue",
-    "languages": ["Rust"],
+    "languages": ["rust"],
     "frameworks": ["bracket-lib"],
-    "description": "A roguelike dungeon game that teaches Vim motions through gameplay. Players navigate four 80×40 dungeon levels using real Vim keybindings (hjkl, wb, G/gg, 0$, ft, dd), dodge FOV-aware enemies, and manage lives/HP while progressing through zones that gate new motion mechanics.",
-    "analyzedAt": "2026-05-04T00:00:00Z",
-    "gitCommitHash": "a71ce03"
+    "description": "A roguelike dungeon game teaching Vim motions through gameplay. Players navigate 80×40 dungeons across 4 levels using 13 Vim commands (h/j/k/l/w/b/0/$/G/gg/f/t/dd) while avoiding FOV-aware enemies. Features fog-of-war exploration, checkpoint system, motion mastery tracking, and combat mechanics.",
+    "analyzedAt": "2026-05-05T00:00:00.000Z",
+    "gitCommitHash": "4404e531ceb1ed256a188ca16405e0ccbcc015b3"
   },
   "nodes": [
-    {
-      "id": "domain:game-lifecycle",
-      "type": "domain",
-      "name": "Game Lifecycle",
-      "summary": "Manages the overall game state transitions from launch through gameplay to win/loss conditions. Handles initialization, pause/resume, level progression, and session persistence.",
-      "tags": ["game-state", "lifecycle", "session-management"],
-      "complexity": "moderate",
-      "domainMeta": {
-        "entities": ["App", "Session", "GameState", "PauseOption"],
-        "businessRules": [
-          "Game starts in Title state, transitions to Playing on first input",
-          "Three pause options: Resume, Restart Level, Quit Game",
-          "Won state when completing Level 4",
-          "Lost state when lives reach 0",
-          "Death with checkpoint: respawn with full HP at checkpoint"
-        ],
-        "crossDomainInteractions": [
-          "Triggers Level Generation when advancing levels",
-          "Resets Player Movement state on retry",
-          "Disables Enemy AI during pause/menu states"
-        ]
-      }
-    },
     {
       "id": "domain:player-movement",
       "type": "domain",
       "name": "Player Movement",
-      "summary": "Core gameplay mechanic teaching Vim motions through dungeon navigation. Thirteen motion types gated across five zones, with boundary checking, wall collision, and motion discovery tracking.",
-      "tags": ["vim-motions", "player-input", "mechanics"],
+      "summary": "Handles all player navigation through the dungeon using 13 Vim motion commands. Manages position updates, boundary validation, motion tracking, and teaching progression (discovered motions, motion count). Includes two-phase input handling for pending commands.",
+      "tags": ["vim-motions", "player", "movement", "teaching", "input"],
       "complexity": "complex",
       "domainMeta": {
-        "entities": ["PlayerState", "VimMotion", "Position", "MotionTrail"],
+        "entities": ["PlayerState", "Position", "VimMotion", "InputState"],
         "businessRules": [
-          "Zone 1 (gray): hjkl basic movements",
-          "Zone 2 (cyan): wb horizontal scan (stop at non-passable)",
-          "Zone 3 (magenta): 0$ line boundaries, G/gg vertical scan",
-          "Zone 4 (red): ft character search (requires both keys)",
-          "Zone 5 (gold): dd destroys obstacles only",
-          "All motions check map boundaries and wall collisions",
-          "Motion discovery tracked per session"
+          "13 Vim motions: h/j/k/l (cardinal), w/b (word jumps), 0/$ (line ends), G/gg (vertical scan), f/t (find/till), dd (destroy obstacle)",
+          "Two-phase input for f/t/dd/gg requires second keypress",
+          "Motion cannot pass through walls (except dd destroys obstacles)",
+          "Each discovered motion increments motion_count and adds to discovered_motions set",
+          "Player position updates validate bounds and passability"
         ],
         "crossDomainInteractions": [
-          "Triggers Collision Detection on enemy contact",
-          "Updates Visibility/FOV after each motion",
-          "Consumes Input State pending key buffer for f/t/dd/gg"
+          "Triggers enemy turn after player motion completes",
+          "Updates visibility system after position change",
+          "Activates checkpoints when stepping on torchlight tiles",
+          "Checks exit condition for level transitions",
+          "Processes collision with enemies during movement"
         ]
       }
     },
@@ -61,273 +38,173 @@
       "id": "domain:enemy-ai",
       "type": "domain",
       "name": "Enemy AI",
-      "summary": "FOV-aware enemy behavior combining BFS pathfinding chase logic with room-based patrol. Enemies pursue player when visible, patrol designated areas otherwise.",
-      "tags": ["enemy-behavior", "pathfinding", "ai"],
+      "summary": "Manages enemy intelligence including FOV-aware chase behavior using BFS pathfinding, patrol movement within designated areas, collision detection with player, and turn-based orchestration. Enemies respond dynamically to player visibility and position.",
+      "tags": ["enemy", "ai", "pathfinding", "fov", "patrol", "combat"],
       "complexity": "complex",
       "domainMeta": {
-        "entities": ["Enemy", "EnemyMovement", "PatrolArea", "EnemyTurn"],
+        "entities": ["Enemy", "PatrolArea", "EnemyTurn", "EnemyMovement"],
         "businessRules": [
-          "FOV radius 8 for enemy vision (has_line_of_sight via Bresenham)",
-          "Player visible: BFS shortest path chase (step_toward_player)",
-          "Player not visible: patrol within PatrolArea boundaries",
-          "Level 4 enemies have hp: Some(30), require 3 melee hits",
-          "All enemies deal 10 damage on collision",
-          "Enemy turn executes after player motion completes"
+          "FOV-aware: chase player only when visible (line-of-sight check)",
+          "BFS pathfinding finds shortest path to player",
+          "Patrol movement when player not visible, within assigned PatrolArea",
+          "Collision with player causes damage and death (lose 1 life, 3 lives total)",
+          "Level 4 enemies have 30 HP, vulnerable to melee attacks",
+          "Stunned state prevents movement for N turns",
+          "Enemies pushed off overlapping positions to avoid stacking"
         ],
         "crossDomainInteractions": [
-          "Queries Visibility system for line-of-sight",
-          "Triggers Combat System on player collision",
-          "Animates movement using Animation timing"
+          "World aggregate orchestrates all enemy turns each tick",
+          "Checks player position and visibility for chase decisions",
+          "Processes collisions with player state (HP, lives, death)",
+          "Movement animations coordinated with player turn completion"
         ]
       }
     },
     {
-      "id": "domain:level-generation",
+      "id": "domain:dungeon-exploration",
       "type": "domain",
-      "name": "Level Generation",
-      "summary": "Procedural dungeon creation across four distinct levels with increasing complexity. Carves corridors, places walls/obstacles, spawns enemies, defines patrol areas, and positions torchlight checkpoints.",
-      "tags": ["procedural-generation", "map-layout", "spawning"],
+      "name": "Dungeon Exploration",
+      "summary": "Manages the 80×40 grid map with 4 procedural dungeon levels, 5 thematic zones, corridor carving, obstacle placement, enemy spawn points, patrol areas, and torchlight checkpoints. Provides the spatial foundation for all gameplay.",
+      "tags": ["map", "generation", "procedural", "zones", "terrain", "checkpoint"],
       "complexity": "moderate",
       "domainMeta": {
-        "entities": ["Map", "Tile", "Zone", "PatrolArea", "Torchlight"],
+        "entities": ["Map", "Tile", "Zone", "PatrolArea"],
         "businessRules": [
-          "80×40 grid, row-major indexing (grid[y][x])",
-          "Level 1: basic layout with 5 zones",
-          "Level 2: inverted maze + obstacles (dd destroys)",
-          "Level 3: zigzag corridors + BFS enemies",
-          "Level 4: fortress rooms + FOV patrol + HP enemies",
-          "Zone colors: gray→cyan→magenta→red→gold",
-          "Torchlight provides permanent FOV radius 6 when activated",
-          "Exit positioned in Zone 5 (gold zone)"
+          "80×40 grid with row-major indexing (grid[y][x])",
+          "4 levels with increasing complexity: basic, inverted maze, zigzag, fortress rooms",
+          "5 zones with distinct visual themes (color-coded walls)",
+          "Tile types: Wall (blocks), Floor (passable), Exit (level transition), Obstacle (dd destroys), Torchlight (checkpoint)",
+          "Reachability guaranteed from start to exit on each level",
+          "Corridor connectivity between rooms"
         ],
         "crossDomainInteractions": [
-          "Populates Enemy AI with spawn positions and patrol areas",
-          "Initializes Visibility system with tile structure",
-          "Sets Player Movement boundary constraints"
+          "Provides spatial data for enemy AI pathfinding",
+          "Supplies terrain data for visibility/FOV calculations",
+          "Stores patrol area definitions for enemy behavior",
+          "Positions torchlight checkpoints for player progression",
+          "Validates player movement passability"
         ]
       }
     },
     {
-      "id": "domain:combat-system",
+      "id": "domain:visibility-and-fog",
       "type": "domain",
-      "name": "Combat System",
-      "summary": "Handles damage calculation, life deduction, enemy HP, and melee combat through the x key. Manages death, respawn, and checkpoint recovery mechanics.",
-      "tags": ["combat", "damage", "health"],
+      "name": "Visibility and Fog of War",
+      "summary": "Computes field of view using ray-casting algorithm, managing three visibility states (Hidden/Visible/Explored) that create the classic fog-of-war effect. Supports multi-source FOV from player position and activated torchlights.",
+      "tags": ["fov", "visibility", "fog-of-war", "ray-casting", "lighting"],
       "complexity": "moderate",
       "domainMeta": {
-        "entities": ["HP", "Lives", "MeleeAttack"],
+        "entities": ["VisibilityMap", "TileVisibility"],
         "businessRules": [
-          "MAX_HP = 30, enemy collision = 10 damage",
-          "Lives: 3 total, enemy collision = -1 life",
-          "0 lives → Lost state (game over)",
-          "Melee (x key): 10 damage to adjacent enemies",
-          "Level 4 enemies have 30 HP (3 melee hits to kill)",
-          "Death without checkpoint: retry level from start",
-          "Death with checkpoint: respawn at checkpoint with full HP"
+          "FOV_RADIUS defines player visibility range",
+          "Three states: Hidden (unseen), Visible (in FOV), Explored (seen before, persist)",
+          "Ray-casting algorithm stops at walls",
+          "Explored areas persist across visibility updates",
+          "Torchlight activation provides permanent FOV radius (TORCHLIGHT_FOV_RADIUS)",
+          "Multi-source FOV combines player + activated torchlights"
         ],
         "crossDomainInteractions": [
-          "Triggered by Enemy AI collision events",
-          "Resets Player Movement position on respawn",
-          "Updates Game Lifecycle to Lost state when lives = 0"
+          "Informs enemy AI about player visibility for chase decisions",
+          "Renders fog overlay in presentation layer",
+          "Updates on every player position change",
+          "Checkpoint system activates torchlight FOV sources"
         ]
       }
     },
     {
-      "id": "domain:visibility-system",
+      "id": "domain:game-progression",
       "type": "domain",
-      "name": "Visibility System",
-      "summary": "Implements fog-of-war through field-of-view computation using ray-casting. Manages three tile states (Hidden, Explored, Visible) with permanent exploration tracking.",
-      "tags": ["fov", "fog-of-war", "visibility"],
+      "name": "Game Progression",
+      "summary": "Manages game state machine transitions including level completion (reaching exit), death handling (losing lives), checkpoint activation (torchlight), victory condition (completing all 4 levels), and retry mechanics. Tracks session timing and motion mastery.",
+      "tags": ["progression", "state-machine", "level-transition", "victory", "checkpoint"],
       "complexity": "moderate",
       "domainMeta": {
-        "entities": ["VisibilityMap", "FOVState"],
+        "entities": ["Session", "GameState", "PlayerState"],
         "businessRules": [
-          "FOV_RADIUS: default player vision radius",
-          "Torchlight: permanent FOV radius 6 when activated",
-          "Hidden: never seen, black",
-          "Visible: currently in FOV, full brightness",
-          "Explored: seen before but not currently visible, dim gray",
-          "Explored tiles persist permanently (memory)"
+          "4 levels total, reaching exit triggers level transition",
+          "3 lives per level, enemy collision = -1 life",
+          "0 lives → Lost state, option to retry level",
+          "Completing level 4 → Won state (victory)",
+          "Torchlight activation sets checkpoint (permanent FOV + respawn point)",
+          "Death with checkpoint → respawn (restore HP + teleport to checkpoint)",
+          "Death without checkpoint → restart level",
+          "Motion mastery tracks discovered motions (13 total)"
         ],
         "crossDomainInteractions": [
-          "Queried by Enemy AI for line-of-sight checks",
-          "Updated after Player Movement",
-          "Rendered by Presentation system (fog-of-war effect)"
+          "Advances player level on exit reach",
+          "Resets player position on retry/respawn",
+          "Updates visibility after level transition",
+          "Displays win/lost screens in presentation layer",
+          "Tracks elapsed time for session statistics"
         ]
       }
     },
     {
-      "id": "domain:input-handling",
-      "type": "domain",
-      "name": "Input Handling",
-      "summary": "Processes keyboard input through bracket-lib event loop. Manages pending state for two-key motions (f, t, dd, gg) and maps raw keys to VimMotion enum variants.",
-      "tags": ["input-processing", "keybindings", "state-buffer"],
-      "complexity": "moderate",
-      "domainMeta": {
-        "entities": ["InputState", "VimMotion"],
-        "businessRules": [
-          "ESC/q: pause game",
-          "f + char: find next character (requires pending state)",
-          "t + char: till before character (requires pending state)",
-          "dd: destroy obstacle (requires pending state)",
-          "gg/G: jump to top/bottom (gg requires pending state)",
-          "All other motions: single key immediate execution"
-        ],
-        "crossDomainInteractions": [
-          "Feeds Player Movement with parsed VimMotion",
-          "Triggers Game Lifecycle pause on ESC/q"
-        ]
-      }
-    },
-    {
-      "id": "domain:presentation",
-      "type": "domain",
-      "name": "Presentation",
-      "summary": "Pure rendering system using bracket-lib with zero state mutation. Draws title screen, game viewport, UI sidebar, minimap, fog-of-war, and win/loss/pause overlays.",
-      "tags": ["rendering", "ui", "bracket-lib"],
-      "complexity": "moderate",
-      "domainMeta": {
-        "entities": ["RenderGrid", "ViewModel"],
-        "businessRules": [
-          "Never mutates App state (read-only)",
-          "Zone-colored walls: gray→cyan→magenta→red→gold",
-          "Sidebar: HP bar, lives count, motion discovery list",
-          "Minimap: 80×40 condensed view",
-          "Fog-of-war: Hidden (black), Explored (dim), Visible (bright)",
-          "ASCII art for title and win/loss screens"
-        ],
-        "crossDomainInteractions": [
-          "Reads all other domains for display data",
-          "No state mutation (pure function)"
-        ]
-      }
-    },
-    {
-      "id": "domain:audio-animation",
-      "type": "domain",
-      "name": "Audio & Animation",
-      "summary": "Polish layer providing smooth movement animations and sound effects. Uses easing functions and separate timing for player (150ms) vs enemy (200ms) movements.",
-      "tags": ["animation", "audio", "timing"],
-      "complexity": "simple",
-      "domainMeta": {
-        "entities": ["GameClock", "AnimationState", "AnimationTimer", "Interpolator", "AudioManager", "SoundEffect"],
-        "businessRules": [
-          "PLAYER_MOVE_MS = 150ms animation duration",
-          "ENEMY_MOVE_MS = 200ms animation duration",
-          "Interpolator provides easing functions",
-          "RealClock for production, TestClock for tests",
-          "Audio disabled by default, requires enable()",
-          "SoundEffect enum with graceful fallback"
-        ],
-        "crossDomainInteractions": [
-          "Polishes Player Movement with motion animations",
-          "Polishes Enemy AI with chase/patrol animations",
-          "Polishes Combat with damage/death sounds"
-        ]
-      }
-    },
-    {
-      "id": "flow:start-game",
+      "id": "flow:execute-vim-motion",
       "type": "flow",
-      "name": "Start Game",
-      "summary": "Initializes the game session, displays title screen, and transitions to active gameplay on first input.",
-      "tags": ["game-lifecycle", "initialization"],
-      "complexity": "simple",
+      "name": "Execute Vim Motion",
+      "summary": "Processes Vim motion input from single-key (h/j/k/l/w/b/0/$/G) and two-phase (f/t/dd/gg) commands, validates input, updates player position, checks boundary conditions, and triggers enemy turn. Core gameplay loop.",
+      "tags": ["vim", "movement", "input", "game-loop"],
+      "complexity": "complex",
       "domainMeta": {
-        "entryPoint": "cargo run / binary launch",
+        "entryPoint": "Keypress (Vim motion key or ESC/q for pause)",
         "entryType": "cli"
       }
     },
     {
-      "id": "flow:play-level",
+      "id": "flow:enemy-turn-orchestration",
       "type": "flow",
-      "name": "Play Level",
-      "summary": "Core gameplay loop: player input → motion validation → collision check → enemy turn → animation update → render. Repeats until level exit or death.",
-      "tags": ["gameplay-loop", "core-mechanic"],
+      "name": "Enemy Turn Orchestration",
+      "summary": "After player animation completes, all enemies take turns simultaneously: checking FOV visibility, computing BFS paths, moving toward player or patrolling, processing collisions, and updating animations.",
+      "tags": ["enemy", "ai", "turn-based", "orchestration"],
       "complexity": "complex",
       "domainMeta": {
-        "entryPoint": "Any key press during GameState::Playing",
+        "entryPoint": "Player animation completion",
         "entryType": "event"
       }
     },
     {
-      "id": "flow:complete-level",
+      "id": "flow:level-completion",
       "type": "flow",
-      "name": "Complete Level",
-      "summary": "Player reaches exit tile → increment level index → generate new level → respawn player at start → restore visibility → continue gameplay.",
-      "tags": ["progression", "level-transition"],
-      "complexity": "moderate",
+      "name": "Level Completion",
+      "summary": "Triggered when player reaches exit tile: increments level, clears trail, sets new starting position, regenerates map for next level, updates visibility, and checks victory condition (level 4 = win).",
+      "tags": ["progression", "level-transition", "victory"],
+      "complexity": "simple",
       "domainMeta": {
         "entryPoint": "Player position == exit tile",
         "entryType": "event"
       }
     },
     {
-      "id": "flow:player-death",
+      "id": "flow:death-and-retry",
       "type": "flow",
-      "name": "Player Death",
-      "summary": "Enemy collision → deduct 10 HP → decrement lives → check loss condition → respawn (with checkpoint if active) or game over.",
-      "tags": ["combat", "death-handling"],
+      "name": "Death and Retry",
+      "summary": "Handles enemy collision: decrements lives, checks death condition (0 lives), triggers checkpoint respawn or full level restart, updates game state to Lost, and presents retry option in pause menu.",
+      "tags": ["death", "retry", "checkpoint", "lives"],
       "complexity": "moderate",
       "domainMeta": {
-        "entryPoint": "Enemy position == player position",
+        "entryPoint": "Enemy collision with player",
         "entryType": "event"
       }
     },
     {
-      "id": "flow:melee-attack",
+      "id": "flow:visibility-update",
       "type": "flow",
-      "name": "Melee Attack",
-      "summary": "Player presses x → check adjacent enemies → deal 10 damage → remove dead enemies (HP ≤ 0) → play animation/sound.",
-      "tags": ["combat", "player-action"],
-      "complexity": "simple",
-      "domainMeta": {
-        "entryPoint": "x key press",
-        "entryType": "event"
-      }
-    },
-    {
-      "id": "flow:pause-game",
-      "type": "flow",
-      "name": "Pause Game",
-      "summary": "Player presses ESC/q → transition to Paused state → render pause overlay → await resume/restart/quit selection.",
-      "tags": ["game-lifecycle", "menu"],
-      "complexity": "simple",
-      "domainMeta": {
-        "entryPoint": "ESC or q key press",
-        "entryType": "event"
-      }
-    },
-    {
-      "id": "flow:enemy-turn",
-      "type": "flow",
-      "name": "Enemy Turn",
-      "summary": "After player motion → check visibility for each enemy → chase (BFS) or patrol → move → check collision with player → deal damage if contact.",
-      "tags": ["enemy-ai", "turn-based"],
+      "name": "Visibility Update",
+      "summary": "Computes FOV from player position and all activated torchlights using ray-casting, demotes visible tiles to explored, marks new visible tiles, and persists explored state across updates.",
+      "tags": ["fov", "visibility", "lighting"],
       "complexity": "moderate",
       "domainMeta": {
-        "entryPoint": "Post player motion execution",
+        "entryPoint": "Player position change or torchlight activation",
         "entryType": "event"
       }
     },
     {
-      "id": "flow:two-key-motion",
+      "id": "flow:checkpoint-activation",
       "type": "flow",
-      "name": "Two-Key Motion",
-      "summary": "First key (f/t/d/g) → store in pending state → await second key → parse complete motion → execute → clear pending state.",
-      "tags": ["input-handling", "vim-motions"],
-      "complexity": "simple",
-      "domainMeta": {
-        "entryPoint": "f, t, d, or g key press",
-        "entryType": "event"
-      }
-    },
-    {
-      "id": "flow:activate-checkpoint",
-      "type": "flow",
-      "name": "Activate Checkpoint",
-      "summary": "Player touches torchlight → set permanent FOV radius 6 → store checkpoint position → enable respawn at this location on death.",
-      "tags": ["progression", "visibility"],
+      "name": "Checkpoint Activation",
+      "summary": "Triggered when player steps on torchlight tile: adds torchlight to permanent FOV sources, updates checkpoint position, enables respawn on death, and grants permanent visibility radius.",
+      "tags": ["checkpoint", "progression", "respawn"],
       "complexity": "simple",
       "domainMeta": {
         "entryPoint": "Player position == torchlight tile",
@@ -335,503 +212,312 @@
       }
     },
     {
-      "id": "step:initialize-app",
+      "id": "step:execute-vim-motion:handle-key-input",
       "type": "step",
-      "name": "Initialize App",
-      "summary": "Create App instance with initial game state (Title), Level 1 map, player at spawn position, default InputState.",
-      "tags": ["initialization", "game-lifecycle"],
-      "complexity": "simple",
-      "filePath": "src/main.rs",
-      "lineRange": [1, 44]
+      "name": "Handle Key Input",
+      "summary": "Processes keypress through InputState, buffers input for pending commands, delegates single-key motions to execute_motion, and handles pause menu (ESC/q) and melee attack (x).",
+      "tags": ["input", "key-processing", "buffering"],
+      "complexity": "moderate",
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:render-title-screen",
+      "id": "step:execute-vim-motion:dispatch-motion",
       "type": "step",
-      "name": "Render Title Screen",
-      "summary": "Display ASCII art title, controls instructions, and 'press any key' prompt using bracket-lib console.",
-      "tags": ["presentation", "rendering"],
-      "complexity": "simple",
-      "filePath": "src/renderer.rs",
-      "lineRange": [1, 914]
+      "name": "Dispatch Motion Handler",
+      "summary": "PlayerState::handle_motion records the motion, dispatches to specific implementation (step, jump_word_forward/backward, find_char, till_char, delete_obstacle, jump_to_column), and updates tracking.",
+      "tags": ["dispatch", "vim-motions"],
+      "complexity": "moderate",
+      "filePath": "src/player.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:wait-for-first-input",
+      "id": "step:execute-vim-motion:validate-and-update-position",
       "type": "step",
-      "name": "Wait For First Input",
-      "summary": "Block in event loop until any key press, then transition from GameState::Title to GameState::Playing.",
-      "tags": ["input-handling", "game-lifecycle"],
+      "name": "Validate and Update Position",
+      "summary": "Each motion handler checks bounds, verifies passability (can_pass_to), updates position, and returns success status. Special cases: dd deletes obstacles, w/b stop at walls.",
+      "tags": ["validation", "boundary-check", "passability"],
+      "complexity": "moderate",
+      "filePath": "src/player.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:execute-vim-motion:queue-animation",
+      "type": "step",
+      "name": "Queue Player Animation",
+      "summary": "Queues 150ms player movement animation in AnimationState, sets interpolation easing, and blocks input until animation completes.",
+      "tags": ["animation", "timing"],
       "complexity": "simple",
       "filePath": "src/game.rs",
-      "lineRange": [1, 647]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:generate-level-1",
+      "id": "step:execute-vim-motion:trigger-enemy-turn",
       "type": "step",
-      "name": "Generate Level 1",
-      "summary": "Create 80×40 map with 5 zones (gray→cyan→magenta→red→gold), basic corridors, enemy spawns, patrol areas, torchlight, exit.",
-      "tags": ["level-generation", "map-creation"],
+      "name": "Trigger Enemy Turn",
+      "summary": "After player animation completes, calls enemies_step to orchestrate all enemy movements, collisions, and animations.",
+      "tags": ["enemy-turn", "orchestration"],
+      "complexity": "simple",
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:enemy-turn-orchestration:capture-prior-positions",
+      "type": "step",
+      "name": "Capture Prior Positions",
+      "summary": "World::step_enemies captures current positions of all enemies before movement for collision detection and movement result building.",
+      "tags": ["enemy", "state-tracking"],
+      "complexity": "simple",
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:enemy-turn-orchestration:compute-ai-decisions",
+      "type": "step",
+      "name": "Compute AI Decisions",
+      "summary": "Each enemy calls step_toward_player: checks line-of-sight (has_line_of_sight), computes BFS path if visible, or selects patrol movement if hidden. Returns EnemyMovement.",
+      "tags": ["ai", "bfs", "line-of-sight", "patrol"],
+      "complexity": "complex",
+      "filePath": "src/enemy.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:enemy-turn-orchestration:process-collisions",
+      "type": "step",
+      "name": "Process Collisions",
+      "summary": "Builds EnemyTurn with movement results and collision indices. Game layer processes collisions: decrements player lives, triggers death flow, stuns enemies, and resolves overlapping positions via push_enemies_off_position.",
+      "tags": ["collision", "damage", "death"],
+      "complexity": "moderate",
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:enemy-turn-orchestration:queue-animations",
+      "type": "step",
+      "name": "Queue Enemy Animations",
+      "summary": "Queues 200ms movement animations for all enemies that moved, with attack effects for combat. Updates AnimationState with interpolated transitions.",
+      "tags": ["animation", "timing"],
+      "complexity": "simple",
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:level-completion:check-exit-condition",
+      "type": "step",
+      "name": "Check Exit Condition",
+      "summary": "After player motion, checks if player position == exit tile. If yes, triggers level completion flow.",
+      "tags": ["level-transition", "exit"],
+      "complexity": "simple",
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:level-completion:advance-player-level",
+      "type": "step",
+      "name": "Advance Player Level",
+      "summary": "PlayerState::advance_level increments level counter, clears trail, and resets starting position for next level.",
+      "tags": ["progression", "level-transition"],
+      "complexity": "simple",
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:level-completion:generate-new-map",
+      "type": "step",
+      "name": "Generate New Map",
+      "summary": "Builds next level's map using procedural generation (build_level_2/3/4), carving corridors, placing enemies, patrol areas, and torchlights.",
+      "tags": ["map-generation", "procedural"],
       "complexity": "moderate",
       "filePath": "src/map.rs",
-      "lineRange": [1, 471]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:parse-key-input",
-      "type": "step",
-      "name": "Parse Key Input",
-      "summary": "Read bracket-lib key event, check for pause (ESC/q), check pending state for two-key motions, map to VimMotion enum.",
-      "tags": ["input-handling", "keybinding"],
-      "complexity": "moderate",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
-    },
-    {
-      "id": "step:validate-motion-boundaries",
-      "type": "step",
-      "name": "Validate Motion Boundaries",
-      "summary": "Check if target position is within 80×40 grid bounds, reject if out of bounds.",
-      "tags": ["player-movement", "validation"],
-      "complexity": "simple",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
-    },
-    {
-      "id": "step:check-wall-collision",
-      "type": "step",
-      "name": "Check Wall Collision",
-      "summary": "Check if target tile is passable (Floor, Exit, Torchlight), stop at walls/obstacles unless dd motion.",
-      "tags": ["player-movement", "collision"],
-      "complexity": "simple",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
-    },
-    {
-      "id": "step:execute-player-motion",
-      "type": "step",
-      "name": "Execute Player Motion",
-      "summary": "Update player position, add to motion trail, increment motion count, mark motion as discovered, trigger animation.",
-      "tags": ["player-movement", "state-update"],
-      "complexity": "moderate",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
-    },
-    {
-      "id": "step:update-visibility",
+      "id": "step:level-completion:update-visibility",
       "type": "step",
       "name": "Update Visibility",
-      "summary": "Recompute FOV from new player position using ray-casting, mark newly visible tiles as explored.",
-      "tags": ["visibility", "fov"],
-      "complexity": "moderate",
-      "filePath": "src/visibility.rs",
-      "lineRange": [1, 124]
-    },
-    {
-      "id": "step:check-enemy-visibility",
-      "type": "step",
-      "name": "Check Enemy Visibility",
-      "summary": "For each enemy, use Bresenham line algorithm to check if player is within FOV radius 8 (has_line_of_sight).",
-      "tags": ["enemy-ai", "visibility"],
-      "complexity": "moderate",
-      "filePath": "src/enemy.rs",
-      "lineRange": [1, 180]
-    },
-    {
-      "id": "step:bfs-chase-player",
-      "type": "step",
-      "name": "BFS Chase Player",
-      "summary": "If player visible, compute shortest path via BFS, move one step toward player (step_toward_player).",
-      "tags": ["enemy-ai", "pathfinding"],
-      "complexity": "moderate",
-      "filePath": "src/enemy.rs",
-      "lineRange": [1, 180]
-    },
-    {
-      "id": "step:patrol-area",
-      "type": "step",
-      "name": "Patrol Area",
-      "summary": "If player not visible, move within PatrolArea boundaries using predefined patrol pattern.",
-      "tags": ["enemy-ai", "patrol"],
-      "complexity": "simple",
-      "filePath": "src/enemy.rs",
-      "lineRange": [1, 180]
-    },
-    {
-      "id": "step:check-player-collision",
-      "type": "step",
-      "name": "Check Player Collision",
-      "summary": "After enemy move, check if enemy position == player position, trigger damage if true.",
-      "tags": ["combat", "collision"],
+      "summary": "World::update_visibility computes FOV for new level, marking visible tiles from player start position and any activated torchlights.",
+      "tags": ["fov", "visibility"],
       "complexity": "simple",
       "filePath": "src/types.rs",
-      "lineRange": [1, 691]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:deduct-hp",
+      "id": "step:level-completion:check-victory",
       "type": "step",
-      "name": "Deduct HP",
-      "summary": "Subtract 10 HP from player on enemy collision, play damage sound, trigger damage animation.",
-      "tags": ["combat", "damage"],
+      "name": "Check Victory Condition",
+      "summary": "If completed level == 4, sets Session state to Won, displays victory screen with final time, and ends game.",
+      "tags": ["victory", "game-state"],
       "complexity": "simple",
-      "filePath": "src/types.rs",
-      "lineRange": [1, 691]
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:decrement-lives",
+      "id": "step:death-and-retry:detect-enemy-collision",
+      "type": "step",
+      "name": "Detect Enemy Collision",
+      "summary": "During enemy turn processing, identifies enemies at player position. Triggers damage and death flow.",
+      "tags": ["collision", "damage"],
+      "complexity": "simple",
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
+    },
+    {
+      "id": "step:death-and-retry:decrement-lives",
       "type": "step",
       "name": "Decrement Lives",
-      "summary": "Lives -= 1 on enemy collision, play death sound, check for game over condition.",
-      "tags": ["combat", "death"],
+      "summary": "Player loses 1 life (3 total). If lives > 0, applies temporary invulnerability stun to enemy. If lives == 0, triggers death flow.",
+      "tags": ["lives", "damage"],
       "complexity": "simple",
       "filePath": "src/game.rs",
-      "lineRange": [1, 647]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:check-loss-condition",
+      "id": "step:death-and-retry:check-checkpoint",
       "type": "step",
-      "name": "Check Loss Condition",
-      "summary": "If lives == 0, transition to GameState::Lost, display game over screen, await restart.",
-      "tags": ["game-lifecycle", "game-over"],
+      "name": "Check Checkpoint Active",
+      "summary": "Determines if torchlight checkpoint has been activated. If yes, respawn flow. If no, full level restart.",
+      "tags": ["checkpoint", "respawn"],
       "complexity": "simple",
       "filePath": "src/game.rs",
-      "lineRange": [1, 647]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:respawn-player",
+      "id": "step:death-and-retry:respawn-or-restart",
       "type": "step",
-      "name": "Respawn Player",
-      "summary": "If checkpoint active, teleport player to checkpoint position; otherwise, reset to level start. Restore full HP.",
-      "tags": ["combat", "respawn"],
+      "name": "Respawn or Restart Level",
+      "summary": "With checkpoint: restore HP, teleport to checkpoint position, maintain torchlight FOV. Without checkpoint: PlayerState::retry_level resets to start, clears trail, regenerates map.",
+      "tags": ["respawn", "retry", "checkpoint"],
       "complexity": "moderate",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:check-exit-reach",
+      "id": "step:death-and-retry:set-lost-state",
       "type": "step",
-      "name": "Check Exit Reach",
-      "summary": "After player motion, check if player position == exit tile position, trigger level completion if true.",
-      "tags": ["progression", "level-transition"],
+      "name": "Set Lost State",
+      "summary": "Updates Session state to Lost, displays death screen with retry prompt in pause menu. Player can retry level or quit.",
+      "tags": ["game-state", "ui"],
       "complexity": "simple",
       "filePath": "src/game.rs",
-      "lineRange": [1, 647]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:increment-level",
+      "id": "step:visibility-update:demote-visible-to-explored",
       "type": "step",
-      "name": "Increment Level",
-      "summary": "Level += 1, check for win condition (Level > 4), otherwise generate next level layout.",
-      "tags": ["progression", "level-transition"],
+      "name": "Demote Visible to Explored",
+      "summary": "World::update_visibility first demotes all currently visible tiles to explored state, persisting fog-of-war memory.",
+      "tags": ["fov", "explored", "persistence"],
       "complexity": "simple",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:generate-next-level",
+      "id": "step:visibility-update:compute-player-fov",
       "type": "step",
-      "name": "Generate Next Level",
-      "summary": "Procedurally generate level 2/3/4 with appropriate layout (maze/zigzag/fortress), enemy spawns, patrol areas.",
-      "tags": ["level-generation", "procedural"],
+      "name": "Compute Player FOV",
+      "summary": "VisibilityMap::compute_fov casts rays in all directions from player position using ray-casting algorithm, marking visible tiles within FOV_RADIUS.",
+      "tags": ["fov", "ray-casting"],
       "complexity": "moderate",
-      "filePath": "src/map.rs",
-      "lineRange": [1, 471]
-    },
-    {
-      "id": "step:check-win-condition",
-      "type": "step",
-      "name": "Check Win Condition",
-      "summary": "If Level > 4, transition to GameState::Won, display victory screen, await restart.",
-      "tags": ["game-lifecycle", "victory"],
-      "complexity": "simple",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
-    },
-    {
-      "id": "step:melee-damage-enemy",
-      "type": "step",
-      "name": "Melee Damage Enemy",
-      "summary": "Subtract 10 HP from adjacent enemy, play attack sound, remove enemy if HP ≤ 0.",
-      "tags": ["combat", "melee"],
-      "complexity": "simple",
-      "filePath": "src/types.rs",
-      "lineRange": [1, 691]
-    },
-    {
-      "id": "step:transition-paused",
-      "type": "step",
-      "name": "Transition Paused",
-      "summary": "Set GameState::Paused, render pause overlay with options (Resume, Restart, Quit).",
-      "tags": ["game-lifecycle", "menu"],
-      "complexity": "simple",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
-    },
-    {
-      "id": "step:handle-pause-selection",
-      "type": "step",
-      "name": "Handle Pause Selection",
-      "summary": "Process user choice: Resume (restore Playing), Restart Level (reset to level start), Quit (exit game).",
-      "tags": ["game-lifecycle", "menu"],
-      "complexity": "simple",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
-    },
-    {
-      "id": "step:store-pending-key",
-      "type": "step",
-      "name": "Store Pending Key",
-      "summary": "On f/t/d/g press, store key in InputState.pending_motion, await second key.",
-      "tags": ["input-handling", "state-buffer"],
-      "complexity": "simple",
-      "filePath": "src/types.rs",
-      "lineRange": [1, 691]
-    },
-    {
-      "id": "step:parse-two-key-combo",
-      "type": "step",
-      "name": "Parse Two-Key Combo",
-      "summary": "On second key press, combine pending_motion + current key into VimMotion (f+char, t+char, dd, gg).",
-      "tags": ["input-handling", "vim-motions"],
-      "complexity": "moderate",
-      "filePath": "src/game.rs",
-      "lineRange": [1, 647]
-    },
-    {
-      "id": "step:clear-pending-state",
-      "type": "step",
-      "name": "Clear Pending State",
-      "summary": "After two-key motion execution or invalid combo, reset InputState.pending_motion to None.",
-      "tags": ["input-handling", "state-buffer"],
-      "complexity": "simple",
-      "filePath": "src/types.rs",
-      "lineRange": [1, 691]
-    },
-    {
-      "id": "step:set-checkpoint",
-      "type": "step",
-      "name": "Set Checkpoint",
-      "summary": "Store torchlight position in Session.checkpoint, set Session.has_checkpoint = true, activate permanent FOV.",
-      "tags": ["progression", "checkpoint"],
-      "complexity": "simple",
-      "filePath": "src/types.rs",
-      "lineRange": [1, 691]
-    },
-    {
-      "id": "step:activate-permanent-fov",
-      "type": "step",
-      "name": "Activate Permanent FOV",
-      "summary": "Set VisibilityMap permanent_radius = 6, torchlight tiles always provide FOV regardless of player position.",
-      "tags": ["visibility", "checkpoint"],
-      "complexity": "simple",
       "filePath": "src/visibility.rs",
-      "lineRange": [1, 124]
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:render-game-viewport",
+      "id": "step:visibility-update:compute-torchlight-fov",
       "type": "step",
-      "name": "Render Game Viewport",
-      "summary": "Draw visible tiles with zone-colored walls, player @ symbol, enemies (E), fog-of-war overlay, torchlight.",
-      "tags": ["presentation", "rendering"],
+      "name": "Compute Torchlight FOV",
+      "summary": "For each activated torchlight, calls compute_fov with TORCHLIGHT_FOV_RADIUS, combining multi-source visibility for checkpoint system.",
+      "tags": ["fov", "torchlight", "multi-source"],
       "complexity": "moderate",
-      "filePath": "src/renderer.rs",
-      "lineRange": [1, 914]
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:render-ui-sidebar",
+      "id": "step:checkpoint-activation:detect-torchlight-tile",
       "type": "step",
-      "name": "Render UI Sidebar",
-      "summary": "Draw HP bar, lives count, level number, motion discovery list, zone progression indicators.",
-      "tags": ["presentation", "ui"],
-      "complexity": "moderate",
-      "filePath": "src/renderer.rs",
-      "lineRange": [1, 914]
-    },
-    {
-      "id": "step:render-minimap",
-      "type": "step",
-      "name": "Render Minimap",
-      "summary": "Draw condensed 80×40 map overview with explored areas, player position, exit marker.",
-      "tags": ["presentation", "ui"],
-      "complexity": "moderate",
-      "filePath": "src/renderer.rs",
-      "lineRange": [1, 914]
-    },
-    {
-      "id": "step:update-animations",
-      "type": "step",
-      "name": "Update Animations",
-      "summary": "Tick AnimationTimer, update interpolation values for active animations, mark completed animations for cleanup.",
-      "tags": ["animation", "timing"],
-      "complexity": "moderate",
-      "filePath": "src/animation.rs",
-      "lineRange": [1, 182]
-    },
-    {
-      "id": "step:play-sound-effect",
-      "type": "step",
-      "name": "Play Sound Effect",
-      "summary": "If audio enabled, play SoundEffect (move/damage/death/melee), graceful fallback if disabled.",
-      "tags": ["audio", "polish"],
+      "name": "Detect Torchlight Tile",
+      "summary": "After player motion, checks if current tile is Tile::Torchlight. If yes, triggers checkpoint activation.",
+      "tags": ["checkpoint", "torchlight"],
       "complexity": "simple",
-      "filePath": "src/audio.rs",
-      "lineRange": [1, 55]
+      "filePath": "src/game.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:scan-horizontal-wb",
+      "id": "step:checkpoint-activation:add-fov-source",
       "type": "step",
-      "name": "Scan Horizontal (w/b)",
-      "summary": "w: scan forward until non-passable, b: scan backward until non-passable. Stop at walls/obstacles.",
-      "tags": ["player-movement", "vim-motions"],
-      "complexity": "moderate",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
-    },
-    {
-      "id": "step:scan-vertical-gg",
-      "type": "step",
-      "name": "Scan Vertical (G/gg)",
-      "summary": "G: jump to bottom of map, gg: jump to top of map. Stop at first non-passable tile.",
-      "tags": ["player-movement", "vim-motions"],
-      "complexity": "moderate",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
-    },
-    {
-      "id": "step:search-character-ft",
-      "type": "step",
-      "name": "Search Character (f/t)",
-      "summary": "f: find next occurrence of character in current line, t: till before character. Scan forward only.",
-      "tags": ["player-movement", "vim-motions"],
-      "complexity": "moderate",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
-    },
-    {
-      "id": "step:destroy-obstacle-dd",
-      "type": "step",
-      "name": "Destroy Obstacle (dd)",
-      "summary": "dd: if target tile is Tile::Obstacle, change to Tile::Floor (destruction). No effect on other tiles.",
-      "tags": ["player-movement", "vim-motions"],
+      "name": "Add Permanent FOV Source",
+      "summary": "Adds torchlight position to World's activated torchlights set, making it a permanent FOV source for multi-source visibility.",
+      "tags": ["checkpoint", "fov", "permanent"],
       "complexity": "simple",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:track-motion-discovery",
+      "id": "step:checkpoint-activation:set-checkpoint-position",
       "type": "step",
-      "name": "Track Motion Discovery",
-      "summary": "On first use of each VimMotion, add to PlayerState.discovered_motions set, persist for session.",
-      "tags": ["player-movement", "progression"],
+      "name": "Set Checkpoint Position",
+      "summary": "PlayerState stores torchlight position as checkpoint, enabling respawn on death. Checkpoint persists until new torchlight activated.",
+      "tags": ["checkpoint", "respawn"],
       "complexity": "simple",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
     },
     {
-      "id": "step:update-motion-trail",
+      "id": "step:checkpoint-activation:update-visibility",
       "type": "step",
-      "name": "Update Motion Trail",
-      "summary": "Add old position to PlayerState.motion_trail, limit trail length, use for rendering player path.",
-      "tags": ["player-movement", "visual-polish"],
+      "name": "Update Visibility with Torchlight",
+      "summary": "Triggers visibility update to incorporate new permanent FOV source, expanding visible area around checkpoint.",
+      "tags": ["fov", "visibility"],
       "complexity": "simple",
-      "filePath": "src/player.rs",
-      "lineRange": [1, 260]
+      "filePath": "src/types.rs",
+      "lineRange": [0, 0]
     }
   ],
   "edges": [
-    { "source": "domain:game-lifecycle", "target": "flow:start-game", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:game-lifecycle", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:game-lifecycle", "target": "flow:complete-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:game-lifecycle", "target": "flow:player-death", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:game-lifecycle", "target": "flow:pause-game", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:player-movement", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:player-movement", "target": "flow:melee-attack", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:player-movement", "target": "flow:two-key-motion", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:player-movement", "target": "flow:activate-checkpoint", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:enemy-ai", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:enemy-ai", "target": "flow:enemy-turn", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:combat-system", "target": "flow:player-death", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:combat-system", "target": "flow:melee-attack", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:level-generation", "target": "flow:start-game", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:level-generation", "target": "flow:complete-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:visibility-system", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:visibility-system", "target": "flow:activate-checkpoint", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:input-handling", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:input-handling", "target": "flow:two-key-motion", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:input-handling", "target": "flow:pause-game", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:presentation", "target": "flow:start-game", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:presentation", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:presentation", "target": "flow:pause-game", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:audio-animation", "target": "flow:play-level", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:audio-animation", "target": "flow:melee-attack", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "domain:audio-animation", "target": "flow:enemy-turn", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
-    { "source": "flow:start-game", "target": "step:initialize-app", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:start-game", "target": "step:generate-level-1", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:start-game", "target": "step:render-title-screen", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:start-game", "target": "step:wait-for-first-input", "type": "flow_step", "direction": "forward", "weight": 0.25 },
-    { "source": "flow:play-level", "target": "step:parse-key-input", "type": "flow_step", "direction": "forward", "weight": 0.08 },
-    { "source": "flow:play-level", "target": "step:validate-motion-boundaries", "type": "flow_step", "direction": "forward", "weight": 0.08 },
-    { "source": "flow:play-level", "target": "step:check-wall-collision", "type": "flow_step", "direction": "forward", "weight": 0.08 },
-    { "source": "flow:play-level", "target": "step:execute-player-motion", "type": "flow_step", "direction": "forward", "weight": 0.08 },
-    { "source": "flow:play-level", "target": "step:scan-horizontal-wb", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:scan-vertical-gg", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:search-character-ft", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:destroy-obstacle-dd", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:update-motion-trail", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:track-motion-discovery", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:update-visibility", "type": "flow_step", "direction": "forward", "weight": 0.08 },
-    { "source": "flow:play-level", "target": "step:check-enemy-visibility", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:bfs-chase-player", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:patrol-area", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:check-player-collision", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:deduct-hp", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:decrement-lives", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:update-animations", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:play-sound-effect", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:render-game-viewport", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:render-ui-sidebar", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:render-minimap", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:play-level", "target": "step:check-exit-reach", "type": "flow_step", "direction": "forward", "weight": 0.04 },
-    { "source": "flow:complete-level", "target": "step:check-exit-reach", "type": "flow_step", "direction": "forward", "weight": 0.25 },
-    { "source": "flow:complete-level", "target": "step:increment-level", "type": "flow_step", "direction": "forward", "weight": 0.25 },
-    { "source": "flow:complete-level", "target": "step:check-win-condition", "type": "flow_step", "direction": "forward", "weight": 0.25 },
-    { "source": "flow:complete-level", "target": "step:generate-next-level", "type": "flow_step", "direction": "forward", "weight": 0.25 },
-    { "source": "flow:player-death", "target": "step:check-player-collision", "type": "flow_step", "direction": "forward", "weight": 0.2 },
-    { "source": "flow:player-death", "target": "step:deduct-hp", "type": "flow_step", "direction": "forward", "weight": 0.2 },
-    { "source": "flow:player-death", "target": "step:decrement-lives", "type": "flow_step", "direction": "forward", "weight": 0.2 },
-    { "source": "flow:player-death", "target": "step:check-loss-condition", "type": "flow_step", "direction": "forward", "weight": 0.2 },
-    { "source": "flow:player-death", "target": "step:respawn-player", "type": "flow_step", "direction": "forward", "weight": 0.2 },
-    { "source": "flow:melee-attack", "target": "step:melee-damage-enemy", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:melee-attack", "target": "step:play-sound-effect", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:melee-attack", "target": "step:update-animations", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:pause-game", "target": "step:transition-paused", "type": "flow_step", "direction": "forward", "weight": 0.5 },
-    { "source": "flow:pause-game", "target": "step:handle-pause-selection", "type": "flow_step", "direction": "forward", "weight": 0.5 },
-    { "source": "flow:enemy-turn", "target": "step:check-enemy-visibility", "type": "flow_step", "direction": "forward", "weight": 0.17 },
-    { "source": "flow:enemy-turn", "target": "step:bfs-chase-player", "type": "flow_step", "direction": "forward", "weight": 0.17 },
-    { "source": "flow:enemy-turn", "target": "step:patrol-area", "type": "flow_step", "direction": "forward", "weight": 0.17 },
-    { "source": "flow:enemy-turn", "target": "step:check-player-collision", "type": "flow_step", "direction": "forward", "weight": 0.17 },
-    { "source": "flow:enemy-turn", "target": "step:update-animations", "type": "flow_step", "direction": "forward", "weight": 0.17 },
-    { "source": "flow:enemy-turn", "target": "step:play-sound-effect", "type": "flow_step", "direction": "forward", "weight": 0.17 },
-    { "source": "flow:two-key-motion", "target": "step:store-pending-key", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:two-key-motion", "target": "step:parse-two-key-combo", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:two-key-motion", "target": "step:clear-pending-state", "type": "flow_step", "direction": "forward", "weight": 0.33 },
-    { "source": "flow:activate-checkpoint", "target": "step:set-checkpoint", "type": "flow_step", "direction": "forward", "weight": 0.5 },
-    { "source": "flow:activate-checkpoint", "target": "step:activate-permanent-fov", "type": "flow_step", "direction": "forward", "weight": 0.5 },
-    { "source": "domain:player-movement", "target": "domain:combat-system", "type": "cross_domain", "direction": "forward", "description": "Player motion triggers enemy collision detection", "weight": 0.6 },
-    { "source": "domain:player-movement", "target": "domain:visibility-system", "type": "cross_domain", "direction": "forward", "description": "Player motion updates FOV computation", "weight": 0.6 },
-    { "source": "domain:player-movement", "target": "domain:level-generation", "type": "cross_domain", "direction": "forward", "description": "Player motions constrained by map boundaries and tile types", "weight": 0.4 },
-    { "source": "domain:enemy-ai", "target": "domain:visibility-system", "type": "cross_domain", "direction": "forward", "description": "Enemy AI queries line-of-sight for chase decisions", "weight": 0.7 },
-    { "source": "domain:enemy-ai", "target": "domain:combat-system", "type": "cross_domain", "direction": "forward", "description": "Enemy movement triggers player collision and damage", "weight": 0.8 },
-    { "source": "domain:enemy-ai", "target": "domain:level-generation", "type": "cross_domain", "direction": "backward", "description": "Map generation places enemies in patrol areas and spawn points", "weight": 0.6 },
-    { "source": "domain:combat-system", "target": "domain:game-lifecycle", "type": "cross_domain", "direction": "forward", "description": "Death (lives = 0) triggers Lost game state", "weight": 0.7 },
-    { "source": "domain:combat-system", "target": "domain:player-movement", "type": "cross_domain", "direction": "forward", "description": "Respawn resets player position (with or without checkpoint)", "weight": 0.6 },
-    { "source": "domain:level-generation", "target": "domain:player-movement", "type": "cross_domain", "direction": "forward", "description": "Map structure defines passable tiles and boundaries for motions", "weight": 0.5 },
-    { "source": "domain:level-generation", "target": "domain:enemy-ai", "type": "cross_domain", "direction": "forward", "description": "Map generation defines patrol areas for enemy behavior", "weight": 0.6 },
-    { "source": "domain:level-generation", "target": "domain:visibility-system", "type": "cross_domain", "direction": "forward", "description": "Map tile types determine FOV ray-casting behavior", "weight": 0.4 },
-    { "source": "domain:input-handling", "target": "domain:player-movement", "type": "cross_domain", "direction": "forward", "description": "Parsed key inputs execute VimMotion on player state", "weight": 0.8 },
-    { "source": "domain:input-handling", "target": "domain:game-lifecycle", "type": "cross_domain", "direction": "forward", "description": "ESC/q keys trigger pause menu", "weight": 0.6 },
-    { "source": "domain:visibility-system", "target": "domain:presentation", "type": "cross_domain", "direction": "forward", "description": "FOV state determines fog-of-war rendering", "weight": 0.6 },
-    { "source": "domain:audio-animation", "target": "domain:player-movement", "type": "cross_domain", "direction": "backward", "description": "Polishes player motions with smooth animations", "weight": 0.4 },
-    { "source": "domain:audio-animation", "target": "domain:enemy-ai", "type": "cross_domain", "direction": "backward", "description": "Polishes enemy movements with animations and sounds", "weight": 0.4 },
-    { "source": "domain:audio-animation", "target": "domain:combat-system", "type": "cross_domain", "direction": "backward", "description": "Polishes combat events with damage/death sounds", "weight": 0.5 },
-    { "source": "domain:game-lifecycle", "target": "domain:level-generation", "type": "cross_domain", "direction": "forward", "description": "Level completion triggers procedural generation of next level", "weight": 0.7 }
+    { "source": "domain:player-movement", "target": "flow:execute-vim-motion", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:enemy-ai", "target": "flow:enemy-turn-orchestration", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:game-progression", "target": "flow:level-completion", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:game-progression", "target": "flow:death-and-retry", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:game-progression", "target": "flow:checkpoint-activation", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:visibility-and-fog", "target": "flow:visibility-update", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:dungeon-exploration", "target": "flow:level-completion", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:dungeon-exploration", "target": "flow:checkpoint-activation", "type": "contains_flow", "direction": "forward", "weight": 1.0 },
+    { "source": "flow:execute-vim-motion", "target": "step:execute-vim-motion:handle-key-input", "type": "flow_step", "direction": "forward", "weight": 0.2 },
+    { "source": "flow:execute-vim-motion", "target": "step:execute-vim-motion:dispatch-motion", "type": "flow_step", "direction": "forward", "weight": 0.4 },
+    { "source": "flow:execute-vim-motion", "target": "step:execute-vim-motion:validate-and-update-position", "type": "flow_step", "direction": "forward", "weight": 0.6 },
+    { "source": "flow:execute-vim-motion", "target": "step:execute-vim-motion:queue-animation", "type": "flow_step", "direction": "forward", "weight": 0.8 },
+    { "source": "flow:execute-vim-motion", "target": "step:execute-vim-motion:trigger-enemy-turn", "type": "flow_step", "direction": "forward", "weight": 1.0 },
+    { "source": "flow:enemy-turn-orchestration", "target": "step:enemy-turn-orchestration:capture-prior-positions", "type": "flow_step", "direction": "forward", "weight": 0.2 },
+    { "source": "flow:enemy-turn-orchestration", "target": "step:enemy-turn-orchestration:compute-ai-decisions", "type": "flow_step", "direction": "forward", "weight": 0.4 },
+    { "source": "flow:enemy-turn-orchestration", "target": "step:enemy-turn-orchestration:process-collisions", "type": "flow_step", "direction": "forward", "weight": 0.6 },
+    { "source": "flow:enemy-turn-orchestration", "target": "step:enemy-turn-orchestration:queue-animations", "type": "flow_step", "direction": "forward", "weight": 1.0 },
+    { "source": "flow:level-completion", "target": "step:level-completion:check-exit-condition", "type": "flow_step", "direction": "forward", "weight": 0.2 },
+    { "source": "flow:level-completion", "target": "step:level-completion:advance-player-level", "type": "flow_step", "direction": "forward", "weight": 0.4 },
+    { "source": "flow:level-completion", "target": "step:level-completion:generate-new-map", "type": "flow_step", "direction": "forward", "weight": 0.6 },
+    { "source": "flow:level-completion", "target": "step:level-completion:update-visibility", "type": "flow_step", "direction": "forward", "weight": 0.8 },
+    { "source": "flow:level-completion", "target": "step:level-completion:check-victory", "type": "flow_step", "direction": "forward", "weight": 1.0 },
+    { "source": "flow:death-and-retry", "target": "step:death-and-retry:detect-enemy-collision", "type": "flow_step", "direction": "forward", "weight": 0.2 },
+    { "source": "flow:death-and-retry", "target": "step:death-and-retry:decrement-lives", "type": "flow_step", "direction": "forward", "weight": 0.4 },
+    { "source": "flow:death-and-retry", "target": "step:death-and-retry:check-checkpoint", "type": "flow_step", "direction": "forward", "weight": 0.6 },
+    { "source": "flow:death-and-retry", "target": "step:death-and-retry:respawn-or-restart", "type": "flow_step", "direction": "forward", "weight": 0.8 },
+    { "source": "flow:death-and-retry", "target": "step:death-and-retry:set-lost-state", "type": "flow_step", "direction": "forward", "weight": 1.0 },
+    { "source": "flow:visibility-update", "target": "step:visibility-update:demote-visible-to-explored", "type": "flow_step", "direction": "forward", "weight": 0.3 },
+    { "source": "flow:visibility-update", "target": "step:visibility-update:compute-player-fov", "type": "flow_step", "direction": "forward", "weight": 0.6 },
+    { "source": "flow:visibility-update", "target": "step:visibility-update:compute-torchlight-fov", "type": "flow_step", "direction": "forward", "weight": 1.0 },
+    { "source": "flow:checkpoint-activation", "target": "step:checkpoint-activation:detect-torchlight-tile", "type": "flow_step", "direction": "forward", "weight": 0.25 },
+    { "source": "flow:checkpoint-activation", "target": "step:checkpoint-activation:add-fov-source", "type": "flow_step", "direction": "forward", "weight": 0.5 },
+    { "source": "flow:checkpoint-activation", "target": "step:checkpoint-activation:set-checkpoint-position", "type": "flow_step", "direction": "forward", "weight": 0.75 },
+    { "source": "flow:checkpoint-activation", "target": "step:checkpoint-activation:update-visibility", "type": "flow_step", "direction": "forward", "weight": 1.0 },
+    { "source": "domain:player-movement", "target": "domain:enemy-ai", "type": "cross_domain", "direction": "forward", "description": "Player motion triggers enemy turn", "weight": 0.8 },
+    { "source": "domain:player-movement", "target": "domain:visibility-and-fog", "type": "cross_domain", "direction": "forward", "description": "Position change updates FOV", "weight": 0.6 },
+    { "source": "domain:player-movement", "target": "domain:game-progression", "type": "cross_domain", "direction": "forward", "description": "Reaching exit/death triggers progression", "weight": 0.7 },
+    { "source": "domain:enemy-ai", "target": "domain:visibility-and-fog", "type": "cross_domain", "direction": "backward", "description": "FOV determines enemy chase behavior", "weight": 0.8 },
+    { "source": "domain:enemy-ai", "target": "domain:game-progression", "type": "cross_domain", "direction": "forward", "description": "Collisions cause death/retry", "weight": 0.9 },
+    { "source": "domain:enemy-ai", "target": "domain:dungeon-exploration", "type": "cross_domain", "direction": "backward", "description": "Patrol areas constrain movement", "weight": 0.7 },
+    { "source": "domain:dungeon-exploration", "target": "domain:player-movement", "type": "cross_domain", "direction": "backward", "description": "Map structure validates movement", "weight": 0.8 },
+    { "source": "domain:dungeon-exploration", "target": "domain:visibility-and-fog", "type": "cross_domain", "direction": "backward", "description": "Walls block FOV rays", "weight": 0.6 },
+    { "source": "domain:visibility-and-fog", "target": "domain:enemy-ai", "type": "cross_domain", "direction": "forward", "description": "FOV state informs chase decisions", "weight": 0.9 },
+    { "source": "domain:game-progression", "target": "domain:dungeon-exploration", "type": "cross_domain", "direction": "forward", "description": "Level advance regenerates map", "weight": 0.7 },
+    { "source": "domain:game-progression", "target": "domain:visibility-and-fog", "type": "cross_domain", "direction": "forward", "description": "Checkpoint adds permanent FOV source", "weight": 0.6 }
   ],
   "layers": [],
   "tour": []
