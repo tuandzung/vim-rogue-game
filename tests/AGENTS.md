@@ -13,7 +13,7 @@
 | `visibility.rs` | 29 | 420 | FOV center, wall blocking, radius, explored persistence, reset, corridors, symmetry, edge cases, multi-source FOV |
 | `player.rs` | 32 | 371 | All 13 motions + boundaries + wall-stopping (w/b/G/gg) + motion recording + motion_count + discovered_motions |
 | `animation.rs` | 34 | 349 | Timer progress, interpolation, easing, AnimationState, TestClock determinism, attack effects |
-| `types.rs` | 25 | 216 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy |
+| `types.rs` | 25 | 216 | Tile glyphs, motion labels/names/descriptions, zone titles, direction deltas, RenderGrid, ViewModel, Enemy (imports `vim_rogue::render_types::*` for renderer types) |
 | `enemy.rs` | 21 | 265 | BFS movement, diagonal, walls, adjacency, corridors, shortest path, LOS, patrol |
 | `audio.rs` | 16 | 191 | Manager lifecycle, play no-op, enable/disable, rapid play, sound variants |
 

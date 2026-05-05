@@ -13,7 +13,8 @@ All vim-rogue source. Tests in `tests/` (integration only).
 | `player.rs` | 260 | `PlayerState` impl — 13 motions + motion tracking (h/j/k/l/w/b/0/$/G/gg/f/t/dd) |
 | `map.rs` | 471 | `Map`, 80×40 grid, 5 zones, 4 levels (`carve_level`, `build_level_2/3/4`), enemy spawns + patrol areas |
 | `renderer.rs` | 914 | bracket-lib render — title/gameplay/win/lost/pause screens, viewport, sidebar, minimap, zone colors |
-| `types.rs` | 691 | Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, EnemyMovement, EnemyTurn, PlayerState, App + 3 aggregates (World, InputState, Session), RenderGrid, ViewModel, ScreenModel |
+| `render_types.rs` | 83 | RenderCell, RenderGrid, ScreenModel, ViewModel — renderer-only types |
+| `types.rs` | ~609 | Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, EnemyMovement, EnemyTurn, PlayerState, App + 3 aggregates (World, InputState, Session) |
 | `animation.rs` | 182 | `GameClock` trait, `RealClock`/`TestClock`, `AnimationState`, `AnimationTimer`, `Interpolator` |
 | `visibility.rs` | 124 | `VisibilityMap` + `compute_fov`, `VisibilityState` (Hidden/Explored/Visible) |
 | `enemy.rs` | 180 | `Enemy` + FOV-aware BFS `step_toward_player`, `has_line_of_sight`, `patrol_step` |
@@ -25,7 +26,7 @@ All vim-rogue source. Tests in `tests/` (integration only).
 |------|------|----------------|
 | Add Vim motion | `player.rs` + `types.rs` | VimMotion enum, handle_motion arm on PlayerState, game.rs parse_motion |
 | Change dungeon | `map.rs` | carve_level, build_level_2/3/4, assign_zones |
-| Change UI | `renderer.rs` | Display only — never mutates state |
+| Change UI | `renderer.rs` + `render_types.rs` | Display only — never mutates state; renderer types in render_types.rs |
 | Change game flow | `game.rs` | handle_key, tick, pending_input for f/t/dd/gg; ESC/q opens pause |
 | Change pause menu | `game.rs` + `renderer.rs` + `types.rs` | GameState::Paused, PauseOption, render_pause_overlay |
 | Add shared type | `types.rs` | All modules `use crate::types::*` |
@@ -38,14 +39,15 @@ All vim-rogue source. Tests in `tests/` (integration only).
 
 ## Internal Dependencies
 ```
-types.rs      ← (all modules)
-map.rs        ← player.rs, enemy.rs, game.rs
-player.rs     ← game.rs
-enemy.rs      ← game.rs
-visibility.rs ← game.rs, renderer.rs
-animation.rs  ← game.rs
-audio.rs      ← game.rs
-renderer.rs   ← main.rs (reads types for display)
+types.rs        ← (all modules)
+render_types.rs ← renderer.rs, tests/types.rs
+map.rs          ← player.rs, enemy.rs, game.rs
+player.rs       ← game.rs
+enemy.rs        ← game.rs
+visibility.rs   ← game.rs, renderer.rs
+animation.rs    ← game.rs
+audio.rs        ← game.rs
+renderer.rs     ← main.rs (reads types for display)
 game.rs       ← main.rs
 lib.rs        ← main.rs (implicit)
 ```
@@ -93,7 +95,7 @@ Shared helpers in `tests/common/mod.rs`: `test_map(w,h)`, `started_app_with_map(
 - Level 3: zigzag corridors, spawns from `map.enemy_spawns`, torchlights at junctions.
 - Level 4: fortress rooms, 9 enemies + room patrol, no-torchlight rooms have ≥2 enemies, HP combat.
 - Enemy glyph: `⚡` (default), stored in struct field.
-- `RenderGrid`/`RenderCell`/`ViewModel`/`ScreenModel` = renderer types in types.rs.
+- `RenderGrid`/`RenderCell`/`ViewModel`/`ScreenModel` = renderer types in `render_types.rs`.
 - `examples/spike.rs`: bracket-lib POC, not in main build.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
