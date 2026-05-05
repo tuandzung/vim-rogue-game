@@ -1,3 +1,4 @@
+use vim_rogue::render_types::*;
 use vim_rogue::types::*;
 
 #[test]
