@@ -69,17 +69,18 @@ cargo run              # Play
 ## Architecture
 
 ```
-src/main.rs       bracket-lib BTerm setup + GameState event loop, quit handling
-src/game.rs       App coordinator — sequences cross-aggregate flows (level transitions, collision → damage, pause/resume)
-src/player.rs     PlayerState impl — 13 motion implementations + motion tracking
-src/map.rs        80×40 grid, 5 zones, corridor carving, 4 dungeon levels, enemy spawn points + patrol areas
-src/renderer.rs   bracket-lib rendering: title, viewport, sidebar, minimap, win/loss/pause screens, fog of war
-src/types.rs      Shared types (Position, Tile, Zone, VimMotion, Enemy, PatrolArea, GameState, PauseOption, App, aggregates, …)
-src/animation.rs  Animation timers, ease-in-out interpolation, deterministic TestClock
-src/visibility.rs FOV ray-casting, explored tile tracking (Hidden/Explored/Visible)
-src/enemy.rs      Enemy struct with FOV-aware BFS chase and room patrol behavior
-src/audio.rs      AudioManager with graceful silent fallback
-src/lib.rs        Module re-exports
+src/main.rs         bracket-lib BTerm setup + GameState event loop, quit handling
+src/game.rs         App coordinator — sequences cross-aggregate flows (level transitions, collision → damage, pause/resume)
+src/player.rs       PlayerState impl — 13 motion implementations + motion tracking
+src/map.rs          80×40 grid, 5 zones, corridor carving, 4 dungeon levels, enemy spawn points + patrol areas
+src/renderer.rs     bracket-lib rendering: title, viewport, sidebar, minimap, win/loss/pause screens, fog of war
+src/render_types.rs Renderer-only types (RenderCell, RenderGrid, ScreenModel, ViewModel)
+src/types.rs        Shared types (Position, Tile, Zone, VimMotion, Enemy, PatrolArea, GameState, PauseOption, App, aggregates, …)
+src/animation.rs    Animation timers, ease-in-out interpolation, deterministic TestClock
+src/visibility.rs   FOV ray-casting, explored tile tracking (Hidden/Explored/Visible)
+src/enemy.rs        Enemy struct with FOV-aware BFS chase and room patrol behavior
+src/audio.rs        AudioManager with graceful silent fallback
+src/lib.rs          Module re-exports
 ```
 
 ### Key Design Decisions

@@ -24,8 +24,9 @@ main.rs       → bracket-lib setup + event loop (44 lines)
 game.rs       → App coordinator — thin enemies_step coordinator (collision outcomes, animation, audio), sequences cross-aggregate flows: level transitions, pause/resume (647 lines)
 player.rs     → PlayerState impl — 13 motions + motion tracking (260 lines)
 map.rs        → 80×40 grid, 5 zones, 4 dungeon levels, corridor carving, enemy spawns + patrol areas (471 lines)
-renderer.rs   → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (914 lines)
-types.rs      → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, EnemyMovement, EnemyTurn, PlayerState, App + 3 aggregates (World owns step_enemies + push_enemies_off_position, InputState, Session), RenderGrid, ViewModel (691 lines)
+renderer.rs     → bracket-lib rendering: title, viewport, sidebar, minimap, win/loss screens, ASCII art (914 lines)
+render_types.rs → RenderCell, RenderGrid, ScreenModel, ViewModel — renderer-only types (83 lines)
+types.rs        → Position, Tile, Zone, VimMotion, Direction, Enemy, PatrolArea, EnemyMovement, EnemyTurn, PlayerState, App + 3 aggregates (World owns step_enemies + push_enemies_off_position, InputState, Session) (~609 lines)
 animation.rs  → GameClock, AnimationState, AnimationTimer, Interpolator (easing) (182 lines)
 visibility.rs → VisibilityMap with FOV (explored/visible/hidden states) (124 lines)
 enemy.rs      → Enemy struct with FOV-aware BFS chase + room patrol (180 lines)
@@ -39,7 +40,7 @@ lib.rs        → Re-exports all modules + test_support (11 lines)
 |------|----------|-------|
 | Add new Vim motion | `src/player.rs` + `src/types.rs` (VimMotion enum) | handle_motion on PlayerState; Update `game.rs` parse_motion too |
 | Change dungeon layout | `src/map.rs` (carve_level, build_level_2/3/4) | `grid[y][x]` row-major; 4 levels |
-| Add UI elements | `src/renderer.rs` | Display only — never mutates state |
+| Add UI elements | `src/renderer.rs` + `src/render_types.rs` | Display only — never mutates state; renderer types in render_types.rs |
 | Change game flow | `src/game.rs` (handle_key, tick, execute_motion) | Two-phase input for f/t/dd/gg; ESC/q = pause |
 | Change pause menu | `src/game.rs` + `src/renderer.rs` + `src/types.rs` | GameState::Paused, PauseOption, render_pause_overlay |
 | Add new types | `src/types.rs` | All modules use `crate::types::*` |

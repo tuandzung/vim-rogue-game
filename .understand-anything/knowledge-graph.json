@@ -3,18 +3,14 @@
   "project": {
     "name": "vim-rogue",
     "languages": [
-      "rust",
-      "markdown",
-      "toml",
-      "yaml"
+      "rust"
     ],
     "frameworks": [
-      "bracket-lib",
-      "GitHub Actions"
+      "bracket-lib"
     ],
-    "description": "A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vim motions through gameplay. Navigate four 80x40 dungeon levels using real Vim keybindings, dodge enemies, and reach the exit.",
-    "analyzedAt": "2026-05-04T09:34:27.584Z",
-    "gitCommitHash": "a71ce03560d8dfc8d023c2a25c02bb923465742a"
+    "description": "A roguelike dungeon game with ASCII aesthetic in a graphical window, teaching Vim motions through gameplay",
+    "analyzedAt": "2026-05-05T00:00:00.000Z",
+    "gitCommitHash": "4404e531ceb1ed256a188ca16405e0ccbcc015b3"
   },
   "nodes": [
     {
@@ -30,20 +26,6 @@
       ],
       "complexity": "simple",
       "languageNotes": "Thin wrapper using bracket-lib's BTermBuilder and main_loop pattern."
-    },
-    {
-      "id": "file:src/lib.rs",
-      "type": "file",
-      "name": "lib.rs",
-      "filePath": "src/lib.rs",
-      "summary": "Library root that re-exports all modules (animation, audio, enemy, game, map, player, renderer, types, visibility) and exposes test_support.",
-      "tags": [
-        "entry-point",
-        "barrel",
-        "module-exports"
-      ],
-      "complexity": "simple",
-      "languageNotes": "Standard Rust crate root with pub mod declarations."
     },
     {
       "id": "file:src/game.rs",
@@ -105,21 +87,6 @@
       ],
       "complexity": "complex",
       "languageNotes": "30+ functions with render (37 lines), render_map_viewport (113 lines), render_sidebar (123 lines), render_title (101 lines). Read-only access to app state."
-    },
-    {
-      "id": "file:src/types.rs",
-      "type": "file",
-      "name": "types.rs",
-      "filePath": "src/types.rs",
-      "summary": "Core type definitions for the entire game: Position, Tile, Zone, VimMotion (13 variants), Direction, GameState, PauseOption, 7 aggregate structs (World, PlayerState, InputState, Session, App, RenderGrid, ViewModel), and 10 supporting types.",
-      "tags": [
-        "type-definitions",
-        "domain-model",
-        "data-structures",
-        "exports"
-      ],
-      "complexity": "complex",
-      "languageNotes": "68 exports including all game types. 68 functions/methods across 24 impl blocks. Single source of truth for game state shape."
     },
     {
       "id": "file:src/animation.rs",
@@ -345,21 +312,6 @@
       "languageNotes": "Verifies audio is disabled by default. Tests enable/disable toggle and play method behavior."
     },
     {
-      "id": "file:tests/types.rs",
-      "type": "file",
-      "name": "types.rs",
-      "filePath": "tests/types.rs",
-      "summary": "25 tests for core type definitions: Tile glyph display, VimMotion key labels and descriptions, Zone title strings, Direction delta values, RenderGrid operations, ViewModel structure, and Enemy struct properties.",
-      "tags": [
-        "test",
-        "integration-test",
-        "type-definitions",
-        "domain-model"
-      ],
-      "complexity": "simple",
-      "languageNotes": "Tests type methods and impl blocks. Verifies Display trait implementations and const values."
-    },
-    {
       "id": "class:src/game.rs:App",
       "type": "class",
       "name": "App",
@@ -475,40 +427,6 @@
         "basic-movement",
         "boundary-check",
         "collision-check"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:src/types.rs:World::step_enemies",
-      "type": "function",
-      "name": "World::step_enemies",
-      "filePath": "src/types.rs",
-      "lineRange": [
-        428,
-        461
-      ],
-      "summary": "World method that orchestrates enemy AI: each enemy moves toward player if visible (via enemy::step_toward_player) or patrols if not, collecting all movements and collision outcomes.",
-      "tags": [
-        "enemy-ai",
-        "turn-orchestration",
-        "world-method"
-      ],
-      "complexity": "moderate"
-    },
-    {
-      "id": "function:src/types.rs:World::update_visibility",
-      "type": "function",
-      "name": "World::update_visibility",
-      "filePath": "src/types.rs",
-      "lineRange": [
-        532,
-        554
-      ],
-      "summary": "World method that recomputes FOV from player position using visibility::compute_fov, demoting previous visible tiles to explored, and marking newly visible tiles.",
-      "tags": [
-        "fov-update",
-        "visibility-system",
-        "world-method"
       ],
       "complexity": "simple"
     },
@@ -697,20 +615,6 @@
       "languageNotes": "Uses cross-rs for Linux ARM64/x86_64 cross-compilation; extracts versioned changelog sections with sed; uploads platform-specific tar.gz/zip archives."
     },
     {
-      "id": "document:AGENTS.md",
-      "type": "document",
-      "name": "AGENTS.md",
-      "filePath": "AGENTS.md",
-      "summary": "Root-level agent coordination guide with project structure, architecture overview, conventions, commands, and verification checklist for vim-rogue.",
-      "tags": [
-        "documentation",
-        "agent-coordination",
-        "architecture",
-        "development"
-      ],
-      "complexity": "moderate"
-    },
-    {
       "id": "document:AGENTS.original.md",
       "type": "document",
       "name": "AGENTS.original.md",
@@ -720,20 +624,6 @@
         "documentation",
         "legacy",
         "architecture"
-      ],
-      "complexity": "moderate"
-    },
-    {
-      "id": "document:CHANGELOG.md",
-      "type": "document",
-      "name": "CHANGELOG.md",
-      "filePath": "CHANGELOG.md",
-      "summary": "Version history following Keep a Changelog format with Unreleased section and releases from 0.1.0 to 0.3.0.",
-      "tags": [
-        "documentation",
-        "changelog",
-        "release-notes",
-        "versioning"
       ],
       "complexity": "moderate"
     },
@@ -794,21 +684,6 @@
         "deployment"
       ],
       "complexity": "simple"
-    },
-    {
-      "id": "document:README.md",
-      "type": "document",
-      "name": "README.md",
-      "filePath": "README.md",
-      "summary": "Project README with features overview, Vim motions reference, quick start guide, controls, build instructions, architecture description, and license.",
-      "tags": [
-        "documentation",
-        "entry-point",
-        "user-guide",
-        "vim",
-        "readme"
-      ],
-      "complexity": "moderate"
     },
     {
       "id": "document:docs/agents/domain.md",
@@ -882,20 +757,6 @@
       "complexity": "simple"
     },
     {
-      "id": "document:src/AGENTS.md",
-      "type": "document",
-      "name": "AGENTS.md",
-      "filePath": "src/AGENTS.md",
-      "summary": "Source directory agent guide with key files, where-to-look guide, internal dependencies, conventions, test patterns, and notes.",
-      "tags": [
-        "documentation",
-        "agent-coordination",
-        "source-code",
-        "architecture"
-      ],
-      "complexity": "moderate"
-    },
-    {
       "id": "document:src/AGENTS.original.md",
       "type": "document",
       "name": "AGENTS.original.md",
@@ -923,20 +784,6 @@
       "complexity": "moderate"
     },
     {
-      "id": "document:tests/AGENTS.md",
-      "type": "document",
-      "name": "AGENTS.md",
-      "filePath": "tests/AGENTS.md",
-      "summary": "Tests directory agent guide with 396 tests across 9 files, common helpers, test constructor patterns, and conventions.",
-      "tags": [
-        "documentation",
-        "agent-coordination",
-        "testing",
-        "integration-tests"
-      ],
-      "complexity": "simple"
-    },
-    {
       "id": "document:tests/AGENTS.original.md",
       "type": "document",
       "name": "AGENTS.original.md",
@@ -962,82 +809,543 @@
         "development"
       ],
       "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib.rs",
+      "type": "file",
+      "name": "lib.rs",
+      "filePath": "src/lib.rs",
+      "summary": "Module barrel file re-exporting all game modules including the new render_types module. Public API entry point for the library.",
+      "tags": [
+        "entry-point",
+        "barrel",
+        "exports",
+        "module-organization"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/types.rs",
+      "type": "file",
+      "name": "types.rs",
+      "filePath": "src/types.rs",
+      "summary": "Core domain types and aggregates defining Position, Tile, Zone, VimMotion, Direction, GameState, enemy types, and three key aggregates: World (enemies + visibility + map), PlayerState (position + motion tracking + checkpoint), InputState (input queue), and Session (game state + timing). Extracts all renderer-specific types to render_types.rs.",
+      "tags": [
+        "domain-model",
+        "type-definition",
+        "aggregate",
+        "core-types",
+        "game-state"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Uses DDD aggregate pattern with three primary aggregates (World, PlayerState, Session) that own their domains and coordinate through App."
+    },
+    {
+      "id": "file:src/render_types.rs",
+      "type": "file",
+      "name": "render_types.rs",
+      "filePath": "src/render_types.rs",
+      "summary": "Renderer-only types extracted from types.rs. Defines RenderCell (glyph + colors + blink), RenderGrid (2D grid with width/height), ScreenModel (Title/Gameplay/Win/Lost states), and ViewModel (screen + frame counter). Used by renderer.rs and tests/types.rs.",
+      "tags": [
+        "rendering",
+        "type-definition",
+        "presentation-layer",
+        "extracted-module",
+        "view-model"
+      ],
+      "complexity": "moderate",
+      "languageNotes": "Newly extracted module to separate renderer concerns from domain logic. Renderer uses these types via App, not direct imports."
+    },
+    {
+      "id": "file:tests/types.rs",
+      "type": "file",
+      "name": "types.rs",
+      "filePath": "tests/types.rs",
+      "summary": "Integration tests for domain types (Tile, VimMotion, Direction, Position, Zone, Enemy) and renderer types (RenderCell, RenderGrid, ScreenModel, ViewModel). Imports from both vim_rogue::types and vim_rogue::render_types to test the extracted module separation.",
+      "tags": [
+        "test",
+        "type-definition",
+        "rendering",
+        "domain-model",
+        "integration-test"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Root architecture documentation with 13 sections covering structure, architecture, where to look, conventions, commands, verification checklist, dependencies, notes, and agent skills. Updated to reflect render_types.rs module extraction.",
+      "tags": [
+        "documentation",
+        "architecture",
+        "entry-point",
+        "conventions",
+        "development"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:src/AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "src/AGENTS.md",
+      "summary": "Source code architecture documentation with 7 sections covering key files, where to look, internal dependencies, conventions, tests, and notes. Updated to include render_types.rs in the module list and dependency graph.",
+      "tags": [
+        "documentation",
+        "architecture",
+        "source-code",
+        "module-organization",
+        "conventions"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:tests/AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "tests/AGENTS.md",
+      "summary": "Test architecture documentation with 7 sections covering test files, shared helpers, test constructor, where to look, conventions, and notes. References render_types import from lib.rs.",
+      "tags": [
+        "documentation",
+        "testing",
+        "architecture",
+        "test-infrastructure",
+        "conventions"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Project README with 10 sections covering features, Vim motions, quick start, controls, build & test, architecture (updated with render_types.rs), key design decisions, dependencies, and license.",
+      "tags": [
+        "documentation",
+        "entry-point",
+        "overview",
+        "getting-started",
+        "architecture"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:CHANGELOG.md",
+      "type": "document",
+      "name": "CHANGELOG.md",
+      "filePath": "CHANGELOG.md",
+      "summary": "Changelog with 20 sections tracking version history. Merged Unreleased into v0.3.0 documenting the render_types.rs extraction and removal of renderer types from types.rs.",
+      "tags": [
+        "documentation",
+        "changelog",
+        "version-history",
+        "release-notes",
+        "project-tracking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/ONBOARDING.md",
+      "type": "document",
+      "name": "ONBOARDING.md",
+      "filePath": "docs/ONBOARDING.md",
+      "summary": "Comprehensive onboarding guide with 34 sections covering architecture layers, key concepts (aggregate pattern, deterministic timing, renderer isolation), guided tour through all source files, file map, complexity hotspots, development workflow, and conventions. Generated from knowledge graph analysis.",
+      "tags": [
+        "documentation",
+        "onboarding",
+        "architecture",
+        "development",
+        "guided-tour"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/types.rs:World",
+      "type": "class",
+      "name": "World",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        296,
+        301
+      ],
+      "summary": "Primary aggregate owning map, visibility, enemies, and activated torchlights. Provides enemy stepping, collision resolution, and visibility updates. Coordinates map data with enemy AI and FOV systems.",
+      "tags": [
+        "aggregate",
+        "enemy-ai",
+        "fov",
+        "game-state",
+        "domain-model"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "class:src/types.rs:PlayerState",
+      "type": "class",
+      "name": "PlayerState",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        473,
+        486
+      ],
+      "summary": "Player aggregate owning position, motion tracking (used_motions, discovered_motions, motion_count), checkpoint system, noclip mode, HP, and trail. Handles level transitions and retry logic.",
+      "tags": [
+        "aggregate",
+        "player",
+        "game-state",
+        "motion-tracking",
+        "checkpoint-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/types.rs:InputState",
+      "type": "class",
+      "name": "InputState",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        540,
+        543
+      ],
+      "summary": "Input aggregate managing input queue for buffered keypresses and pending input state for two-phase motions (f/t/dd/gg). Supports input queueing and pending motion tracking.",
+      "tags": [
+        "aggregate",
+        "input-handling",
+        "key-binding",
+        "two-phase-input",
+        "buffering"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/types.rs:Session",
+      "type": "class",
+      "name": "Session",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        562,
+        570
+      ],
+      "summary": "Session aggregate tracking game state (Playing/Won/Dying/Lost/Paused/Quit), pause menu selection, started flag, status message, and timing (start time, elapsed, final time). Manages game flow and session persistence.",
+      "tags": [
+        "aggregate",
+        "game-state",
+        "timing",
+        "pause-menu",
+        "session-management"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/types.rs:App",
+      "type": "class",
+      "name": "App",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        594,
+        607
+      ],
+      "summary": "Root application coordinator assembling all aggregates (world, player, input, session) with player animation, enemy animations, attack effects, audio manager, and cheat buffer. Thin coordinator that delegates to aggregates.",
+      "tags": [
+        "coordinator",
+        "root-aggregate",
+        "app-orchestration",
+        "composition-root",
+        "game-loop"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/types.rs:VimMotion",
+      "type": "class",
+      "name": "VimMotion",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        81,
+        95
+      ],
+      "summary": "Enum of 13 Vim motions (h/j/k/l/w/b/0/$/f/t/dd/g) with key_label, display_name, and description methods. Provides motion metadata for UI display and teaching.",
+      "tags": [
+        "domain-model",
+        "vim-motions",
+        "key-binding",
+        "teaching",
+        "enumeration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/types.rs:Tile",
+      "type": "class",
+      "name": "Tile",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        27,
+        33
+      ],
+      "summary": "Tile type enum (Wall/Floor/Exit/Obstacle/Torchlight) with glyph and Display formatting. Represents the 5 possible tile states in the dungeon grid.",
+      "tags": [
+        "domain-model",
+        "tile-system",
+        "display",
+        "enumeration",
+        "grid-cell"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/types.rs:Enemy",
+      "type": "class",
+      "name": "Enemy",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        234,
+        240
+      ],
+      "summary": "Enemy entity with position, glyph, optional HP (level 4 enemies have 30 HP), stunned turn counter, and patrol area. Supports both patrol-only and FOV-aware chase behaviors.",
+      "tags": [
+        "domain-model",
+        "enemy",
+        "ai",
+        "combat",
+        "patrol-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/types.rs:PatrolArea",
+      "type": "class",
+      "name": "PatrolArea",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        216,
+        221
+      ],
+      "summary": "Axis-aligned bounding box for enemy patrol areas defined by min/max x/y coordinates. Provides point factory and containment testing for room-based enemy AI.",
+      "tags": [
+        "domain-model",
+        "patrol-system",
+        "bounding-box",
+        "enemy-ai",
+        "spatial-query"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/render_types.rs:RenderCell",
+      "type": "class",
+      "name": "RenderCell",
+      "filePath": "src/render_types.rs",
+      "lineRange": [
+        3,
+        8
+      ],
+      "summary": "Renderer cell type with glyph, foreground RGB, background RGB, and optional blink. Provides builder-style new() and with_blink() methods for terminal rendering.",
+      "tags": [
+        "rendering",
+        "terminal",
+        "color",
+        "display",
+        "builder-pattern"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/render_types.rs:RenderGrid",
+      "type": "class",
+      "name": "RenderGrid",
+      "filePath": "src/render_types.rs",
+      "lineRange": [
+        23,
+        27
+      ],
+      "summary": "2D grid of RenderCells with width, height, and cells vector. Provides new(), width(), height(), get(x,y), set(x,y,cell), and fill(cell) methods for terminal framebuffer operations.",
+      "tags": [
+        "rendering",
+        "grid",
+        "framebuffer",
+        "2d-array",
+        "terminal"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:src/render_types.rs:ViewModel",
+      "type": "class",
+      "name": "ViewModel",
+      "filePath": "src/render_types.rs",
+      "lineRange": [
+        70,
+        73
+      ],
+      "summary": "View state wrapping ScreenModel (Title/Gameplay/Win/Lost) with frame_number counter for animation. Provides new() and advance_frame() for frame-based rendering.",
+      "tags": [
+        "rendering",
+        "view-state",
+        "animation",
+        "frame-counter",
+        "screen-management"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/render_types.rs:ScreenModel",
+      "type": "class",
+      "name": "ScreenModel",
+      "filePath": "src/render_types.rs",
+      "lineRange": [
+        61,
+        66
+      ],
+      "summary": "Screen state enumeration (Title/Gameplay/Win/Lost) representing the 4 possible rendering modes. Maps game states to rendering strategies.",
+      "tags": [
+        "rendering",
+        "screen-state",
+        "enumeration",
+        "display-mode",
+        "view-model"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/types.rs:World::step_enemies",
+      "type": "function",
+      "name": "World::step_enemies",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        344,
+        377
+      ],
+      "summary": "Core enemy turn orchestration: captures prior positions, steps each enemy (FOV chase or patrol), builds movement/collision results, and returns EnemyTurn with movements and collision indices. Delegates AI to enemy.rs methods.",
+      "tags": [
+        "enemy-ai",
+        "game-loop",
+        "orchestration",
+        "fov",
+        "patrol-system"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/types.rs:World::push_enemies_off_position",
+      "type": "function",
+      "name": "World::push_enemies_off_position",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        379,
+        446
+      ],
+      "summary": "BFS-based enemy collision resolution that finds nearest empty tiles for enemies occupying a position, respecting passability and avoiding other enemy positions. Uses visited/claimed sets for pathfinding.",
+      "tags": [
+        "enemy-ai",
+        "collision-resolution",
+        "pathfinding",
+        "bfs",
+        "spatial-algorithm"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/types.rs:World::update_visibility",
+      "type": "function",
+      "name": "World::update_visibility",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        448,
+        470
+      ],
+      "summary": "Updates FOV visibility map: demotes visible to explored, computes player FOV, computes activated torchlight FOVs with TORCHLIGHT_FOV_RADIUS. Supports multi-source FOV for checkpoint system.",
+      "tags": [
+        "fov",
+        "visibility",
+        "lighting",
+        "torchlight",
+        "checkpoint-system"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/types.rs:PlayerState::advance_level",
+      "type": "function",
+      "name": "PlayerState::advance_level",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        506,
+        512
+      ],
+      "summary": "Increments player level, clears trail, and sets starting position for level transition. Used when player reaches the exit tile.",
+      "tags": [
+        "player",
+        "level-transition",
+        "game-state",
+        "progression",
+        "checkpoint-system"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/types.rs:PlayerState::retry_level",
+      "type": "function",
+      "name": "PlayerState::retry_level",
+      "filePath": "src/types.rs",
+      "lineRange": [
+        514,
+        520
+      ],
+      "summary": "Maintains current level, clears trail, and sets starting position for retry after death. Used when player loses all lives or selects retry from pause menu.",
+      "tags": [
+        "player",
+        "retry",
+        "game-state",
+        "checkpoint-system",
+        "death-handling"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/render_types.rs:RenderGrid::fill",
+      "type": "function",
+      "name": "RenderGrid::fill",
+      "filePath": "src/render_types.rs",
+      "lineRange": [
+        50,
+        56
+      ],
+      "summary": "Fills entire grid with cloned RenderCell by iterating all cells. Used for clearing screen or setting uniform background.",
+      "tags": [
+        "rendering",
+        "grid",
+        "fill-operation",
+        "framebuffer",
+        "terminal"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/render_types.rs:ViewModel::advance_frame",
+      "type": "function",
+      "name": "ViewModel::advance_frame",
+      "filePath": "src/render_types.rs",
+      "lineRange": [
+        80,
+        82
+      ],
+      "summary": "Increments frame_number counter for animation sequencing. Called each render cycle to drive interpolated animations.",
+      "tags": [
+        "rendering",
+        "animation",
+        "frame-counter",
+        "timing",
+        "view-state"
+      ],
+      "complexity": "simple"
     }
   ],
   "edges": [
     {
-      "source": "file:src/main.rs",
-      "target": "file:src/lib.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/types.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
+      "source": "file:src/game.rs",
       "target": "file:src/map.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/player.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/visibility.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/enemy.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/animation.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/audio.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/game.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/renderer.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/lib.rs",
-      "target": "file:src/test_support.rs",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -1045,13 +1353,6 @@
     {
       "source": "file:src/game.rs",
       "target": "file:src/types.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/game.rs",
-      "target": "file:src/map.rs",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -1072,13 +1373,6 @@
     },
     {
       "source": "file:src/player.rs",
-      "target": "file:src/types.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/player.rs",
       "target": "file:src/map.rs",
       "type": "imports",
       "direction": "forward",
@@ -1086,49 +1380,14 @@
     },
     {
       "source": "file:src/player.rs",
-      "target": "file:src/audio.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "file:src/map.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "file:src/visibility.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "file:src/animation.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "file:src/audio.rs",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:src/enemy.rs",
       "target": "file:src/types.rs",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
     },
     {
-      "source": "file:src/test_support.rs",
-      "target": "file:src/types.rs",
+      "source": "file:src/player.rs",
+      "target": "file:src/audio.rs",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -1141,8 +1400,8 @@
       "weight": 0.7
     },
     {
-      "source": "file:tests/common/mod.rs",
-      "target": "file:src/lib.rs",
+      "source": "file:src/test_support.rs",
+      "target": "file:src/types.rs",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -1192,20 +1451,6 @@
     {
       "source": "file:src/player.rs",
       "target": "function:src/player.rs:step",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "function:src/types.rs:World::step_enemies",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "function:src/types.rs:World::update_visibility",
       "type": "contains",
       "direction": "forward",
       "weight": 1
@@ -1281,20 +1526,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:src/types.rs",
-      "target": "function:src/types.rs:World::step_enemies",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:src/types.rs",
-      "target": "function:src/types.rs:World::update_visibility",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "file:src/renderer.rs",
       "target": "function:src/renderer.rs:render",
       "type": "exports",
@@ -1304,13 +1535,6 @@
     {
       "source": "file:tests/game.rs",
       "target": "file:src/game.rs",
-      "type": "tested_by",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "file:tests/game.rs",
-      "target": "file:src/types.rs",
       "type": "tested_by",
       "direction": "forward",
       "weight": 0.5
@@ -1365,13 +1589,6 @@
       "weight": 0.5
     },
     {
-      "source": "file:tests/types.rs",
-      "target": "file:src/types.rs",
-      "type": "tested_by",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
       "source": "file:tests/common/mod.rs",
       "target": "file:src/test_support.rs",
       "type": "tested_by",
@@ -1415,13 +1632,6 @@
     },
     {
       "source": "function:src/game.rs:enemies_step",
-      "target": "function:src/types.rs:World::step_enemies",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:src/game.rs:enemies_step",
       "target": "function:src/enemy.rs:step_toward_player",
       "type": "calls",
       "direction": "forward",
@@ -1430,13 +1640,6 @@
     {
       "source": "function:src/enemy.rs:step_toward_player",
       "target": "function:src/enemy.rs:has_line_of_sight",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:src/types.rs:World::update_visibility",
-      "target": "function:src/visibility.rs:compute_fov",
       "type": "calls",
       "direction": "forward",
       "weight": 0.8
@@ -1459,13 +1662,6 @@
       "source": "pipeline:.github/workflows/release.yml",
       "target": "config:Cargo.toml",
       "type": "triggers",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "pipeline:.github/workflows/release.yml",
-      "target": "document:CHANGELOG.md",
-      "type": "depends_on",
       "direction": "forward",
       "weight": 0.6
     },
@@ -1498,36 +1694,8 @@
       "weight": 0.6
     },
     {
-      "source": "document:CONTEXT.md",
-      "target": "file:src/types.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:docs/specs/aggregate-refactor.md",
-      "target": "file:src/types.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
       "source": "document:docs/specs/aggregate-refactor.md",
       "target": "file:src/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/AGENTS.md",
-      "target": "file:src/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/AGENTS.md",
-      "target": "file:src/types.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
@@ -1547,13 +1715,6 @@
       "weight": 0.5
     },
     {
-      "source": "document:CHANGELOG.md",
-      "target": "pipeline:.github/workflows/release.yml",
-      "type": "related",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
       "source": "document:docs/agents/domain.md",
       "target": "document:CONTEXT.md",
       "type": "related",
@@ -1561,50 +1722,8 @@
       "weight": 0.5
     },
     {
-      "source": "document:docs/agents/issue-tracker.md",
-      "target": "document:AGENTS.md",
-      "type": "related",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:docs/agents/triage-labels.md",
-      "target": "document:AGENTS.md",
-      "type": "related",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.original.md",
-      "target": "document:AGENTS.md",
-      "type": "related",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/AGENTS.original.md",
-      "target": "document:src/AGENTS.md",
-      "type": "related",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.original.md",
-      "target": "document:tests/AGENTS.md",
-      "type": "related",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
       "source": "config:rustfmt.toml",
       "target": "file:src/main.rs",
-      "type": "configures",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "config:rustfmt.toml",
-      "target": "file:src/lib.rs",
       "type": "configures",
       "direction": "forward",
       "weight": 0.6
@@ -1633,13 +1752,6 @@
     {
       "source": "config:rustfmt.toml",
       "target": "file:src/renderer.rs",
-      "type": "configures",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "config:rustfmt.toml",
-      "target": "file:src/types.rs",
       "type": "configures",
       "direction": "forward",
       "weight": 0.6
@@ -1678,90 +1790,6 @@
       "type": "configures",
       "direction": "forward",
       "weight": 0.6
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/main.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/lib.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/player.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/map.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/renderer.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/types.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/animation.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/visibility.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/enemy.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/audio.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
-      "target": "file:src/test_support.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
     },
     {
       "source": "document:CLAUDE.md",
@@ -1772,287 +1800,567 @@
     },
     {
       "source": "document:CLAUDE.md",
+      "target": "file:src/game.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/player.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/map.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/renderer.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/animation.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/visibility.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/enemy.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/audio.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/test_support.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/game.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/player.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/map.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/renderer.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/animation.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/visibility.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/enemy.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/audio.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:src/CLAUDE.md",
+      "target": "file:src/test_support.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/types.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/render_types.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/animation.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/audio.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/enemy.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/game.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/map.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/player.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/renderer.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/visibility.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib.rs",
+      "target": "file:src/test_support.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/main.rs",
+      "target": "file:src/lib.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "file:src/audio.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/enemy.rs",
+      "target": "file:src/types.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/common/mod.rs",
+      "target": "file:src/lib.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "file:src/map.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "file:src/visibility.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "file:src/enemy.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "file:src/animation.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "file:src/player.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/types.rs",
+      "target": "file:src/render_types.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/types.rs",
+      "target": "file:src/types.rs",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:World",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:PlayerState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:InputState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:Session",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:App",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:VimMotion",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:Tile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:Enemy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:PatrolArea",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "function:src/types.rs:World::step_enemies",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "function:src/types.rs:World::push_enemies_off_position",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "function:src/types.rs:World::update_visibility",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "function:src/types.rs:PlayerState::advance_level",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "function:src/types.rs:PlayerState::retry_level",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:World",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:PlayerState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:InputState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:Session",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:App",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:VimMotion",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:Tile",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:Enemy",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/types.rs",
+      "target": "class:src/types.rs:PatrolArea",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:RenderCell",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:RenderGrid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:ViewModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:ScreenModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "function:src/render_types.rs:RenderGrid::fill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "function:src/render_types.rs:ViewModel::advance_frame",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:RenderCell",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:RenderGrid",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:ViewModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/render_types.rs",
+      "target": "class:src/render_types.rs:ScreenModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/types.rs",
+      "target": "file:src/types.rs",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:tests/types.rs",
+      "target": "file:src/render_types.rs",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:AGENTS.md",
       "target": "file:src/lib.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
     },
     {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/player.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/map.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/renderer.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
+      "source": "document:AGENTS.md",
       "target": "file:src/types.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
     },
     {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/animation.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/visibility.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/enemy.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/audio.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:CLAUDE.md",
-      "target": "file:src/test_support.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
       "source": "document:AGENTS.md",
-      "target": "file:src/main.rs",
+      "target": "file:src/render_types.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
     },
     {
-      "source": "document:AGENTS.md",
+      "source": "document:src/AGENTS.md",
       "target": "file:src/lib.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
     },
     {
-      "source": "document:AGENTS.md",
-      "target": "file:src/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/player.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/map.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/renderer.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
+      "source": "document:src/AGENTS.md",
       "target": "file:src/types.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
     },
     {
-      "source": "document:AGENTS.md",
-      "target": "file:src/animation.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/visibility.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/enemy.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/audio.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:AGENTS.md",
-      "target": "file:src/test_support.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/player.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/map.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/renderer.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/types.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/animation.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/visibility.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/enemy.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/audio.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:src/CLAUDE.md",
-      "target": "file:src/test_support.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/game.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/player.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/map.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/renderer.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/animation.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/visibility.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/enemy.rs",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/audio.rs",
+      "source": "document:src/AGENTS.md",
+      "target": "file:src/render_types.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
@@ -2065,18 +2373,144 @@
       "weight": 0.5
     },
     {
-      "source": "document:tests/AGENTS.md",
-      "target": "file:tests/common/mod.rs",
+      "source": "document:README.md",
+      "target": "file:src/lib.rs",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:src/types.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:src/render_types.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CHANGELOG.md",
+      "target": "file:src/types.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CHANGELOG.md",
+      "target": "file:src/render_types.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ONBOARDING.md",
+      "target": "file:src/lib.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ONBOARDING.md",
+      "target": "file:src/types.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:docs/ONBOARDING.md",
+      "target": "file:src/render_types.rs",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "class:src/types.rs:App",
+      "target": "class:src/types.rs:World",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:App",
+      "target": "class:src/types.rs:PlayerState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:App",
+      "target": "class:src/types.rs:InputState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:App",
+      "target": "class:src/types.rs:Session",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:World",
+      "target": "function:src/types.rs:World::step_enemies",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:World",
+      "target": "function:src/types.rs:World::push_enemies_off_position",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:World",
+      "target": "function:src/types.rs:World::update_visibility",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:PlayerState",
+      "target": "function:src/types.rs:PlayerState::advance_level",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/types.rs:PlayerState",
+      "target": "function:src/types.rs:PlayerState::retry_level",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/render_types.rs:RenderGrid",
+      "target": "function:src/render_types.rs:RenderGrid::fill",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "class:src/render_types.rs:ViewModel",
+      "target": "function:src/render_types.rs:ViewModel::advance_frame",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
     }
   ],
   "layers": [
     {
       "id": "layer:domain-core",
       "name": "Domain Core",
-      "description": "Core domain types and data structures that define the game's fundamental concepts (Position, Tile, Zone, VimMotion, aggregates) and serve as the foundation for all other layers",
+      "description": "Core domain types and data structures defining Position, Tile, Zone, VimMotion, Direction, GameState, enemy types, and domain aggregates (World, PlayerState, InputState, Session, App). The foundational type system for the entire game.",
       "nodeIds": [
         "file:src/types.rs"
       ]
@@ -2084,7 +2518,7 @@
     {
       "id": "layer:game-logic",
       "name": "Game Logic",
-      "description": "Core game systems including map generation with 4 dungeon levels, player state with 13 Vim motions, enemy AI with FOV-aware BFS chase and patrol, and visibility/fog-of-war computation",
+      "description": "Core game systems including map generation (80x40 grid, 4 levels, procedural carving), player movement (13 Vim motions with boundary checking), enemy AI (FOV-aware BFS pathfinding and patrol), and visibility system (ray-casting FOV with fog-of-war persistence).",
       "nodeIds": [
         "file:src/map.rs",
         "file:src/player.rs",
@@ -2095,7 +2529,7 @@
     {
       "id": "layer:application",
       "name": "Application",
-      "description": "Application coordinator (App) that orchestrates the game loop, handles input, manages state transitions, coordinates enemy turns, and sequences level flows and pause/resume behavior",
+      "description": "App coordinator orchestrating the game loop: input processing via handle_key, animation updates via tick, motion execution via execute_motion, enemy turn orchestration via enemies_step, level transitions, pause menu, and game state machine management.",
       "nodeIds": [
         "file:src/game.rs"
       ]
@@ -2103,15 +2537,16 @@
     {
       "id": "layer:presentation",
       "name": "Presentation",
-      "description": "Pure rendering layer using bracket-lib to display the title, viewport, sidebar, minimap, fog-of-war, animations, and win/loss screens without mutating game state",
+      "description": "Pure rendering layer using bracket-lib to draw title/gameplay/win/lost/pause screens, viewport with FOV fog, sidebar with stats, minimap, zone-colored walls, animation effects, and renderer-specific types (RenderCell, RenderGrid, ScreenModel, ViewModel). Read-only with no state mutation.",
       "nodeIds": [
-        "file:src/renderer.rs"
+        "file:src/renderer.rs",
+        "file:src/render_types.rs"
       ]
     },
     {
       "id": "layer:system-support",
       "name": "System Support",
-      "description": "Cross-cutting systems for animation timing with GameClock trait and easing interpolators, plus audio with SoundEffect enum and graceful fallback when disabled",
+      "description": "Cross-cutting concerns including animation timing system (GameClock trait with RealClock/TestClock, AnimationTimer, Interpolator easing functions, AttackEffect combat visuals) and audio manager (SoundEffect enum with enable/disable toggle and graceful no-op fallback).",
       "nodeIds": [
         "file:src/animation.rs",
         "file:src/audio.rs"
@@ -2120,19 +2555,232 @@
     {
       "id": "layer:entry-points",
       "name": "Entry Points",
-      "description": "Binary entry point (main.rs) with bracket-lib event loop setup and library root (lib.rs) that re-exports all modules for integration testing",
+      "description": "Binary entry point (main.rs initializing bracket-lib console and event loop) and library root (lib.rs re-exporting all modules including render_types) providing the public API surface.",
       "nodeIds": [
         "file:src/main.rs",
-        "file:src/lib.rs",
-        "file:src/test_support.rs"
+        "file:src/lib.rs"
       ]
     },
     {
       "id": "layer:integration-tests",
       "name": "Integration Tests",
-      "description": "396 integration tests across 9 test files verifying game state machine (140), Vim motions (32), map structure (46), rendering (53), animation (34), FOV (29), enemy AI (21), audio (16), and core types (25)",
+      "description": "396 comprehensive integration tests across 9 files covering all 13 Vim motions, game state machine transitions, map structure validation, rendering output, animation timing, FOV behavior, enemy AI pathfinding, audio system, and domain types. Includes shared test helpers (test_map, tick_timer, approx_eq) and test seam (App::for_test).",
       "nodeIds": [
-        "file:tests/common/mod.rs",
+        "file:tests/game.rs",
+        "file:tests/player.rs",
+        "file:tests/map.rs",
+        "file:tests/renderer.rs",
+        "file:tests/animation.rs",
+        "file:tests/visibility.rs",
+        "file:tests/enemy.rs",
+        "file:tests/audio.rs",
+        "file:tests/types.rs",
+        "file:tests/common/mod.rs"
+      ]
+    },
+    {
+      "id": "layer:examples",
+      "name": "Examples",
+      "description": "Proof-of-concept spike demonstrating bracket-lib basics including console creation, character drawing, background colors, and input handling.",
+      "nodeIds": [
+        "file:examples/spike.rs"
+      ]
+    },
+    {
+      "id": "layer:configuration",
+      "name": "Configuration",
+      "description": "Project configuration files including Rust package manifest (Cargo.toml with edition 2024 and bracket-lib dependency), cross-compilation settings (Cross.toml for Linux x86_64/ARM64), code formatter configuration (rustfmt.toml with small heuristics), and Git blame ignore rules.",
+      "nodeIds": [
+        "config:Cargo.toml",
+        "config:Cross.toml",
+        "config:rustfmt.toml",
+        "file:.git-blame-ignore-revs"
+      ]
+    },
+    {
+      "id": "layer:ci-cd",
+      "name": "CI/CD",
+      "description": "GitHub Actions workflows for continuous integration (ci.yml running format check, clippy linting, testing across 6 platforms, cross-compilation builds) and release automation (release.yml building cross-platform binaries and publishing GitHub releases with auto-extracted changelog).",
+      "nodeIds": [
+        "pipeline:.github/workflows/ci.yml",
+        "pipeline:.github/workflows/release.yml"
+      ]
+    },
+    {
+      "id": "layer:documentation",
+      "name": "Documentation",
+      "description": "Project documentation including root architecture (AGENTS.md, CLAUDE.md, CONTEXT.md with DDD aggregates), source code guides (src/AGENTS.md, src/CLAUDE.md), test documentation (tests/CLAUDE.md, tests/AGENTS.md), user-facing content (README.md with features/controls, CHANGELOG.md with version history), onboarding guide (docs/ONBOARDING.md), agent workflows (docs/agents/), and specifications (docs/specs/aggregate-refactor.md).",
+      "nodeIds": [
+        "document:AGENTS.md",
+        "document:CLAUDE.md",
+        "document:CONTEXT.md",
+        "document:README.md",
+        "document:CHANGELOG.md",
+        "document:AGENTS.original.md",
+        "document:src/AGENTS.md",
+        "document:src/CLAUDE.md",
+        "document:src/AGENTS.original.md",
+        "document:tests/AGENTS.md",
+        "document:tests/CLAUDE.md",
+        "document:tests/AGENTS.original.md",
+        "document:docs/ONBOARDING.md",
+        "document:docs/agents/domain.md",
+        "document:docs/agents/issue-tracker.md",
+        "document:docs/agents/triage-labels.md",
+        "document:docs/specs/aggregate-refactor.md"
+      ]
+    },
+    {
+      "id": "layer:test-support",
+      "name": "Test Support",
+      "description": "Test infrastructure providing App::for_test constructor for deterministic test setup with custom map and position, used by all 396 integration tests.",
+      "nodeIds": [
+        "file:src/test_support.rs"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Entry Point and Library Structure",
+      "description": "The journey begins at the binary entry point (main.rs) which initializes bracket-lib console and sets up the main event loop. It delegates to lib.rs, a module barrel file that re-exports all game modules including the new render_types module, establishing the public API surface. This thin ~44-line bootstrap demonstrates Rust's binary/library separation pattern.",
+      "nodeIds": [
+        "file:src/main.rs",
+        "file:src/lib.rs"
+      ],
+      "languageLesson": "Rust binaries use src/main.rs as the entry point, while libraries use src/lib.rs for their public API. The lib.rs barrel file pattern uses 'pub mod' and 'pub use' to re-export modules, creating a clean public API surface that abstracts internal structure."
+    },
+    {
+      "order": 2,
+      "title": "Core Domain Types and Aggregates",
+      "description": "The foundational type system lives in types.rs, the most depended-upon module (12 imports). It defines Position, Tile, Zone, VimMotion, Direction, GameState, enemy types, and four key DDD aggregates: World (enemies + visibility + map), PlayerState (position + motion tracking + checkpoint), InputState (input queue), and Session (game state + timing). This is the vocabulary used throughout the entire codebase.",
+      "nodeIds": [
+        "file:src/types.rs"
+      ],
+      "languageLesson": "Rust's type system enables domain-driven design through lightweight enums and structs. The aggregate pattern groups related state and behavior: World owns step_enemies + push_enemies_off_position, PlayerState owns motion tracking, keeping domains separate and cohesive."
+    },
+    {
+      "order": 3,
+      "title": "Presentation Layer Types",
+      "description": "Renderer-specific types are extracted into render_types.rs, maintaining the critical separation between domain logic and presentation. This module defines RenderCell (glyph + colors + blink), RenderGrid (2D grid with width/height), ScreenModel (Title/Gameplay/Win/Lost states), and ViewModel (screen + frame counter). The renderer.rs module uses these types exclusively, never touching domain aggregates directly.",
+      "nodeIds": [
+        "file:src/render_types.rs",
+        "file:src/renderer.rs"
+      ],
+      "languageLesson": "Separating presentation types from domain types prevents renderer concerns from leaking into business logic. RenderCell, RenderGrid, and ViewModel are pure data structures for display, while Tile, Position, and VimMotion represent the game domain. This isolation makes the renderer read-only and easily testable."
+    },
+    {
+      "order": 4,
+      "title": "Map Generation and Structure",
+      "description": "The 80x40 grid map with 5 procedural zones comes from map.rs, a highly depended-upon module (9 imports). It implements corridor carving, builds 4 distinct dungeon levels (basic, inverted maze + obstacles, zigzag + BFS enemies, fortress rooms + FOV patrol), places enemy spawn points, defines patrol areas, and positions torchlights. The row-major grid[y][x] convention is used throughout.",
+      "nodeIds": [
+        "file:src/map.rs"
+      ],
+      "languageLesson": "Procedural generation uses room carving algorithms: start with solid walls, carve rooms, connect with corridors, then spawn entities. The 'is_passable' predicate determines which tiles (Floor, Exit, Torchlight) allow movement, while Obstacle blocks but can be destroyed by dd. Zone assignments (5 total) enable colored wall rendering."
+    },
+    {
+      "order": 5,
+      "title": "Player Movement and Vim Motions",
+      "description": "PlayerState in player.rs implements all 13 Vim motion handlers: h/j/k/l (cardinal), w/b (word jumps), 0/$ (line ends), G/gg (vertical scan to bounds), f/t (find/till pending), and dd (destroy obstacle). Each handler performs boundary checking, wall stopping logic, and motion tracking (motion_count increment, discovered_motions set). The handle_motion method takes &mut Map since dd deletes obstacles.",
+      "nodeIds": [
+        "file:src/player.rs"
+      ],
+      "languageLesson": "Rust pattern matching on enums makes Vim motion dispatch elegant. Pending input state (f/t/dd/gg) stores the first key in InputState, awaiting the second keystroke. This two-phase input pattern is common in text editors and requires careful state machine management."
+    },
+    {
+      "order": 6,
+      "title": "Enemy AI and Pathfinding",
+      "description": "Enemy intelligence in enemy.rs uses FOV-aware BFS pathfinding for chase (step_toward_player) with Bresenham line-of-sight detection (has_line_of_sight), plus patrol movement within assigned PatrolArea when the player isn't visible. The World aggregate's step_enemies method orchestrates all enemy turns, handling collision outcomes and movement animations. This creates the game's dynamic threat response.",
+      "nodeIds": [
+        "file:src/enemy.rs"
+      ],
+      "languageLesson": "BFS (Breadth-First Search) guarantees shortest pathfinding in unweighted grids. The algorithm explores outward from the enemy until reaching the player, building a path backwards. Bresenham's line algorithm efficiently checks line-of-sight without floating-point math by walking the grid with integer error accumulation."
+    },
+    {
+      "order": 7,
+      "title": "Visibility and Fog of War",
+      "description": "The FOV system in visibility.rs uses ray-casting to compute visible tiles from the player position, with three visibility states: Hidden (unseen), Visible (currently in FOV), and Explored (seen before but not currently). The World aggregate's update_visibility method computes the FOV radius each turn. Explored areas persist across updates, creating the classic fog-of-war effect that rewards map memory.",
+      "nodeIds": [
+        "file:src/visibility.rs"
+      ],
+      "languageLesson": "Ray-casting FOV sends rays in all directions (360 degrees) from the player, stopping at walls. Each visited tile becomes Visible; previously Visible tiles become Explored. This is more efficient than shadow-casting for simple roguelikes and produces natural circular visibility with proper wall occlusion."
+    },
+    {
+      "order": 8,
+      "title": "Application Coordinator and Game Loop",
+      "description": "The App coordinator in game.rs orchestrates the entire game loop with 16 dependencies. It implements handle_key for input processing (two-phase for f/t/dd/gg), tick for animation updates, execute_motion for player movement triggering enemy turns, enemies_step for turn orchestration, and level transitions. This is the central traffic controller that sequences cross-aggregate flows while keeping each aggregate focused on its domain.",
+      "nodeIds": [
+        "file:src/game.rs"
+      ],
+      "languageLesson": "The coordinator pattern delegates to domain experts: execute_motion calls PlayerState::handle_motion, which may mutate the Map; enemies_step calls World::step_enemies, which iterates Enemy::step_toward_player. Each aggregate owns its state (World owns enemies, PlayerState owns position), and App sequences the interactions."
+    },
+    {
+      "order": 9,
+      "title": "Animation and Timing System",
+      "description": "Smooth animations rely on the animation.rs module with its GameClock trait (RealClock for production, TestClock for deterministic tests), AnimationState for transitions, AnimationTimer for duration tracking, Interpolator for easing functions (linear, ease-in, ease-out, ease-in-out), and AttackEffect for combat visuals. The tick method advances animations by delta milliseconds, making the game feel responsive and polished.",
+      "nodeIds": [
+        "file:src/animation.rs"
+      ],
+      "languageLesson": "Trait-based time abstraction (GameClock) enables deterministic testing: TestClock returns fixed values, while RealClock uses std::time::Instant. Easing functions implement interpolation formulas like t*t for ease-in quadratic acceleration. The AnimationTimer tracks progress (0.0 to 1.0) over a duration, triggering phase transitions."
+    },
+    {
+      "order": 10,
+      "title": "Audio System",
+      "description": "The audio.rs module provides a SoundEffect enum for all game events and an AudioManager with enable/disable toggle. Audio is off by default, with graceful no-op fallback when disabled\u2014no sound plays, but the game logic continues uninterrupted. This design keeps audio optional without complicating the core game systems, making it easy to add sound later without refactoring.",
+      "nodeIds": [
+        "file:src/audio.rs"
+      ],
+      "languageLesson": "The null object pattern makes optional dependencies painless: AudioManager::play is a no-op when disabled, so callers don't need conditional logic. The SoundEffect enum exhaustively lists all audio events, providing a single place to add new sounds. This separation keeps audio concerns isolated from core gameplay."
+    },
+    {
+      "order": 11,
+      "title": "Test Infrastructure and Deterministic Setup",
+      "description": "The test_support.rs module provides App::for_test, a test seam constructor that creates an App with a custom map and position. All 396 integration tests across 9 files use this constructor for deterministic setup. The shared test helpers in tests/common/mod.rs provide test_map, tick_timer, tick_state, approx_eq, and FOV testing utilities. This infrastructure makes tests fast, reliable, and easy to write.",
+      "nodeIds": [
+        "file:src/test_support.rs",
+        "file:tests/common/mod.rs"
+      ],
+      "languageLesson": "Test seam constructors separate production logic from test setup. App::for_test bypasses random map generation, accepting a fixed map and position. This makes tests deterministic and fast\u2014no need to fight randomness. Shared test helpers (test_map, tick_timer) reduce duplication across 396 tests, enforcing consistency."
+    },
+    {
+      "order": 12,
+      "title": "Project Configuration and Build System",
+      "description": "The Cargo.toml manifest defines the vim-rogue 0.2.2 package with Rust edition 2024 and bracket-lib 0.8.7 dependency. Cross.toml configures cross-compilation for Linux x86_64 and ARM64. rustfmt.toml enforces code style with small heuristics. These configuration files control how the project builds, runs on different platforms, and maintains consistent formatting across contributors.",
+      "nodeIds": [
+        "config:Cargo.toml",
+        "config:Cross.toml",
+        "config:rustfmt.toml"
+      ],
+      "languageLesson": "Cargo.toml is the single source of truth for dependencies, package metadata, and build configuration. Edition 2024 enables modern Rust features. Cross.toml extends cargo with cross-rs for cross-compilation without local toolchains. rustfmt.toml's 'use_small_heuristics = Max' prefers shorter lines within the default width limit."
+    },
+    {
+      "order": 13,
+      "title": "CI/CD Pipeline and Release Automation",
+      "description": "GitHub Actions workflows automate quality and releases. ci.yml runs format checks, clippy linting, tests across 6 platforms, and cross-compilation builds on every push. release.yml triggers on version tags, builds cross-platform binaries, and publishes GitHub releases with auto-extracted changelog. This automation ensures the project always ships tested, working code across all supported platforms.",
+      "nodeIds": [
+        "pipeline:.github/workflows/ci.yml",
+        "pipeline:.github/workflows/release.yml"
+      ],
+      "languageLesson": "GitHub Actions uses workflow YAML with 'on' triggers for push/tags, 'jobs' for parallel tasks, and 'steps' for sequential commands. Matrix builds test across multiple OS/language versions (6 platforms here). The cargo-release tool extracts CHANGELOG.md entries for release notes, automating the release process while keeping documentation in sync."
+    },
+    {
+      "order": 14,
+      "title": "Documentation and Onboarding",
+      "description": "The project documentation ecosystem includes AGENTS.md (root architecture), CLAUDE.md (project overview), CONTEXT.md (DDD aggregates and domain rules), README.md (user-facing features and controls), CHANGELOG.md (version history), and docs/ONBOARDING.md (comprehensive 34-section guide). These documents explain architecture, conventions, commands, verification checklist, and development workflow, enabling smooth contributor onboarding.",
+      "nodeIds": [
+        "document:README.md",
+        "document:CLAUDE.md",
+        "document:AGENTS.md",
+        "document:CONTEXT.md",
+        "document:docs/ONBOARDING.md"
+      ],
+      "languageLesson": "Good documentation lives alongside code. AGENTS.md and CLAUDE.md provide architecture and conventions for AI-assisted development. CONTEXT.md defines the domain language (aggregates, rules, naming). README.md is the user's first impression. ONBOARDING.md synthesizes everything into a guided narrative. Keeping docs in version control ensures they evolve with the codebase."
+    },
+    {
+      "order": 15,
+      "title": "Comprehensive Test Coverage",
+      "description": "The project boasts 396 integration tests across 9 files, validating every aspect: all 13 Vim motions (player.rs tests), game state machine transitions (game.rs tests, 140 tests alone), map structure and reachability (map.rs tests), rendering output and zone colors (renderer.rs tests), animation timing and easing (animation.rs tests), FOV behavior and explored state persistence (visibility.rs tests), enemy BFS pathfinding (enemy.rs tests), and audio system (audio.rs tests). This coverage ensures confidence in refactoring and prevents regressions.",
+      "nodeIds": [
         "file:tests/game.rs",
         "file:tests/player.rs",
         "file:tests/map.rs",
@@ -2142,179 +2790,8 @@
         "file:tests/enemy.rs",
         "file:tests/audio.rs",
         "file:tests/types.rs"
-      ]
-    },
-    {
-      "id": "layer:examples",
-      "name": "Examples",
-      "description": "Proof-of-concept spike demonstrating bracket-lib usage patterns and prototyping experimental features",
-      "nodeIds": [
-        "file:examples/spike.rs"
-      ]
-    },
-    {
-      "id": "layer:configuration",
-      "name": "Configuration",
-      "description": "Project configuration files including Cargo.toml package manifest, Cross.toml for cross-compilation to Linux x86_64 and ARM64, and rustfmt.toml formatter settings",
-      "nodeIds": [
-        "config:Cargo.toml",
-        "config:Cross.toml",
-        "config:rustfmt.toml"
-      ]
-    },
-    {
-      "id": "layer:ci-cd",
-      "name": "CI/CD",
-      "description": "GitHub Actions workflows for continuous integration (fmt, clippy, test, cross-platform builds) and automated releases with cross-platform binaries published to GitHub releases",
-      "nodeIds": [
-        "pipeline:.github/workflows/ci.yml",
-        "pipeline:.github/workflows/release.yml"
-      ]
-    },
-    {
-      "id": "layer:documentation",
-      "name": "Documentation",
-      "description": "Project documentation including README with quick start, CLAUDE.md AI assistance guide, CONTEXT.md domain model with DDD aggregates, CHANGELOG version history, AGENTS.md coordination guides, and docs/agents workflow specifications",
-      "nodeIds": [
-        "document:AGENTS.md",
-        "document:AGENTS.original.md",
-        "document:CHANGELOG.md",
-        "document:CLAUDE.md",
-        "document:CONTEXT.md",
-        "document:README.md",
-        "document:docs/agents/domain.md",
-        "document:docs/agents/issue-tracker.md",
-        "document:docs/agents/triage-labels.md",
-        "document:docs/specs/aggregate-refactor.md",
-        "document:src/AGENTS.md",
-        "document:src/AGENTS.original.md",
-        "document:src/CLAUDE.md",
-        "document:tests/AGENTS.md",
-        "document:tests/AGENTS.original.md",
-        "document:tests/CLAUDE.md"
-      ]
-    },
-    {
-      "id": "layer:project-support",
-      "name": "Project Support",
-      "description": "Git configuration and project metadata files",
-      "nodeIds": [
-        "file:.git-blame-ignore-revs"
-      ]
-    }
-  ],
-  "tour": [
-    {
-      "order": 1,
-      "title": "Project Overview",
-      "description": "The README introduces vim-rogue: a roguelike dungeon game that teaches Vim motions through gameplay. It outlines the core architectural decisions—domain aggregates over a god object, read-only renderer, deterministic timing via traits, and FOV-aware enemy AI. This sets the stage for understanding how the codebase implements a roguelike while teaching Vim navigation.",
-      "nodeIds": [
-        "document:README.md"
-      ]
-    },
-    {
-      "order": 2,
-      "title": "Entry Point & Bootstrapping",
-      "description": "main.rs is the binary entry point that bootstraps bracket-lib (BTerm), creates the initial App state, and runs the main event loop. This thin (~44 lines) file demonstrates Rust's convention of separating binary entry points from library code, with main.rs delegating to lib.rs for the actual application logic.",
-      "nodeIds": [
-        "file:src/main.rs"
       ],
-      "languageLesson": "Rust binaries typically have a thin main.rs that calls into a library crate (lib.rs). This separation enables the library to be used as a dependency in tests, examples, and other binaries—main.rs exists only to bootstrap the runtime."
-    },
-    {
-      "order": 3,
-      "title": "Module Re-Exports & Public API",
-      "description": "lib.rs serves as the library root, re-exporting all modules with 'pub use' to create a clean public API surface. This pattern lets consumers use 'crate::types::*' instead of tracing internal module paths. The module structure here reflects the architectural layers: domain types, game logic, systems, rendering, and test support.",
-      "nodeIds": [
-        "file:src/lib.rs"
-      ],
-      "languageLesson": "Rust barrel files (lib.rs) use 'pub use' to re-export modules, flattening the module hierarchy for consumers. This creates a stable public API while allowing internal refactoring—external code sees only what you choose to expose."
-    },
-    {
-      "order": 4,
-      "title": "Core Domain Types",
-      "description": "types.rs defines the entire domain model: Position, Tile, Zone, VimMotion enum, and the key aggregates (World, PlayerState, InputState, Session, App). This file has the highest fan-in (6 imports) because every module depends on these foundational types. The aggregate pattern splits App into cohesive domains—World owns enemies and collision, PlayerState owns motion tracking—avoiding a monolithic god object.",
-      "nodeIds": [
-        "file:src/types.rs"
-      ],
-      "languageLesson": "Rust enums with data variants (like VimMotion) encode state machines in the type system. The compiler guarantees exhaustive matching, ensuring you handle every motion variant—refactoring adds new motions forces compilation until all matches are updated."
-    },
-    {
-      "order": 5,
-      "title": "Dungeon Map Generation",
-      "description": "map.rs implements the 80×40 grid across 4 dungeon levels with 5 zones each. It procedurally generates corridors, rooms, enemy spawns, and patrol areas. This file has high fan-in (5 imports) because tiles, zones, and enemy placement are referenced throughout the codebase. The carve_level functions demonstrate Rust's iterator chains for expressive grid manipulation.",
-      "nodeIds": [
-        "file:src/map.rs"
-      ],
-      "languageLesson": "Rust's iterator adapters (map, filter, for_each) enable functional-style data pipelines. The 'grid[y][x]' row-major layout requires bounds-checking before access—Rust's safety model prevents undefined behavior from out-of-bounds indexing."
-    },
-    {
-      "order": 6,
-      "title": "Player Vim Motions",
-      "description": "player.rs implements PlayerState with handlers for all 13 Vim motions (h/j/k/l, w/b, e/ge, f/t, 0/$, dd, G/gg,_CTRL-D/U). Each motion handler mutates player position and updates the motion tracking system. The handle_motion method takes &mut Map because 'dd' destroys obstacles—a design choice encapsulating state mutations within the aggregate that owns them.",
-      "nodeIds": [
-        "file:src/player.rs"
-      ],
-      "languageLesson": "Rust's ownership model is explicit about mutation: &mut Map conveys that the method may change the map. The 'dd' motion mutating the map through the PlayerState handler reflects the aggregate pattern—PlayerState owns the motion logic, even when it affects other aggregates."
-    },
-    {
-      "order": 7,
-      "title": "Enemy AI & FOV System",
-      "description": "enemy.rs implements FOV-aware enemy AI with two behaviors: BFS chase when the player is visible (has_line_of_sight), and room patrol within PatrolArea otherwise. The Enemy struct patrols between rooms using deterministic movement. The AI leverages the visibility system from types.rs, showing how domain types coordinate across aggregates.",
-      "nodeIds": [
-        "file:src/enemy.rs",
-        "file:src/visibility.rs"
-      ],
-      "languageLesson": "BFS (breadth-first search) finds the shortest path from enemy to player by exploring all positions at distance k before k+1. Rust's VecDeque is ideal for BFS—O(1) push to back, pop from front. The algorithm terminates once the player is found, avoiding unnecessary exploration."
-    },
-    {
-      "order": 8,
-      "title": "Game Orchestration & Timing",
-      "description": "game.rs is the App coordinator with the highest fan-out (9 imports), orchestrating input handling, tick progression, motion execution, enemy turns, and level transitions. It sequences cross-aggregate flows like level transitions and pause/resume. The GameClock trait enables deterministic timing—RealClock for production, TestClock for integration tests—making animations and timers testable without wall-clock delays.",
-      "nodeIds": [
-        "file:src/game.rs",
-        "file:src/animation.rs"
-      ],
-      "languageLesson": "Rust traits define shared behavior with multiple implementations. The GameClock trait abstracts time sourcing—RealClock uses SystemTime, TestClock returns deterministic values. This dependency injection pattern makes code testable by swapping implementations at compile time."
-    },
-    {
-      "order": 9,
-      "title": "Rendering (Read-Only)",
-      "description": "renderer.rs is purely read-only—it never mutates game state. This architectural boundary separates display from logic, making rendering a pure function of App state. The renderer draws the title, viewport, sidebar, minimap, fog-of-war effects, and win/loss screens. All renderer internals are 'pub' for test access, reflecting the project's emphasis on integration test coverage.",
-      "nodeIds": [
-        "file:src/renderer.rs"
-      ],
-      "languageLesson": "Pure functions (no mutation) are easier to test and reason about—they have no side effects and always produce the same output for the same input. By keeping renderer.rs read-only, the codebase ensures UI code cannot accidentally corrupt game state."
-    },
-    {
-      "order": 10,
-      "title": "Test Infrastructure & Seam",
-      "description": "test_support.rs provides App::for_test(map, position), a single constructor that creates an App with minimal state for integration tests. This test seam bypasses the full setup chain, letting tests instantiate only what they need. The tests/ directory contains 396 integration tests across 9 files, each testing a specific module with helpers from tests/common/mod.rs.",
-      "nodeIds": [
-        "file:src/test_support.rs",
-        "file:tests/common/mod.rs"
-      ],
-      "languageLesson": "Test seams are controlled entry points for creating test fixtures. By providing a dedicated constructor (App::for_test), the codebase avoids exposing internal implementation details—tests get a clean API that can evolve independently from production constructors."
-    },
-    {
-      "order": 11,
-      "title": "Domain Documentation",
-      "description": "CONTEXT.md documents the domain language and aggregate definitions. It explains why App was decomposed into World, PlayerState, InputState, and Session—each aggregate owns its domain logic and state. This living document captures architectural decisions, ensuring future changes respect the aggregate boundaries and avoiding regression to a god object.",
-      "nodeIds": [
-        "document:CONTEXT.md",
-        "document:CLAUDE.md"
-      ]
-    },
-    {
-      "order": 12,
-      "title": "Build Configuration & CI",
-      "description": "Cargo.toml defines the package manifest for vim-rogue 0.2.2 with Rust edition 2024. It declares dependencies (bracket-lib 0.8.7 for rendering, anyhow listed but unused). The GitHub Actions CI pipeline (.github/workflows/ci.yml) runs cargo fmt, cargo clippy, cargo test, and cargo build across platforms, enforcing code quality before merge.",
-      "nodeIds": [
-        "config:Cargo.toml",
-        "pipeline:.github/workflows/ci.yml",
-        "config:rustfmt.toml"
-      ],
-      "languageLesson": "Cargo is Rust's build system and package manager. The [dependencies] section declares external crates with semantic versions. Edition 2024 enables newer Rust features without breaking backwards compatibility. CI ensures every commit passes formatting, linting, and tests before merging."
+      "languageLesson": "Integration tests in Rust go in the tests/ directory, separate from src/. They import the library crate (vim_rogue) and test public APIs. The test constructor pattern (App::for_test) provides deterministic setup. High coverage doesn't guarantee bug-free code, but it does prevent regressions and documents expected behavior. Each test file focuses on one module, keeping tests organized and readable."
     }
   ]
 }

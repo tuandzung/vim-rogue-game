@@ -7,21 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- **Move enemy turn into World aggregate** — `enemies_step` AI dispatch (LOS check, chase, patrol, stun decrement) moved from game.rs into `World::step_enemies`, returning structured `EnemyTurn` result; `push_enemies_off_position` (BFS respawn displacement) moved into `World::push_enemies_off_position`; game.rs `enemies_step` reduced to thin coordinator handling collision outcomes, animation, and audio from returned data
-
-### Added
-
-- `EnemyMovement` and `EnemyTurn` structs — structured result types for `World::step_enemies`
-- `App::for_test(map, position)` constructor in `src/test_support.rs` — centralized test seam; adding an App field no longer breaks all tests
-- `test_support` module registered in `lib.rs`
-
-### Removed
-
-- `started_app_with_map` and `test_app` helpers from `tests/common/mod.rs` — replaced by `App::for_test`
-
-## [0.3.0] - 2026-04-29
+## [0.3.0] - 2026-05-05
 
 ### Changed
 
@@ -30,10 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Move `update_visibility` into `World`** — FOV computation belongs to the aggregate that owns the map
 - **Extract motion/damage feedback into `PlayerState`** — status message generation lives with the aggregate that produces it
 - **Merge `Player` into `PlayerState`** — eliminate shallow `inner: Player` wrapper; PlayerState now holds position, used_motions, last_direction, noclip directly. `handle_motion` owns motion tracking (motion_count, discovered_motions)
+- **Move enemy turn into World aggregate** — `enemies_step` AI dispatch (LOS check, chase, patrol, stun decrement) moved from game.rs into `World::step_enemies`, returning structured `EnemyTurn` result; `push_enemies_off_position` (BFS respawn displacement) moved into `World::push_enemies_off_position`; game.rs `enemies_step` reduced to thin coordinator handling collision outcomes, animation, and audio from returned data
+- **Separate renderer types into `render_types` module** — `RenderCell`, `RenderGrid`, `ScreenModel`, `ViewModel` extracted from `types.rs` into `src/render_types.rs`; renderer-only types no longer mixed with domain types
+
+### Added
+
+- `EnemyMovement` and `EnemyTurn` structs — structured result types for `World::step_enemies`
+- `App::for_test(map, position)` constructor in `src/test_support.rs` — centralized test seam; adding an App field no longer breaks all tests
+- `test_support` module registered in `lib.rs`
+- `render_types` module with renderer-only types (`RenderCell`, `RenderGrid`, `ScreenModel`, `ViewModel`)
+
+### Removed
+
+- `started_app_with_map` and `test_app` helpers from `tests/common/mod.rs` — replaced by `App::for_test`
 
 ### Tests
 
-- 396 integration tests (+3 covering motion_count and discovered_motions behavior)
+- 396 integration tests covering all game systems
 
 ## [0.2.2] - 2026-04-22
 
